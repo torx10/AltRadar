@@ -17,6 +17,35 @@
 
 namespace RadarRender {
 
+struct TerrainGridExtents {
+    float gxMin = -0.25f;
+    float gyMin = -0.25f;
+    float gxSpan = 0.f;
+    float gySpan = 0.f;
+};
+
+inline TerrainGridExtents ResolveTerrainGridExtents(const RadarData::RadarConfig& cfg,
+                                                    const TerrainTexture& terrain) {
+    TerrainGridExtents extents;
+    switch (cfg.TerrainAlignment) {
+        case RadarData::TerrainTextureAlignmentMode::CellCentered:
+            extents.gxMin = -0.5f;
+            extents.gyMin = -0.5f;
+            break;
+        case RadarData::TerrainTextureAlignmentMode::ZeroBased:
+            extents.gxMin = 0.f;
+            extents.gyMin = 0.f;
+            break;
+        default:
+            extents.gxMin = -0.25f;
+            extents.gyMin = -0.25f;
+            break;
+    }
+    extents.gxSpan = static_cast<float>(terrain.Width());
+    extents.gySpan = static_cast<float>(terrain.Height());
+    return extents;
+}
+
 inline float ClampTerrainGrid(float value, int extent) {
     if (extent <= 0) return 0.f;
     const float maxValue = static_cast<float>(extent - 1);
@@ -177,18 +206,17 @@ inline void BuildProjectedTerrainVertexGrid(std::vector<ProjectedTerrainVertex>&
 }
 
 inline void DrawTerrainLargeMap(ImDrawList* dl, PluginSDK::Context* ctx,
-                                const PluginSDK::Snapshot& snap, const TerrainTexture& terrain) {
+                                const PluginSDK::Snapshot& snap, const TerrainTexture& terrain,
+                                const RadarData::RadarConfig& cfg) {
     if (!dl || !terrain.Valid() || terrain.Width() <= 0 || terrain.Height() <= 0) return;
 
     const int cols = std::clamp(terrain.Width() / 20, 36, 72);
     const int rows = std::clamp(terrain.Height() / 20, 36, 72);
-    const float gxMin = -0.25f;
-    const float gyMin = -0.25f;
-    const float gxSpan = static_cast<float>(terrain.Width());
-    const float gySpan = static_cast<float>(terrain.Height());
+    const TerrainGridExtents extents = ResolveTerrainGridExtents(cfg, terrain);
     std::vector<ProjectedTerrainVertex> vertices;
     BuildProjectedTerrainVertexGrid(vertices, ctx, snap, true, terrain.Width(), terrain.Height(),
-                                    cols, rows, gxMin, gyMin, gxSpan, gySpan);
+                                    cols, rows, extents.gxMin, extents.gyMin, extents.gxSpan,
+                                    extents.gySpan);
 
     for (int row = 0; row < rows; ++row) {
         const float v0 = static_cast<float>(row) / static_cast<float>(rows);
@@ -241,18 +269,17 @@ inline bool TerrainPatchTouchesMinimap(PluginSDK::Context* ctx, const PluginSDK:
 }
 
 inline void DrawTerrainMiniMap(ImDrawList* dl, PluginSDK::Context* ctx,
-                               const PluginSDK::Snapshot& snap, const TerrainTexture& terrain) {
+                               const PluginSDK::Snapshot& snap, const TerrainTexture& terrain,
+                               const RadarData::RadarConfig& cfg) {
     if (!dl || !terrain.Valid() || terrain.Width() <= 0 || terrain.Height() <= 0) return;
 
     const int cols = std::clamp(terrain.Width() / 12, 48, 96);
     const int rows = std::clamp(terrain.Height() / 12, 48, 96);
-    const float gxMin = -0.25f;
-    const float gyMin = -0.25f;
-    const float gxSpan = static_cast<float>(terrain.Width());
-    const float gySpan = static_cast<float>(terrain.Height());
+    const TerrainGridExtents extents = ResolveTerrainGridExtents(cfg, terrain);
     std::vector<ProjectedTerrainVertex> vertices;
     BuildProjectedTerrainVertexGrid(vertices, ctx, snap, false, terrain.Width(), terrain.Height(),
-                                    cols, rows, gxMin, gyMin, gxSpan, gySpan);
+                                    cols, rows, extents.gxMin, extents.gyMin, extents.gxSpan,
+                                    extents.gySpan);
 
     for (int row = 0; row < rows; ++row) {
         const float v0 = static_cast<float>(row) / static_cast<float>(rows);
@@ -351,7 +378,7 @@ public:
 
         if (snap.LargeMap.IsVisible) {
             MapClipScope clip(dl, snap.LargeMap, false);
-            if (terrainReady) DrawTerrainLargeMap(dl, ctx, snap, terrain);
+            if (terrainReady) DrawTerrainLargeMap(dl, ctx, snap, terrain, cfg);
             cache.entities.Draw(ctx, snap, dl);
             if (cfg.ShowImportantPOI) {
                 cache.pois.UpdateScreenPositions(ctx, snap);
@@ -364,7 +391,8 @@ public:
             }
         } else if (snap.MiniMap.IsVisible) {
             MapClipScope clip(dl, snap.MiniMap, true);
-            if (terrainReady && cfg.DrawMiniMapTerrain) DrawTerrainMiniMap(dl, ctx, snap, terrain);
+            if (terrainReady && cfg.DrawMiniMapTerrain)
+                DrawTerrainMiniMap(dl, ctx, snap, terrain, cfg);
             if (cfg.DrawMiniMapEntities) cache.entities.Draw(ctx, snap, dl);
             if (cfg.ShowImportantPOI) {
                 cache.pois.UpdateScreenPositions(ctx, snap);

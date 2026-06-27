@@ -120,6 +120,24 @@ inline void DrawShapePicker(UiState& ui) {
 }
 
 inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
+    auto drawTerrainAlignmentCombo = [&](const char* label) {
+        const char* preview = RadarData::TerrainTextureAlignmentModeName(cfg.TerrainAlignment);
+        ImGui::SetNextItemWidth(240.f);
+        if (!ImGui::BeginCombo(label, preview, ImGuiComboFlags_HeightLargest)) return;
+
+        const auto drawOption = [&](RadarData::TerrainTextureAlignmentMode mode) {
+            const bool selected = cfg.TerrainAlignment == mode;
+            if (ImGui::Selectable(RadarData::TerrainTextureAlignmentModeName(mode), selected))
+                cfg.TerrainAlignment = mode;
+            if (selected) ImGui::SetItemDefaultFocus();
+        };
+
+        drawOption(RadarData::TerrainTextureAlignmentMode::Legacy);
+        drawOption(RadarData::TerrainTextureAlignmentMode::CellCentered);
+        drawOption(RadarData::TerrainTextureAlignmentMode::ZeroBased);
+        ImGui::EndCombo();
+    };
+
     bool en = cfg.OverlayEnabled;
     if (ImGui::Checkbox("Enable Radar Overlay", &en)) cfg.OverlayEnabled = en;
     ImGui::Separator();
@@ -139,6 +157,11 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
         ImGui::SameLine(160.f);
         ImGui::SetNextItemWidth(140.f);
         ImGui::SliderInt("##EdgeThickness", &cfg.WalkableMapBorderThickness, 0, 8, "%d");
+        drawTerrainAlignmentCombo("Terrain Alignment");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Use this to test texture/cell alignment. "
+                              "Cell-centred should usually align texels to walkable grid samples.");
+        }
         ImGui::EndDisabled();
         ImGui::Unindent(12.f);
     }

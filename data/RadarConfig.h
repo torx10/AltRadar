@@ -10,6 +10,23 @@
 
 namespace RadarData {
 
+enum class TerrainTextureAlignmentMode : int {
+    Legacy = 0,
+    CellCentered = 1,
+    ZeroBased = 2,
+};
+
+inline const char* TerrainTextureAlignmentModeName(TerrainTextureAlignmentMode mode) {
+    switch (mode) {
+        case TerrainTextureAlignmentMode::CellCentered:
+            return "Cell-centred";
+        case TerrainTextureAlignmentMode::ZeroBased:
+            return "Zero-based";
+        default:
+            return "Current / Legacy";
+    }
+}
+
 inline Rgba8 ParseRgbString(const std::string& s, Rgba8 fallback = {}) {
     int r = fallback.r, g = fallback.g, b = fallback.b;
     if (sscanf_s(s.c_str(), "%d, %d, %d", &r, &g, &b) >= 3
@@ -29,6 +46,7 @@ struct RadarConfig {
     bool  DrawMiniMapTerrain = true;
     bool  DrawMiniMapEntities = true;
     int   WalkableMapBorderThickness = 0;
+    TerrainTextureAlignmentMode TerrainAlignment = TerrainTextureAlignmentMode::Legacy;
     int   WalkableDecimation = 4;
     bool  ShowPlayerNames = false;
     bool  ShowImportantPOI = true;
@@ -69,6 +87,8 @@ struct RadarConfig {
         DrawMiniMapEntities = j.value("DrawMiniMapEntities", DrawMiniMapEntities);
         WalkableMapBorderThickness =
             std::clamp(j.value("WalkableMapBorderThickness", WalkableMapBorderThickness), 0, 8);
+        TerrainAlignment = static_cast<TerrainTextureAlignmentMode>(
+            std::clamp(j.value("TerrainAlignment", static_cast<int>(TerrainAlignment)), 0, 2));
         WalkableDecimation = std::clamp(j.value("WalkableDecimation", WalkableDecimation), 2, 16);
         ShowPlayerNames = j.value("ShowPlayerNames", ShowPlayerNames);
         ShowImportantPOI = j.value("ShowImportantPOI", ShowImportantPOI);
@@ -105,6 +125,7 @@ struct RadarConfig {
         j["DrawMiniMapTerrain"] = DrawMiniMapTerrain;
         j["DrawMiniMapEntities"] = DrawMiniMapEntities;
         j["WalkableMapBorderThickness"] = WalkableMapBorderThickness;
+        j["TerrainAlignment"] = static_cast<int>(TerrainAlignment);
         j["WalkableDecimation"] = WalkableDecimation;
         j["ShowPlayerNames"] = ShowPlayerNames;
         j["ShowImportantPOI"] = ShowImportantPOI;
