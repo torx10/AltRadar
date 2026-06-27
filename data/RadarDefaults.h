@@ -18,6 +18,21 @@ inline void ApplyDefaultIcons(IconTables& icons) {
     icons.SeedDefaults();
 }
 
+inline bool ResetSettingsToDefaults(const std::filesystem::path& pluginDir, RadarConfig& cfg) {
+    ApplyDefaultSettings(cfg);
+    cfg.Save(pluginDir);
+    RadarLog::Instance().Info("Reset to defaults: settings reloaded");
+    return true;
+}
+
+inline bool ResetCustomTargets(const std::filesystem::path& pluginDir, TargetDatabase& targets) {
+    std::error_code ec;
+    std::filesystem::remove(pluginDir / "config" / "targets" / "user.json", ec);
+    targets.Load(pluginDir);
+    RadarLog::Instance().Info("Reset to defaults: custom landmarks removed");
+    return true;
+}
+
 inline bool ResetAllToDefaults(const std::filesystem::path& pluginDir,
                                RadarConfig& cfg, IconTables& icons,
                                TargetDatabase& targets) {

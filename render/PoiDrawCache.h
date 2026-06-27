@@ -484,7 +484,8 @@ struct PoiDrawCache {
 
             const char* label = p.name.c_str();
             ImVec2 ts = ImGui::CalcTextSize(label);
-            ImVec2 pos(p.screenX - ts.x * 0.5f, p.screenY - ts.y - 8.f);
+            constexpr float kLabelOffsetX = 10.f;
+            ImVec2 pos(p.screenX - ts.x * 0.5f + kLabelOffsetX, p.screenY - ts.y - 8.f);
             if (cfg.EnablePOIBackground)
                 dl->AddRectFilled(ImVec2(pos.x - 2, pos.y - 1),
                                   ImVec2(pos.x + ts.x + 2, pos.y + ts.y + 1),
