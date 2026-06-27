@@ -100,18 +100,18 @@ private:
 
     bool Build(void* d3dDevice, const WalkableBake& bake, const PackedStyle& style,
                uint64_t areaCounter, const uint8_t* walkablePtr) {
-        std::vector<uint8_t> edgeMask = bake.baseEdgeMask;
+        m_edgeMask = bake.baseEdgeMask;
         if (style.edgeRadius > 1) {
-            std::vector<uint8_t> frontier = edgeMask;
-            std::vector<uint8_t> nextFrontier(edgeMask.size(), 0);
+            m_frontier = m_edgeMask;
+            m_nextFrontier.assign(m_edgeMask.size(), 0);
             for (uint8_t step = 1; step < style.edgeRadius; ++step) {
-                std::fill(nextFrontier.begin(), nextFrontier.end(), 0);
+                std::fill(m_nextFrontier.begin(), m_nextFrontier.end(), 0);
                 bool expanded = false;
                 for (int gy = 0; gy < bake.height; ++gy) {
                     for (int gx = 0; gx < bake.width; ++gx) {
                         const size_t idx = static_cast<size_t>(gy) * static_cast<size_t>(bake.width)
                                          + static_cast<size_t>(gx);
-                        if (bake.walkableMask[idx] == 0 || edgeMask[idx] != 0) continue;
+                        if (bake.walkableMask[idx] == 0 || m_edgeMask[idx] != 0) continue;
 
                         bool touchesFrontier = false;
                         for (int dy = -1; dy <= 1 && !touchesFrontier; ++dy) {
@@ -124,7 +124,7 @@ private:
                                 const size_t nidx =
                                     static_cast<size_t>(ny) * static_cast<size_t>(bake.width)
                                     + static_cast<size_t>(nx);
-                                if (frontier[nidx] != 0) {
+                                if (m_frontier[nidx] != 0) {
                                     touchesFrontier = true;
                                     break;
                                 }
@@ -132,26 +132,26 @@ private:
                         }
 
                         if (!touchesFrontier) continue;
-                        nextFrontier[idx] = 1;
-                        edgeMask[idx] = 1;
+                        m_nextFrontier[idx] = 1;
+                        m_edgeMask[idx] = 1;
                         expanded = true;
                     }
                 }
 
                 if (!expanded) break;
-                frontier.swap(nextFrontier);
+                m_frontier.swap(m_nextFrontier);
             }
         }
 
-        std::vector<uint8_t> pixels(bake.CellCount() * 4, 0);
+        m_pixels.assign(bake.CellCount() * 4, 0);
         for (size_t idx = 0; idx < bake.walkableMask.size(); ++idx) {
             if (bake.walkableMask[idx] == 0) continue;
-            const PackedColor& color = edgeMask[idx] != 0 ? style.edge : style.interior;
+            const PackedColor& color = m_edgeMask[idx] != 0 ? style.edge : style.interior;
             const size_t px = idx * 4;
-            pixels[px + 0] = color.r;
-            pixels[px + 1] = color.g;
-            pixels[px + 2] = color.b;
-            pixels[px + 3] = color.a;
+            m_pixels[px + 0] = color.r;
+            m_pixels[px + 1] = color.g;
+            m_pixels[px + 2] = color.b;
+            m_pixels[px + 3] = color.a;
         }
 
         auto* dev = static_cast<ID3D11Device*>(d3dDevice);
@@ -171,7 +171,7 @@ private:
         desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
         D3D11_SUBRESOURCE_DATA sub{};
-        sub.pSysMem = pixels.data();
+        sub.pSysMem = m_pixels.data();
         sub.SysMemPitch = static_cast<UINT>(bake.width * 4);
 
         ID3D11Texture2D* tex = nullptr;
@@ -207,6 +207,10 @@ private:
     uint64_t                  m_areaCounter = 0;
     const uint8_t*            m_walkablePtr = nullptr;
     PackedStyle               m_style{};
+    std::vector<uint8_t>      m_edgeMask;
+    std::vector<uint8_t>      m_frontier;
+    std::vector<uint8_t>      m_nextFrontier;
+    std::vector<uint8_t>      m_pixels;
 };
 
 } // namespace RadarRender
