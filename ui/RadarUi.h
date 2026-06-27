@@ -1,9 +1,7 @@
 #pragma once
 
 #include "data/RadarConfig.h"
-#include "data/RadarDefaults.h"
 #include "data/IconTables.h"
-#include "data/PathMatcher.h"
 #include "data/TargetDatabase.h"
 #include "render/EntityMarkers.h"
 #include "render/IconAtlas.h"
@@ -18,14 +16,9 @@
 namespace RadarUi {
 
 struct UiState {
-    char        iconSearch[128]{};
-    bool        iconPickerOpen = false;
-    std::string iconPickerTarget;
-    std::unordered_map<std::string, RadarData::IconDef>* iconPickerMap = nullptr;
     bool        shapePickerOpen = false;
     std::string shapePickerTarget;
     std::unordered_map<std::string, RadarData::IconDef>* shapePickerMap = nullptr;
-    float       setAllIconSize = 30.f;
     char        rulePickerSearch[128]{};
     int         rulePickerCategory = 0;
     bool        rulePickerOpen = false;
@@ -34,8 +27,6 @@ struct UiState {
     bool        pickerEntityMode = false;
     bool        requestResetSettings = false;
     bool        requestResetCustomLandmarks = false;
-
-    std::unordered_set<std::string> expandedAreas;
 
     bool        editModalOpen = false;
     RadarData::TargetEntry editTarget;
@@ -58,28 +49,24 @@ struct RulePickerRow {
     std::string seedValue;
 };
 
-inline bool DrawMarkerPickerButton(const char* id, RadarData::MarkerShape shape) {
-    const ImVec2 size(58.f, 20.f);
-    if (ImGui::InvisibleButton(id, size)) return true;
-
-    ImDrawList* dl = ImGui::GetWindowDrawList();
-    const ImVec2 min = ImGui::GetItemRectMin();
-    const ImVec2 max = ImGui::GetItemRectMax();
-    const bool hovered = ImGui::IsItemHovered();
-    dl->AddRectFilled(min, max, hovered ? IM_COL32(34, 44, 58, 255) : IM_COL32(24, 28, 36, 255),
-                      3.f);
-    dl->AddRect(min, max, hovered ? IM_COL32(90, 155, 235, 255) : IM_COL32(76, 82, 96, 255), 3.f);
-
-    if (shape != RadarData::MarkerShape::None) {
-        RadarRender::DrawEntityMarker(dl, shape, min.x + 11.f, min.y + size.y * 0.5f, 5.0f,
-                                      IM_COL32(115, 220, 255, 255));
-        dl->AddText(ImVec2(min.x + 21.f, min.y + 3.f), IM_COL32(230, 236, 244, 255),
-                    RadarData::MarkerShapeName(shape));
-    } else {
-        dl->AddText(ImVec2(min.x + 7.f, min.y + 3.f), IM_COL32(180, 184, 192, 255), "None");
-    }
-    return false;
-}
+inline constexpr RadarData::MarkerShape kMarkerShapes[] = {
+    RadarData::MarkerShape::Circle,      RadarData::MarkerShape::Square,
+    RadarData::MarkerShape::Triangle,    RadarData::MarkerShape::Diamond,
+    RadarData::MarkerShape::Plus,        RadarData::MarkerShape::Star,
+    RadarData::MarkerShape::Hexagon,     RadarData::MarkerShape::Pentagon,
+    RadarData::MarkerShape::TriangleDown,RadarData::MarkerShape::ArrowUp,
+    RadarData::MarkerShape::Cross,       RadarData::MarkerShape::Heart,
+    RadarData::MarkerShape::Droplet,     RadarData::MarkerShape::Gem,
+    RadarData::MarkerShape::Ring,        RadarData::MarkerShape::Shield,
+    RadarData::MarkerShape::Exclamation, RadarData::MarkerShape::Skull,
+    RadarData::MarkerShape::Crown,       RadarData::MarkerShape::Person,
+    RadarData::MarkerShape::Chat,        RadarData::MarkerShape::Chest,
+    RadarData::MarkerShape::Stairs,      RadarData::MarkerShape::MapPin,
+    RadarData::MarkerShape::Portal,      RadarData::MarkerShape::Flask,
+    RadarData::MarkerShape::Flag,        RadarData::MarkerShape::Eye,
+    RadarData::MarkerShape::Coin,        RadarData::MarkerShape::Sword,
+    RadarData::MarkerShape::Fang,        RadarData::MarkerShape::Claw,
+};
 
 inline void DrawShapePicker(UiState& ui) {
     if (!ui.shapePickerOpen || !ui.shapePickerMap) return;
@@ -88,25 +75,6 @@ inline void DrawShapePicker(UiState& ui) {
         ui.shapePickerOpen = false;
         return;
     }
-
-    constexpr RadarData::MarkerShape kShapes[] = {
-        RadarData::MarkerShape::Circle,      RadarData::MarkerShape::Square,
-        RadarData::MarkerShape::Triangle,    RadarData::MarkerShape::Diamond,
-        RadarData::MarkerShape::Plus,        RadarData::MarkerShape::Star,
-        RadarData::MarkerShape::Hexagon,     RadarData::MarkerShape::Pentagon,
-        RadarData::MarkerShape::TriangleDown,RadarData::MarkerShape::ArrowUp,
-        RadarData::MarkerShape::Cross,       RadarData::MarkerShape::Heart,
-        RadarData::MarkerShape::Droplet,     RadarData::MarkerShape::Gem,
-        RadarData::MarkerShape::Ring,        RadarData::MarkerShape::Shield,
-        RadarData::MarkerShape::Exclamation, RadarData::MarkerShape::Skull,
-        RadarData::MarkerShape::Crown,       RadarData::MarkerShape::Person,
-        RadarData::MarkerShape::Chat,        RadarData::MarkerShape::Chest,
-        RadarData::MarkerShape::Stairs,      RadarData::MarkerShape::MapPin,
-        RadarData::MarkerShape::Portal,      RadarData::MarkerShape::Flask,
-        RadarData::MarkerShape::Flag,        RadarData::MarkerShape::Eye,
-        RadarData::MarkerShape::Coin,        RadarData::MarkerShape::Sword,
-        RadarData::MarkerShape::Fang,        RadarData::MarkerShape::Claw,
-    };
 
     ImGui::SetNextWindowSize(ImVec2(560, 360), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Marker Picker", &ui.shapePickerOpen)) {
@@ -118,9 +86,9 @@ inline void DrawShapePicker(UiState& ui) {
     ImGui::Separator();
 
     const int cols = 6;
-    constexpr int kShapeCount = static_cast<int>(sizeof(kShapes) / sizeof(kShapes[0]));
+    constexpr int kShapeCount = static_cast<int>(sizeof(kMarkerShapes) / sizeof(kMarkerShapes[0]));
     for (int i = 0; i < kShapeCount; ++i) {
-        const auto shape = kShapes[i];
+        const auto shape = kMarkerShapes[i];
         ImGui::PushID(i);
         if (i % cols != 0) ImGui::SameLine();
 
@@ -419,28 +387,9 @@ inline void SplitCsv(const char* text, std::vector<std::string>& out) {
 }
 
 inline void DrawMarkerShapeCombo(const char* label, RadarData::MarkerShape& shape) {
-    constexpr RadarData::MarkerShape kShapes[] = {
-        RadarData::MarkerShape::Circle,      RadarData::MarkerShape::Square,
-        RadarData::MarkerShape::Triangle,    RadarData::MarkerShape::Diamond,
-        RadarData::MarkerShape::Plus,        RadarData::MarkerShape::Star,
-        RadarData::MarkerShape::Hexagon,     RadarData::MarkerShape::Pentagon,
-        RadarData::MarkerShape::TriangleDown,RadarData::MarkerShape::ArrowUp,
-        RadarData::MarkerShape::Cross,       RadarData::MarkerShape::Heart,
-        RadarData::MarkerShape::Droplet,     RadarData::MarkerShape::Gem,
-        RadarData::MarkerShape::Ring,        RadarData::MarkerShape::Shield,
-        RadarData::MarkerShape::Exclamation, RadarData::MarkerShape::Skull,
-        RadarData::MarkerShape::Crown,       RadarData::MarkerShape::Person,
-        RadarData::MarkerShape::Chat,        RadarData::MarkerShape::Chest,
-        RadarData::MarkerShape::Stairs,      RadarData::MarkerShape::MapPin,
-        RadarData::MarkerShape::Portal,      RadarData::MarkerShape::Flask,
-        RadarData::MarkerShape::Flag,        RadarData::MarkerShape::Eye,
-        RadarData::MarkerShape::Coin,        RadarData::MarkerShape::Sword,
-        RadarData::MarkerShape::Fang,        RadarData::MarkerShape::Claw,
-    };
-
     const std::string preview = std::string("   ") + RadarData::MarkerShapeName(shape);
     if (ImGui::BeginCombo(label, preview.c_str())) {
-        for (const auto candidate : kShapes) {
+        for (const auto candidate : kMarkerShapes) {
             const bool selected = candidate == shape;
             const std::string rowId = std::string("##markeropt") + RadarData::MarkerShapeName(candidate);
             if (ImGui::Selectable(rowId.c_str(), selected, 0, ImVec2(0.f, 20.f)))
