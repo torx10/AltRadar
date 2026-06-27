@@ -1,35 +1,73 @@
 #pragma once
 
-#include "MapProjection.h"
 #include "WalkableGridView.h"
 #include "data/RadarConfig.h"
 #include "sdk/PluginSDK.h"
 
-#include <imgui.h>
+#include <cstddef>
+#include <cstdint>
 #include <vector>
 
 namespace RadarRender {
 
 struct WalkableBake {
-    struct Cell {
-        uint16_t gx = 0;
-        uint16_t gy = 0;
-        float    z = 0.f;
-    };
-
-    std::vector<Cell> cells;
-    ImU32             color = 0;
-    bool              valid = false;
+    int                       width = 0;
+    int                       height = 0;
+    const uint8_t*            sourcePtr = nullptr;
+    std::vector<uint8_t>      walkableMask;
+    std::vector<uint8_t>      baseEdgeMask;
+    bool                      valid = false;
 
     void Clear() {
-        cells.clear();
+        width = 0;
+        height = 0;
+        sourcePtr = nullptr;
+        walkableMask.clear();
+        baseEdgeMask.clear();
         valid = false;
+    }
+
+    size_t CellCount() const {
+        return (width > 0 && height > 0)
+                   ? static_cast<size_t>(width) * static_cast<size_t>(height)
+                   : 0;
+    }
+
+    bool IsWalkable(int gx, int gy) const {
+        if (gx < 0 || gy < 0 || gx >= width || gy >= height) return false;
+        const size_t idx =
+            static_cast<size_t>(gy) * static_cast<size_t>(width) + static_cast<size_t>(gx);
+        return idx < walkableMask.size() && walkableMask[idx] != 0;
+    }
+
+    static bool IsBoundaryCell(const std::vector<uint8_t>& mask, int w, int h, int gx, int gy) {
+        const size_t idx =
+            static_cast<size_t>(gy) * static_cast<size_t>(w) + static_cast<size_t>(gx);
+        if (idx >= mask.size() || mask[idx] == 0) return false;
+
+        for (int dy = -1; dy <= 1; ++dy) {
+            const int ny = gy + dy;
+            if (ny < 0 || ny >= h) return true;
+            for (int dx = -1; dx <= 1; ++dx) {
+                if (dx == 0 && dy == 0) continue;
+                const int nx = gx + dx;
+                if (nx < 0 || nx >= w) return true;
+                const size_t nidx = static_cast<size_t>(ny) * static_cast<size_t>(w)
+                                  + static_cast<size_t>(nx);
+                if (nidx >= mask.size() || mask[nidx] == 0) return true;
+            }
+        }
+
+        return false;
     }
 
     void Rebuild(PluginSDK::Context* ctx, const PluginSDK::WalkableGridHandle& grid,
                  const RadarData::RadarConfig& cfg) {
+        (void)ctx;
+        (void)cfg;
+
         Clear();
-        if (!grid.Valid() || !ctx) return;
+        if (!grid.Valid()) return;
 
         const uint8_t* data = grid.Data();
         const int w = grid.Width();
@@ -37,55 +75,34 @@ struct WalkableBake {
         const size_t sizeBytes = grid.SizeBytes();
         if (!data || w <= 0 || h <= 0) return;
 
-        color = ImGui::ColorConvertFloat4ToU32(cfg.WalkableMapColor);
-        int step = std::max(2, cfg.WalkableDecimation);
-        while ((w / step) * (h / step) > 15000 && step < 32) step *= 2;
+        width = w;
+        height = h;
+        sourcePtr = data;
 
-        cells.reserve(static_cast<size_t>((w / step) * (h / step) / 3));
-        for (int gy = 0; gy < h; gy += step) {
-            for (int gx = 0; gx < w; gx += step) {
+        const size_t cellCount = CellCount();
+        walkableMask.assign(cellCount, 0);
+        for (int gy = 0; gy < h; ++gy) {
+            for (int gx = 0; gx < w; ++gx) {
                 if (!IsWalkableCell(data, sizeBytes, w, h, gx, gy)) continue;
-                Cell c;
-                c.gx = static_cast<uint16_t>(gx);
-                c.gy = static_cast<uint16_t>(gy);
-                c.z = ctx->Terrain.GetTerrainHeight(gx, gy);
-                cells.push_back(c);
+                const size_t idx = static_cast<size_t>(gy) * static_cast<size_t>(w)
+                                 + static_cast<size_t>(gx);
+                walkableMask[idx] = 1;
             }
         }
-        valid = !cells.empty();
-    }
 
-    static void DrawCellsForMap(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
-                                ImDrawList* dl, const PluginSDK::MapData& map, ImU32 color,
-                                bool useLargeMap, const std::vector<Cell>& cells) {
-        if (!map.IsVisible) return;
-        for (const Cell& c : cells) {
-            ProjectedScreen scr;
-            if (useLargeMap) {
-                scr = ProjectGridToLargeMapScreen(ctx, snap, static_cast<float>(c.gx),
-                                                  static_cast<float>(c.gy), c.z);
-            } else {
-                scr = ProjectGridToMiniMapScreen(ctx, snap, static_cast<float>(c.gx),
-                                                 static_cast<float>(c.gy), c.z, 10.f, true);
+        baseEdgeMask.assign(cellCount, 0);
+        bool anyWalkable = false;
+        for (int gy = 0; gy < h; ++gy) {
+            for (int gx = 0; gx < w; ++gx) {
+                const size_t idx = static_cast<size_t>(gy) * static_cast<size_t>(w)
+                                 + static_cast<size_t>(gx);
+                if (walkableMask[idx] == 0) continue;
+                anyWalkable = true;
+                if (IsBoundaryCell(walkableMask, w, h, gx, gy)) baseEdgeMask[idx] = 1;
             }
-            if (!scr.valid) continue;
-            if (useLargeMap) {
-                if (!IsInsideMapRect(map, scr.sx, scr.sy)) continue;
-            } else if (!IsOnMinimapSurface(ctx, map, scr.sx, scr.sy, 10.f)) {
-                continue;
-            }
-            dl->AddRectFilled(ImVec2(scr.sx, scr.sy), ImVec2(scr.sx + 1.f, scr.sy + 1.f),
-                              color);
         }
-    }
 
-    void Draw(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap, ImDrawList* dl,
-              const PluginSDK::MapData& largeMap, const PluginSDK::MapData& miniMap) const {
-        if (!dl || !valid || !ctx) return;
-        if (largeMap.IsVisible)
-            DrawCellsForMap(ctx, snap, dl, largeMap, color, true, cells);
-        if (miniMap.IsVisible)
-            DrawCellsForMap(ctx, snap, dl, miniMap, color, false, cells);
+        valid = anyWalkable;
     }
 };
 

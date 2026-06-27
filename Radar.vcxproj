@@ -102,9 +102,11 @@
     <ClInclude Include="render\MapProjection.h" />
     <ClInclude Include="render\EntityClassifier.h" />
     <ClInclude Include="render\EntityDrawCache.h" />
+    <ClInclude Include="render\EntityMarkers.h" />
     <ClInclude Include="render\IconAtlas.h" />
     <ClInclude Include="render\PoiDrawCache.h" />
     <ClInclude Include="render\RadarOverlay.h" />
+    <ClInclude Include="render\TerrainTexture.h" />
     <ClInclude Include="render\WalkableBake.h" />
     <ClInclude Include="render\WalkableGridView.h" />
     <ClInclude Include="ui\RadarUi.h" />

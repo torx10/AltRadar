@@ -26,6 +26,8 @@ inline void TryMigrateFromHost(const std::filesystem::path& pluginDir,
             cfg.DrawWhenNotPaused = j.value("DrawWhenNotPaused", true);
             cfg.HideOutsideNetworkBubble = j.value("HideOutsideNetworkBubble", false);
             cfg.DrawWalkableMap = j.value("DrawWalkableMap", true);
+            cfg.DrawMiniMapTerrain = true;
+            cfg.DrawMiniMapEntities = true;
             cfg.WalkableMapBorderThickness = j.value("WalkableMapBorderThickness", 0);
             cfg.ShowPlayerNames = j.value("ShowPlayersNames", false);
             cfg.ShowImportantPOI = j.value("ShowImportantPOI", true);
@@ -36,8 +38,8 @@ inline void TryMigrateFromHost(const std::filesystem::path& pluginDir,
             if (j.contains("WalkableMapColor") && j["WalkableMapColor"].is_array()
                 && j["WalkableMapColor"].size() >= 4) {
                 auto& a = j["WalkableMapColor"];
-                cfg.WalkableMapColor = ImVec4(a[0].get<float>(), a[1].get<float>(),
-                                              a[2].get<float>(), a[3].get<float>());
+                cfg.WalkableMapInteriorColor = ImVec4(a[0].get<float>(), a[1].get<float>(),
+                                                      a[2].get<float>(), a[3].get<float>());
             }
             if (j.contains("POIColor") && j["POIColor"].is_array() && j["POIColor"].size() >= 4) {
                 auto& a = j["POIColor"];

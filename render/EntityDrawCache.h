@@ -1,7 +1,7 @@
 #pragma once
 
 #include "EntityClassifier.h"
-#include "IconAtlas.h"
+#include "EntityMarkers.h"
 #include "MapProjection.h"
 #include "data/RadarConfig.h"
 #include "data/TargetDatabase.h"
@@ -26,15 +26,6 @@ struct EntityDrawCache {
         if (e.EntitySubtype == PluginSDK::EntitySubtype::PlayerSelf) return true;
         if (e.Address != 0 && e.Address == snap.Player.Address) return true;
         return false;
-    }
-
-    static bool ApplyIcon(RadarData::EntityDrawCmd& cmd, const RadarData::IconDef& def) {
-        if (!RadarData::IsIconVisible(def)) return false;
-        cmd.useIcon = true;
-        cmd.iconCx = def.cx;
-        cmd.iconCy = def.cy;
-        cmd.iconSize = def.scale * 0.5f;
-        return true;
     }
 
     void Rebuild(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
@@ -65,35 +56,44 @@ struct EntityDrawCache {
             cmd.gridY = e.GridPositionY;
             cmd.terrainZ = e.TerrainHeight;
 
-            if (auto icon = ClassifyEntity(e, icons)) ApplyIcon(cmd, *icon);
-
-            if (!cmd.useIcon) continue;
+            const auto marker = ClassifyEntity(ctx, e, path, icons, cfg);
+            if (!marker.matched || marker.hidden) continue;
+            cmd.markerShape = marker.style.shape;
+            cmd.markerSize = marker.style.size;
+            cmd.markerColor = marker.style.color;
+            cmd.label = marker.style.label;
             cmds.push_back(cmd);
             ++count;
         }
 
         if (snap.Player.IsValid) {
-            if (auto it = icons.baseIcons.find("Self"); it != icons.baseIcons.end()) {
+            if (auto marker = ClassifySelf(icons, cfg)) {
                 RadarData::EntityDrawCmd cmd;
                 cmd.gridX = snap.Player.GridPositionX;
                 cmd.gridY = snap.Player.GridPositionY;
                 cmd.terrainZ = snap.Player.TerrainHeight;
-                if (ApplyIcon(cmd, it->second)) cmds.push_back(cmd);
+                cmd.markerShape = marker->shape;
+                cmd.markerSize = marker->size;
+                cmd.markerColor = marker->color;
+                cmd.label = marker->label;
+                cmds.push_back(cmd);
             }
         }
 
         lastSnapshotTime = snap.LastUpdateTime;
     }
 
-    void Draw(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap, ImDrawList* dl,
-              const IconAtlas& atlas) const {
-        if (!dl || !ctx || !atlas.Valid()) return;
+    void Draw(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap, ImDrawList* dl) const {
+        if (!dl || !ctx) return;
         for (const auto& c : cmds) {
-            if (!c.useIcon || c.iconSize <= 0.f) continue;
+            if (c.markerShape == RadarData::MarkerShape::None || c.markerSize <= 0.f) continue;
             const auto scr =
                 ProjectEntityGridToScreen(ctx, snap, c.gridX, c.gridY, c.terrainZ);
             if (!scr.valid) continue;
-            atlas.DrawIcon(dl, c.iconCx, c.iconCy, c.iconSize, scr.sx, scr.sy);
+            DrawEntityMarker(dl, c.markerShape, scr.sx, scr.sy, c.markerSize, c.markerColor);
+            if (!c.label.empty())
+                dl->AddText(ImVec2(scr.sx + c.markerSize + 4.f, scr.sy - c.markerSize - 2.f),
+                            c.markerColor, c.label.c_str());
         }
     }
 };

@@ -14,6 +14,8 @@
   "EdgeIndicatorMinimap": true,
   "EdgeIndicatorLargemap": true,
   "LargeMapScaleMultiplier": 0.1738000065088272,
+  "WalkableMapInteriorColor": [0.46, 0.46, 0.46, 0.7],
+  "WalkableMapEdgeColor": [0.23529412, 0.8627451, 1.0, 0.7058824],
   "WalkableMapColor": [0.46, 0.46, 0.46, 0.7],
   "POIColor": [1.0, 1.0, 0.5, 1.0],
   "MaxEntitiesDrawn": 512,

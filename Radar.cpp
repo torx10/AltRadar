@@ -58,6 +58,7 @@ public:
     void OnDisable() override {
         EndPickerMode();
         m_overlay.walkable.Reset();
+        m_overlay.terrain.Release();
         m_overlay.atlas.Release();
         m_overlay.cache.Clear();
         RadarData::RadarLog::Instance().Info("Radar plugin disabled");
@@ -70,21 +71,26 @@ public:
             ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx()->ImGuiContext));
 
         const auto pluginDir = DirectoryPath();
-        if (m_ui.requestResetDefaults) {
-            m_ui.requestResetDefaults = false;
-            std::error_code ec;
-            std::filesystem::remove(pluginDir / "config" / "targets" / "user.json", ec);
-            RadarData::ResetAllToDefaults(pluginDir, m_overlay.cfg, m_overlay.icons,
-                                          m_overlay.targets);
+        if (m_ui.requestResetSettings) {
+            m_ui.requestResetSettings = false;
+            RadarData::ResetSettingsToDefaults(pluginDir, m_overlay.cfg);
             m_overlay.cache.Clear();
             m_overlay.cache.InvalidatePoi();
-            RadarData::RadarLog::Instance().Info("Settings reset to defaults");
-            ctx()->Log.Info("Radar settings reset to defaults");
+            RadarData::RadarLog::Instance().Info("General settings reset to defaults");
+            ctx()->Log.Info("Radar general settings reset to defaults");
+        }
+        if (m_ui.requestResetCustomLandmarks) {
+            m_ui.requestResetCustomLandmarks = false;
+            RadarData::ResetCustomTargets(pluginDir, m_overlay.targets);
+            m_overlay.cache.Clear();
+            m_overlay.cache.InvalidatePoi();
+            RadarData::RadarLog::Instance().Info("Custom landmarks reset");
+            ctx()->Log.Info("Radar custom landmarks reset");
         }
 
         const auto snap = ctx()->Game.GetSnapshot();
         m_overlay.EnsureAtlas(const_cast<PluginSDK::Context*>(ctx()), pluginDir);
-        RadarUi::DrawSettings(m_overlay, m_ui, snap, pluginDir);
+        RadarUi::DrawSettings(m_overlay, m_ui, const_cast<PluginSDK::Context*>(ctx()), snap, pluginDir);
     }
 
     void DrawUI() override {
