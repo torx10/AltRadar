@@ -204,11 +204,13 @@ struct DisplayRule {
     std::string              life;
     std::string              chest;
     std::string              poi;
+    // Persisted/exposed for future rule filtering work; runtime matching does not use this yet.
     std::string              encounter;
     MarkerShape              markerShape = MarkerShape::Circle;
     Rgba8                    markerColor{255, 217, 38, 255};
     float                    size = 6.f;
     std::string              label;
+    // Persisted/exposed for future GPS/pathing work; runtime matching does not use this yet.
     bool                     navigable = false;
 };
 

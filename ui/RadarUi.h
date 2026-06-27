@@ -1265,8 +1265,10 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
         ImGui::TextUnformatted(t.path.c_str());
         ImGui::TableSetColumnIndex(3);
         if (t.showIcon && atlas.Valid()) {
+            const auto iconDef = RadarRender::PoiDrawCache::ResolvePoiIcon(t, overlay.icons);
             ImVec2 p = ImGui::GetCursorScreenPos();
-            atlas.DrawIcon(ImGui::GetWindowDrawList(), 1, 37, 18.f, p.x + 12.f, p.y + 10.f);
+            atlas.DrawIcon(ImGui::GetWindowDrawList(), iconDef.cx, iconDef.cy, 18.f,
+                           p.x + 12.f, p.y + 10.f);
         }
         ImGui::TableSetColumnIndex(4);
         ImGui::Text("%.0f", t.iconSize);
