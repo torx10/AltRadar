@@ -828,10 +828,20 @@ inline void DrawRuleActionButtons(bool canMoveUp, bool canMoveDown, bool showDel
     }
 }
 
+inline void DrawRuleColorSourceCombo(const char* id, bool& useRuneshapeColor) {
+    const char* preview = useRuneshapeColor ? "Runeshape if available" : "Static";
+    if (!ImGui::BeginCombo(id, preview, ImGuiComboFlags_HeightLargest)) return;
+    if (ImGui::Selectable("Static", !useRuneshapeColor)) useRuneshapeColor = false;
+    if (ImGui::Selectable("Runeshape if available", useRuneshapeColor)) useRuneshapeColor = true;
+    ImGui::EndCombo();
+}
+
 inline void DrawDisplayRuleStyleRow(bool hideEditable, bool& hideValue,
                                     RadarData::MarkerShape& shape, RadarData::Rgba8& color,
                                     float& size, bool labelEditable, std::string& label,
-                                    bool autoPathEditable, bool& autoPath) {
+                                    bool autoPathEditable, bool& autoPath,
+                                    bool showRuneshapeColorSource = false,
+                                    bool* useRuneshapeColor = nullptr) {
     ImGui::BeginDisabled(!hideEditable);
     ImGui::Checkbox("Hide", &hideValue);
     ImGui::EndDisabled();
@@ -840,6 +850,12 @@ inline void DrawDisplayRuleStyleRow(bool hideEditable, bool& hideValue,
     ImGui::SetNextItemWidth(132.f);
     DrawMarkerShapeCombo("##Marker", shape);
     ImGui::SameLine();
+    if (showRuneshapeColorSource && useRuneshapeColor) {
+        DrawInlineRuleLabel("Colour Source");
+        ImGui::SetNextItemWidth(168.f);
+        DrawRuleColorSourceCombo("##ColorSource", *useRuneshapeColor);
+        ImGui::SameLine();
+    }
     DrawInlineRuleLabel("Color");
     ImVec4 colorEdit = color.ToImVec4();
     ImGui::SetNextItemWidth(72.f);
@@ -994,8 +1010,10 @@ inline void DrawDisplayRuleRow(size_t index, RadarData::IconTables& icons, RuleS
     }
     if (open) {
         DrawDisplayRuleMatcherFields(rule, true, true, "##cat");
+        const bool runeshapeEligible = RadarData::IsRuneshapeColourEligible(rule);
         DrawDisplayRuleStyleRow(true, rule.hide, rule.markerShape, rule.markerColor, rule.size,
-                                true, rule.label, true, rule.navigable);
+                                true, rule.label, true, rule.navigable, runeshapeEligible,
+                                &rule.useRuneshapeColor);
         ImGui::TreePop();
     }
     PopRuleCardStyle();

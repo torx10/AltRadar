@@ -8,6 +8,7 @@
 #include "sdk/PluginSDK.h"
 
 #include <imgui.h>
+#include <unordered_map>
 #include <vector>
 
 namespace RadarRender {
@@ -28,12 +29,38 @@ struct EntityDrawCache {
         return false;
     }
 
+    static bool AnyRuleUsesRuneshapeColor(const RadarData::IconTables& icons) {
+        for (const auto& rule : icons.displayRules) {
+            if (!rule.enabled || !rule.useRuneshapeColor) continue;
+            if (RadarData::IsRuneshapeColourEligible(rule)) return true;
+        }
+        return false;
+    }
+
+    static ImU32 RuneshapeColorToImU32(uint32_t color) {
+        const uint8_t r = static_cast<uint8_t>(color & 0xFFu);
+        const uint8_t g = static_cast<uint8_t>((color >> 8) & 0xFFu);
+        const uint8_t b = static_cast<uint8_t>((color >> 16) & 0xFFu);
+        uint8_t a = static_cast<uint8_t>((color >> 24) & 0xFFu);
+        if (a == 0) a = 255;
+        return IM_COL32(r, g, b, a);
+    }
+
     void Rebuild(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
                  const RadarData::RadarConfig& cfg, const RadarData::TargetDatabase& db,
                  const RadarData::IconTables& icons) {
         cmds.clear();
         if (!ctx) return;
         cmds.reserve(static_cast<size_t>(std::min(cfg.MaxEntitiesDrawn, 2048)));
+
+        std::unordered_map<uint32_t, ImU32> runeshapeColors;
+        if (!cfg.UseLegacyClassifier && AnyRuleUsesRuneshapeColor(icons)) {
+            for (const auto& runeshape : ctx->Runeshape.Runeshapes()) {
+                if (runeshape.entityId == 0 || runeshape.entityId > 0xFFFFFFFFull) continue;
+                runeshapeColors.emplace(static_cast<uint32_t>(runeshape.entityId),
+                                        RuneshapeColorToImU32(runeshape.color));
+            }
+        }
 
         auto wpath = [](const std::wstring& p) -> std::string {
             return std::string(p.begin(), p.end());
@@ -61,6 +88,10 @@ struct EntityDrawCache {
             cmd.markerShape = marker.style.shape;
             cmd.markerSize = marker.style.size;
             cmd.markerColor = marker.style.color;
+            if (marker.useRuneshapeColor) {
+                if (const auto it = runeshapeColors.find(e.Id); it != runeshapeColors.end())
+                    cmd.markerColor = it->second;
+            }
             cmd.label = marker.style.label;
             cmds.push_back(cmd);
             ++count;

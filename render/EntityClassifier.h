@@ -20,6 +20,7 @@ struct EntityMarkerStyle {
 struct EntityClassification {
     bool              matched = false;
     bool              hidden = false;
+    bool              useRuneshapeColor = false;
     EntityMarkerStyle style{};
 };
 
@@ -272,6 +273,8 @@ inline EntityClassification ClassifyByRules(const PluginSDK::Entity& e, PluginSD
         EntityClassification out;
         out.matched = true;
         out.hidden = rule.hide || rule.size <= 0.f;
+        out.useRuneshapeColor =
+            rule.useRuneshapeColor && RadarData::IsRuneshapeColourEligible(rule);
         out.style = EntityMarkerStyle{rule.markerShape, rule.markerColor.ToImU32(),
                                       std::clamp(rule.size, 1.5f, 22.f), rule.label};
         return out;

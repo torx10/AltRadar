@@ -207,12 +207,47 @@ struct DisplayRule {
     // Persisted/exposed for future rule filtering work; runtime matching does not use this yet.
     std::string              encounter;
     MarkerShape              markerShape = MarkerShape::Circle;
+    bool                     useRuneshapeColor = false;
     Rgba8                    markerColor{255, 217, 38, 255};
     float                    size = 6.f;
     std::string              label;
     // Persisted/exposed for future GPS/pathing work; runtime matching does not use this yet.
     bool                     navigable = false;
 };
+
+inline bool ContainsCaseInsensitiveRuleText(std::string_view text, std::string_view term) {
+    if (term.empty()) return true;
+    if (term.size() > text.size()) return false;
+    for (size_t i = 0; i + term.size() <= text.size(); ++i) {
+        bool ok = true;
+        for (size_t j = 0; j < term.size(); ++j) {
+            const unsigned char a = static_cast<unsigned char>(text[i + j]);
+            const unsigned char b = static_cast<unsigned char>(term[j]);
+            if (std::tolower(a) != std::tolower(b)) {
+                ok = false;
+                break;
+            }
+        }
+        if (ok) return true;
+    }
+    return false;
+}
+
+inline bool IsRuneshapeColourEligible(const DisplayRule& rule) {
+    for (const auto& term : rule.matchTerms) {
+        if (ContainsCaseInsensitiveRuleText(term, "Expedition2/Expedition2Encounter")
+            || ContainsCaseInsensitiveRuleText(term, "Expedition2Encounter"))
+            return true;
+        if (ContainsCaseInsensitiveRuleText(term, "Expedition2")) {
+            for (const auto& category : rule.categories) {
+                if (MarkerShapeNameEquals(category, "Object")) return true;
+            }
+        }
+    }
+    return MarkerShapeNameEquals(rule.name, "Expedition")
+           || MarkerShapeNameEquals(rule.label, "Expedition")
+           || MarkerShapeNameEquals(rule.id, "stock.expedition");
+}
 
 struct TargetEntry {
     std::string name;

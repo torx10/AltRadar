@@ -133,6 +133,7 @@ struct IconTables {
         rule.encounter = j.value("Encounter", std::string{});
         rule.markerShape = ParseMarkerShape(j.value("Shape", std::string("Circle")));
         if (rule.markerShape == MarkerShape::None) rule.markerShape = MarkerShape::Circle;
+        rule.useRuneshapeColor = j.value("UseRuneshapeColor", false);
         rule.size = j.value("Size", 6.f);
         rule.label = j.value("Label", std::string{});
         rule.navigable = j.value("Navigable", false);
@@ -164,6 +165,7 @@ struct IconTables {
                 {"Poi", rule.poi},
                 {"Encounter", rule.encounter},
                 {"Shape", MarkerShapeName(rule.markerShape)},
+                {"UseRuneshapeColor", rule.useRuneshapeColor},
                 {"Color", WriteColor(rule.markerColor)},
                 {"Size", rule.size},
                 {"Label", rule.label},
