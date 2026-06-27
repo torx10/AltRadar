@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <imgui.h>
+#include <vector>
 
 namespace RadarRender {
 
@@ -138,6 +139,43 @@ inline bool BuildTerrainQuad(PluginSDK::Context* ctx, const PluginSDK::Snapshot&
     return true;
 }
 
+struct ProjectedTerrainVertex {
+    ImVec2 pos{};
+    bool   valid = false;
+};
+
+inline void BuildProjectedTerrainVertexGrid(std::vector<ProjectedTerrainVertex>& out,
+                                            PluginSDK::Context* ctx,
+                                            const PluginSDK::Snapshot& snap, bool useLargeMap,
+                                            int gridWidth, int gridHeight, int cols, int rows,
+                                            float gxMin, float gyMin, float gxSpan, float gySpan) {
+    out.clear();
+    out.resize(static_cast<size_t>(cols + 1) * static_cast<size_t>(rows + 1));
+
+    for (int row = 0; row <= rows; ++row) {
+        const float v = static_cast<float>(row) / static_cast<float>(rows);
+        const float gy = gyMin + gySpan * v;
+
+        for (int col = 0; col <= cols; ++col) {
+            const float u = static_cast<float>(col) / static_cast<float>(cols);
+            const float gx = gxMin + gxSpan * u;
+            auto& vertex =
+                out[static_cast<size_t>(row) * static_cast<size_t>(cols + 1)
+                    + static_cast<size_t>(col)];
+
+            float sx = 0.f;
+            float sy = 0.f;
+            vertex.valid =
+                useLargeMap
+                    ? ProjectTerrainGridCorner(ctx, snap, true, gridWidth, gridHeight, gx, gy,
+                                               sx, sy)
+                    : ProjectTerrainMiniMapCornerSafe(ctx, snap, gridWidth, gridHeight, gx, gy,
+                                                      sx, sy);
+            if (vertex.valid) vertex.pos = ImVec2(sx, sy);
+        }
+    }
+}
+
 inline void DrawTerrainLargeMap(ImDrawList* dl, PluginSDK::Context* ctx,
                                 const PluginSDK::Snapshot& snap, const TerrainTexture& terrain) {
     if (!dl || !terrain.Valid() || terrain.Width() <= 0 || terrain.Height() <= 0) return;
@@ -148,26 +186,27 @@ inline void DrawTerrainLargeMap(ImDrawList* dl, PluginSDK::Context* ctx,
     const float gyMin = -0.25f;
     const float gxSpan = static_cast<float>(terrain.Width());
     const float gySpan = static_cast<float>(terrain.Height());
+    std::vector<ProjectedTerrainVertex> vertices;
+    BuildProjectedTerrainVertexGrid(vertices, ctx, snap, true, terrain.Width(), terrain.Height(),
+                                    cols, rows, gxMin, gyMin, gxSpan, gySpan);
 
     for (int row = 0; row < rows; ++row) {
         const float v0 = static_cast<float>(row) / static_cast<float>(rows);
         const float v1 = static_cast<float>(row + 1) / static_cast<float>(rows);
-        const float gy0 = gyMin + gySpan * v0;
-        const float gy1 = gyMin + gySpan * v1;
 
         for (int col = 0; col < cols; ++col) {
             const float u0 = static_cast<float>(col) / static_cast<float>(cols);
             const float u1 = static_cast<float>(col + 1) / static_cast<float>(cols);
-            const float gx0 = gxMin + gxSpan * u0;
-            const float gx1 = gxMin + gxSpan * u1;
 
-            ImVec2 quad[4];
-            if (!BuildTerrainQuad(ctx, snap, true, terrain.Width(), terrain.Height(), gx0, gy0,
-                                  gx1, gy1, quad)) {
-                continue;
-            }
+            const size_t row0 = static_cast<size_t>(row) * static_cast<size_t>(cols + 1);
+            const size_t row1 = static_cast<size_t>(row + 1) * static_cast<size_t>(cols + 1);
+            const auto& vtx0 = vertices[row0 + static_cast<size_t>(col)];
+            const auto& vtx1 = vertices[row0 + static_cast<size_t>(col + 1)];
+            const auto& vtx2 = vertices[row1 + static_cast<size_t>(col + 1)];
+            const auto& vtx3 = vertices[row1 + static_cast<size_t>(col)];
+            if (!vtx0.valid || !vtx1.valid || !vtx2.valid || !vtx3.valid) continue;
 
-            dl->AddImageQuad(terrain.TexRef(), quad[0], quad[1], quad[2], quad[3],
+            dl->AddImageQuad(terrain.TexRef(), vtx0.pos, vtx1.pos, vtx2.pos, vtx3.pos,
                              ImVec2(u0, v0), ImVec2(u1, v0), ImVec2(u1, v1),
                              ImVec2(u0, v1), IM_COL32_WHITE);
         }
@@ -211,38 +250,29 @@ inline void DrawTerrainMiniMap(ImDrawList* dl, PluginSDK::Context* ctx,
     const float gyMin = -0.25f;
     const float gxSpan = static_cast<float>(terrain.Width());
     const float gySpan = static_cast<float>(terrain.Height());
+    std::vector<ProjectedTerrainVertex> vertices;
+    BuildProjectedTerrainVertexGrid(vertices, ctx, snap, false, terrain.Width(), terrain.Height(),
+                                    cols, rows, gxMin, gyMin, gxSpan, gySpan);
 
     for (int row = 0; row < rows; ++row) {
         const float v0 = static_cast<float>(row) / static_cast<float>(rows);
         const float v1 = static_cast<float>(row + 1) / static_cast<float>(rows);
-        const float gy0 = gyMin + gySpan * v0;
-        const float gy1 = gyMin + gySpan * v1;
 
         for (int col = 0; col < cols; ++col) {
             const float u0 = static_cast<float>(col) / static_cast<float>(cols);
             const float u1 = static_cast<float>(col + 1) / static_cast<float>(cols);
-            const float gx0 = gxMin + gxSpan * u0;
-            const float gx1 = gxMin + gxSpan * u1;
-
             ImVec2 quad[4];
-            float sx = 0.f;
-            float sy = 0.f;
-            if (!ProjectTerrainMiniMapCornerSafe(ctx, snap, terrain.Width(), terrain.Height(), gx0,
-                                                 gy0, sx, sy))
-                continue;
-            quad[0] = ImVec2(sx, sy);
-            if (!ProjectTerrainMiniMapCornerSafe(ctx, snap, terrain.Width(), terrain.Height(), gx1,
-                                                 gy0, sx, sy))
-                continue;
-            quad[1] = ImVec2(sx, sy);
-            if (!ProjectTerrainMiniMapCornerSafe(ctx, snap, terrain.Width(), terrain.Height(), gx1,
-                                                 gy1, sx, sy))
-                continue;
-            quad[2] = ImVec2(sx, sy);
-            if (!ProjectTerrainMiniMapCornerSafe(ctx, snap, terrain.Width(), terrain.Height(), gx0,
-                                                 gy1, sx, sy))
-                continue;
-            quad[3] = ImVec2(sx, sy);
+            const size_t row0 = static_cast<size_t>(row) * static_cast<size_t>(cols + 1);
+            const size_t row1 = static_cast<size_t>(row + 1) * static_cast<size_t>(cols + 1);
+            const auto& vtx0 = vertices[row0 + static_cast<size_t>(col)];
+            const auto& vtx1 = vertices[row0 + static_cast<size_t>(col + 1)];
+            const auto& vtx2 = vertices[row1 + static_cast<size_t>(col + 1)];
+            const auto& vtx3 = vertices[row1 + static_cast<size_t>(col)];
+            if (!vtx0.valid || !vtx1.valid || !vtx2.valid || !vtx3.valid) continue;
+            quad[0] = vtx0.pos;
+            quad[1] = vtx1.pos;
+            quad[2] = vtx2.pos;
+            quad[3] = vtx3.pos;
 
             if (!IsReasonableConvexQuad(quad)) continue;
 
