@@ -6,6 +6,7 @@
   "HideOutsideNetworkBubble": false,
   "DrawWalkableMap": true,
   "WalkableMapBorderThickness": 0,
+  "MapLayerProjectionMode": 1,
   "WalkableDecimation": 4,
   "ShowPlayerNames": false,
   "ShowImportantPOI": true,

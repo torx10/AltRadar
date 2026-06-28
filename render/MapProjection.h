@@ -1,5 +1,6 @@
 #pragma once
 
+#include "data/RadarConfig.h"
 #include "sdk/PluginSDK.h"
 
 #include <imgui.h>
@@ -8,11 +9,32 @@
 
 namespace RadarRender {
 
+enum class MapLayerSubject {
+    Terrain,
+    Entity,
+    Poi,
+    TargetPoi,
+};
+
 struct ProjectedScreen {
     float sx = 0.f;
     float sy = 0.f;
     bool  valid = false;
 };
+
+struct MapLayerProjection {
+    RadarData::MapLayerProjectionMode mode = RadarData::MapLayerProjectionMode::Unified2D;
+    bool                              valid = false;
+    PluginSDK::MapData                map{};
+    PluginSDK::MapTransform           transform{};
+};
+
+inline ProjectedScreen ProjectTgtToLargeMapScreen(PluginSDK::Context* ctx,
+                                                  const PluginSDK::Snapshot& snap,
+                                                  float gx, float gy);
+inline ProjectedScreen ProjectEntityGridToScreen(PluginSDK::Context* ctx,
+                                                 const PluginSDK::Snapshot& snap, float gx,
+                                                 float gy, float terrainZ);
 
 inline float WorldToGridScale(const PluginSDK::Snapshot& snap, PluginSDK::Context* ctx) {
     if (snap.WorldToGridConvertor > 1.f) return snap.WorldToGridConvertor;
@@ -145,6 +167,66 @@ inline ProjectedScreen ProjectGridToLargeMapScreen(PluginSDK::Context* ctx,
         out.valid = true;
     }
     return out;
+}
+
+inline MapLayerProjection BuildLargeMapLayerProjection(PluginSDK::Context* ctx,
+                                                       const PluginSDK::Snapshot& snap,
+                                                       const RadarData::RadarConfig& cfg) {
+    MapLayerProjection out;
+    out.mode = cfg.MapProjectionMode;
+    out.map = snap.LargeMap;
+    if (!snap.LargeMap.IsVisible) return out;
+
+    if (!ctx) {
+        out.valid = (out.mode == RadarData::MapLayerProjectionMode::NativeSdk);
+        return out;
+    }
+
+    out.transform = ctx->Render.GetLargeMapTransform();
+    if (out.mode == RadarData::MapLayerProjectionMode::Unified2D) {
+        out.valid = out.transform.IsVisible;
+        return out;
+    }
+
+    out.valid = true;
+    return out;
+}
+
+inline ProjectedScreen ProjectGridUnified2D(const MapLayerProjection& proj, float gx, float gy) {
+    ProjectedScreen out;
+    if (!proj.valid || proj.mode != RadarData::MapLayerProjectionMode::Unified2D
+        || !proj.map.IsVisible || !proj.transform.IsVisible)
+        return out;
+
+    const float dx = gx - proj.transform.PlayerGridX;
+    const float dy = gy - proj.transform.PlayerGridY;
+    out.sx = proj.transform.CenterX + (dx - dy) * proj.transform.ScaleX;
+    out.sy = proj.transform.CenterY - (dx + dy) * proj.transform.ScaleY;
+    out.valid = IsInsideMapRect(proj.map, out.sx, out.sy);
+    return out;
+}
+
+inline ProjectedScreen ProjectGridLargeMapLayer(const MapLayerProjection& proj,
+                                                PluginSDK::Context* ctx,
+                                                const PluginSDK::Snapshot& snap, float gx,
+                                                float gy, float terrainZ,
+                                                MapLayerSubject subject) {
+    if (!proj.valid) return {};
+
+    if (proj.mode == RadarData::MapLayerProjectionMode::Unified2D)
+        return ProjectGridUnified2D(proj, gx, gy);
+
+    switch (subject) {
+        case MapLayerSubject::TargetPoi:
+            return ProjectTgtToLargeMapScreen(ctx, snap, gx, gy);
+        case MapLayerSubject::Terrain:
+        case MapLayerSubject::Poi:
+            return ProjectGridToLargeMapScreen(ctx, snap, gx, gy, terrainZ);
+        case MapLayerSubject::Entity:
+            return ProjectEntityGridToScreen(ctx, snap, gx, gy, terrainZ);
+        default:
+            return {};
+    }
 }
 
 inline ProjectedScreen ProjectGridToMiniMapScreen(PluginSDK::Context* ctx,

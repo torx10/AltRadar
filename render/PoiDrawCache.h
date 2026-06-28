@@ -103,7 +103,8 @@ struct PoiDrawCache {
     static bool ProjectMetatileScreenNorth(PluginSDK::Context* ctx,
                                            const PluginSDK::Snapshot& snap,
                                            const std::vector<std::pair<float, float>>& cells,
-                                           float& outSx, float& outSy) {
+                                           float& outSx, float& outSy,
+                                           const MapLayerProjection* largeMapProj = nullptr) {
         if (!ctx || cells.empty()) return false;
         float minGy = cells[0].second;
         for (const auto& [gx, gy] : cells) {
@@ -114,14 +115,21 @@ struct PoiDrawCache {
         int   n = 0;
         for (const auto& [gx, gy] : cells) {
             if (gy > minGy + 0.5f) continue;
-            const float tz = TerrainHeightAtGrid(ctx, gx, gy);
             ProjectedScreen scr;
-            if (snap.LargeMap.IsVisible)
-                scr = ProjectGridToLargeMapScreen(ctx, snap, gx, gy, tz);
-            else if (snap.MiniMap.IsVisible)
+            if (snap.LargeMap.IsVisible) {
+                const float tz = TerrainHeightAtGrid(ctx, gx, gy);
+                if (largeMapProj) {
+                    scr = ProjectGridLargeMapLayer(*largeMapProj, ctx, snap, gx, gy, tz,
+                                                   MapLayerSubject::TargetPoi);
+                } else {
+                    scr = ProjectGridToLargeMapScreen(ctx, snap, gx, gy, tz);
+                }
+            } else if (snap.MiniMap.IsVisible) {
+                const float tz = TerrainHeightAtGrid(ctx, gx, gy);
                 scr = ProjectGridToMiniMapScreen(ctx, snap, gx, gy, tz);
-            else
+            } else {
                 continue;
+            }
             if (!scr.valid) continue;
             sx += scr.sx;
             sy += scr.sy;
@@ -165,13 +173,15 @@ struct PoiDrawCache {
         p.terrainZ = ctx->Terrain.GetTerrainHeight(static_cast<int>(p.gridX), static_cast<int>(p.gridY));
     }
 
-    void UpdateScreenPositions(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap) {
+    void UpdateScreenPositions(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
+                               const MapLayerProjection* largeMapProj = nullptr) {
         for (auto& p : pois) {
             p.hasScreen = false;
             ProjectedScreen scr;
             if (p.fromTgt && p.metatileCells.size() >= 4) {
                 float northSx = 0.f, northSy = 0.f;
-                if (ProjectMetatileScreenNorth(ctx, snap, p.metatileCells, northSx, northSy)) {
+                if (ProjectMetatileScreenNorth(ctx, snap, p.metatileCells, northSx, northSy,
+                                               largeMapProj)) {
                     p.screenX = northSx;
                     p.screenY = northSy;
                     p.hasScreen = true;
@@ -180,7 +190,13 @@ struct PoiDrawCache {
             }
             if (p.fromTgt) {
                 if (snap.LargeMap.IsVisible) {
-                    scr = ProjectTgtToLargeMapScreen(ctx, snap, p.gridX, p.gridY);
+                    if (largeMapProj) {
+                        scr = ProjectGridLargeMapLayer(*largeMapProj, ctx, snap, p.gridX,
+                                                       p.gridY, p.terrainZ,
+                                                       MapLayerSubject::TargetPoi);
+                    } else {
+                        scr = ProjectTgtToLargeMapScreen(ctx, snap, p.gridX, p.gridY);
+                    }
                     if (scr.valid) {
                         p.screenX = scr.sx;
                         p.screenY = scr.sy;
@@ -207,7 +223,14 @@ struct PoiDrawCache {
                 }
             } else {
                 if (snap.LargeMap.IsVisible) {
-                    scr = ProjectGridToLargeMapScreen(ctx, snap, p.gridX, p.gridY, p.terrainZ);
+                    if (largeMapProj) {
+                        scr = ProjectGridLargeMapLayer(*largeMapProj, ctx, snap, p.gridX,
+                                                       p.gridY, p.terrainZ,
+                                                       MapLayerSubject::Poi);
+                    } else {
+                        scr = ProjectGridToLargeMapScreen(ctx, snap, p.gridX, p.gridY,
+                                                          p.terrainZ);
+                    }
                     if (scr.valid) {
                         p.screenX = scr.sx;
                         p.screenY = scr.sy;

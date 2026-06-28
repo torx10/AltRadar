@@ -114,12 +114,19 @@ struct EntityDrawCache {
         lastSnapshotTime = snap.LastUpdateTime;
     }
 
-    void Draw(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap, ImDrawList* dl) const {
+    void Draw(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap, ImDrawList* dl,
+              const MapLayerProjection* largeMapProj = nullptr) const {
         if (!dl || !ctx) return;
         for (const auto& c : cmds) {
             if (c.markerShape == RadarData::MarkerShape::None || c.markerSize <= 0.f) continue;
-            const auto scr =
-                ProjectEntityGridToScreen(ctx, snap, c.gridX, c.gridY, c.terrainZ);
+            ProjectedScreen scr;
+            if (snap.LargeMap.IsVisible && largeMapProj
+                && largeMapProj->mode == RadarData::MapLayerProjectionMode::Unified2D) {
+                scr = ProjectGridLargeMapLayer(*largeMapProj, ctx, snap, c.gridX, c.gridY,
+                                               c.terrainZ, MapLayerSubject::Entity);
+            } else {
+                scr = ProjectEntityGridToScreen(ctx, snap, c.gridX, c.gridY, c.terrainZ);
+            }
             if (!scr.valid) continue;
             DrawEntityMarker(dl, c.markerShape, scr.sx, scr.sy, c.markerSize, c.markerColor);
             if (!c.label.empty())
