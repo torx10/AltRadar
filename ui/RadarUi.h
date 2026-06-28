@@ -154,22 +154,20 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
         drawOption(RadarData::TerrainTextureAlignmentMode::ZeroBased);
         ImGui::EndCombo();
     };
-    auto drawTerrainHeightModeCombo = [&](const char* label) {
-        const char* preview = RadarData::TerrainProjectionHeightModeName(cfg.TerrainHeightMode);
+    auto drawMapProjectionModeCombo = [&](const char* label) {
+        const char* preview = RadarData::MapLayerProjectionModeName(cfg.MapProjectionMode);
         ImGui::SetNextItemWidth(240.f);
         if (!ImGui::BeginCombo(label, preview, ImGuiComboFlags_HeightLargest)) return;
 
-        const auto drawOption = [&](RadarData::TerrainProjectionHeightMode mode) {
-            const bool selected = cfg.TerrainHeightMode == mode;
-            if (ImGui::Selectable(RadarData::TerrainProjectionHeightModeName(mode), selected))
-                cfg.TerrainHeightMode = mode;
+        const auto drawOption = [&](RadarData::MapLayerProjectionMode mode) {
+            const bool selected = cfg.MapProjectionMode == mode;
+            if (ImGui::Selectable(RadarData::MapLayerProjectionModeName(mode), selected))
+                cfg.MapProjectionMode = mode;
             if (selected) ImGui::SetItemDefaultFocus();
         };
 
-        drawOption(RadarData::TerrainProjectionHeightMode::Legacy);
-        drawOption(RadarData::TerrainProjectionHeightMode::Flat);
-        drawOption(RadarData::TerrainProjectionHeightMode::RelativeToPlayer);
-        drawOption(RadarData::TerrainProjectionHeightMode::FlatPlayerAnchored);
+        drawOption(RadarData::MapLayerProjectionMode::Unified2D);
+        drawOption(RadarData::MapLayerProjectionMode::NativeSdk);
         ImGui::EndCombo();
     };
 
@@ -184,7 +182,6 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
                              || cfg.TerrainStyle == RadarData::TerrainRenderStyle::TextureAndDotMatrix;
         ImGui::Indent(12.f);
         ImGui::Checkbox("Enable Terrain Overlay", &cfg.DrawWalkableMap);
-        ImGui::Checkbox("Show Terrain on Minimap", &cfg.DrawMiniMapTerrain);
         ImGui::BeginDisabled(!cfg.DrawWalkableMap);
         drawTerrainRenderStyleCombo("Terrain Render Style");
         if (usesTexture) {
@@ -215,20 +212,18 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
             ImGui::SetNextItemWidth(140.f);
             ImGui::SliderFloat("##DotSize", &cfg.DotSize, 0.5f, 6.0f, "%.1f");
         }
-        if (ImGui::CollapsingHeader("Debug / Advanced")) {
-            drawTerrainAlignmentCombo("Terrain Alignment");
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Use this to test texture/cell alignment. "
-                                  "Cell-centred should usually align texels to walkable grid samples.");
-            }
-            ImGui::TextDisabled("Diagnostic only:");
-            drawTerrainHeightModeCombo("Terrain Height Mode");
-            if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("Legacy uses sampled terrain height. "
-                                  "Flat ignores Z for terrain only and is diagnostic because it can misalign terrain "
-                                  "relative to map markers across elevation changes.");
-            }
-            ImGui::TextWrapped("Flat / Player Anchored projects terrain flat, then anchors it to the player's normal map position. Useful when Flat / Ignore Z floats away from the player.");
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::TextUnformatted("Projection / Placement");
+        drawMapProjectionModeCombo("Map Layer Projection");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Unified 2D uses one shared player-relative 2D projection for the large map terrain and large-map markers. Minimap terrain stays disabled.");
+        }
+        drawTerrainAlignmentCombo("Terrain Alignment");
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Use this to test texture/cell alignment. "
+                              "Cell-centred should usually align texels to walkable grid samples.");
         }
         ImGui::EndDisabled();
         ImGui::Unindent(12.f);

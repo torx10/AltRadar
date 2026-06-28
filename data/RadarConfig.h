@@ -81,6 +81,20 @@ inline const char* TerrainRenderStyleName(TerrainRenderStyle style) {
     }
 }
 
+enum class MapLayerProjectionMode : int {
+    NativeSdk = 0,
+    Unified2D = 1,
+};
+
+inline const char* MapLayerProjectionModeName(MapLayerProjectionMode mode) {
+    switch (mode) {
+        case MapLayerProjectionMode::Unified2D:
+            return "Unified 2D / POE2GPS-style";
+        default:
+            return "Native / SDK";
+    }
+}
+
 inline Rgba8 ParseRgbString(const std::string& s, Rgba8 fallback = {}) {
     int r = fallback.r, g = fallback.g, b = fallback.b;
     if (sscanf_s(s.c_str(), "%d, %d, %d", &r, &g, &b) >= 3
@@ -104,6 +118,7 @@ struct RadarConfig {
     TerrainTextureAlignmentMode TerrainAlignment = TerrainTextureAlignmentMode::Legacy;
     TerrainProjectionHeightMode TerrainHeightMode = TerrainProjectionHeightMode::Legacy;
     TerrainProjectionMode TerrainProjection = TerrainProjectionMode::Normal;
+    MapLayerProjectionMode MapProjectionMode = MapLayerProjectionMode::Unified2D;
     int   DotCellStep = 2;
     float DotSize = 1.5f;
     bool  ShowPlayerNames = false;
@@ -154,6 +169,8 @@ struct RadarConfig {
             std::clamp(j.value("TerrainHeightMode", static_cast<int>(TerrainHeightMode)), 0, 3));
         TerrainProjection = static_cast<TerrainProjectionMode>(
             std::clamp(j.value("TerrainProjection", static_cast<int>(TerrainProjection)), 0, 2));
+        MapProjectionMode = static_cast<MapLayerProjectionMode>(
+            std::clamp(j.value("MapLayerProjectionMode", static_cast<int>(MapProjectionMode)), 0, 1));
         DotCellStep = std::clamp(j.value("DotCellStep", j.value("WalkableDecimation", DotCellStep)), 1, 16);
         DotSize = std::clamp(j.value("DotSize", DotSize), 0.5f, 6.0f);
         ShowPlayerNames = j.value("ShowPlayerNames", ShowPlayerNames);
@@ -201,6 +218,7 @@ struct RadarConfig {
         j["TerrainAlignment"] = static_cast<int>(TerrainAlignment);
         j["TerrainHeightMode"] = static_cast<int>(TerrainHeightMode);
         j["TerrainProjection"] = static_cast<int>(TerrainProjection);
+        j["MapLayerProjectionMode"] = static_cast<int>(MapProjectionMode);
         j["DotCellStep"] = DotCellStep;
         j["DotSize"] = DotSize;
         j["WalkableDecimation"] = DotCellStep;
