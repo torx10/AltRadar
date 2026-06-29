@@ -1,4 +1,4 @@
-// Official Radar plugin — SDK v6, performance-first overlay.
+// Alt Radar plugin — fork of the official Radar overlay.
 
 #include "sdk/PluginSDK.h"
 
@@ -28,7 +28,7 @@ std::string PathBaseName(const std::string& path) {
 
 class RadarPlugin : public PluginSDK::Plugin {
 public:
-    const char* GetName() const override { return "Radar"; }
+    const char* GetName() const override { return "Alt Radar"; }
 
     bool WantsOverlay() const override { return m_overlay.cfg.OverlayEnabled; }
 
@@ -51,8 +51,8 @@ public:
         m_overlay.walkable = ctx()->Terrain.GetWalkableGrid();
         m_overlay.EnsureAtlas(const_cast<PluginSDK::Context*>(ctx()), pluginDir);
 
-        RadarData::RadarLog::Instance().Info("Radar plugin enabled");
-        ctx()->Log.Info("Radar plugin enabled — see logs/radar.log in plugin folder");
+        RadarData::RadarLog::Instance().Info("Alt Radar plugin enabled");
+        ctx()->Log.Info("Alt Radar plugin enabled — see logs/altradar.log in plugin folder");
     }
 
     void OnDisable() override {
@@ -61,9 +61,9 @@ public:
         m_overlay.terrain.Release();
         m_overlay.atlas.Release();
         m_overlay.cache.Clear();
-        RadarData::RadarLog::Instance().Info("Radar plugin disabled");
+        RadarData::RadarLog::Instance().Info("Alt Radar plugin disabled");
         RadarData::RadarLog::Instance().Shutdown();
-        ctx()->Log.Info("Radar plugin disabled");
+        ctx()->Log.Info("Alt Radar plugin disabled");
     }
 
     void DrawSettings() override {
@@ -77,7 +77,7 @@ public:
             m_overlay.cache.Clear();
             m_overlay.cache.InvalidatePoi();
             RadarData::RadarLog::Instance().Info("General settings reset to defaults");
-            ctx()->Log.Info("Radar general settings reset to defaults");
+            ctx()->Log.Info("Alt Radar general settings reset to defaults");
         }
         if (m_ui.requestResetCustomLandmarks) {
             m_ui.requestResetCustomLandmarks = false;
@@ -85,7 +85,7 @@ public:
             m_overlay.cache.Clear();
             m_overlay.cache.InvalidatePoi();
             RadarData::RadarLog::Instance().Info("Custom landmarks reset");
-            ctx()->Log.Info("Radar custom landmarks reset");
+            ctx()->Log.Info("Alt Radar custom landmarks reset");
         }
 
         const auto snap = ctx()->Game.GetSnapshot();

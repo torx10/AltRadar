@@ -138,7 +138,7 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
         ImGui::EndCombo();
     };
     bool en = cfg.OverlayEnabled;
-    if (ImGui::Checkbox("Enable Radar Overlay", &en)) cfg.OverlayEnabled = en;
+    if (ImGui::Checkbox("Enable Alt Radar Overlay", &en)) cfg.OverlayEnabled = en;
     ImGui::Separator();
 
     if (ImGui::CollapsingHeader("Terrain Overlay", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -185,7 +185,7 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
     ImGui::Separator();
     ImGui::Spacing();
 
-    if (ImGui::CollapsingHeader("Minimap Radar", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Minimap Overlay", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent(12.f);
         ImGui::Checkbox("Enemies", &cfg.DrawMiniMapEntities);
         ImGui::Unindent(12.f);
@@ -225,7 +225,7 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
             ui.requestResetSettings = true;
         }
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Restore Radar settings to their built-in defaults.\nDoes not change display rules or custom landmarks.");
+            ImGui::SetTooltip("Restore Alt Radar settings to their built-in defaults.\nDoes not change display rules or custom landmarks.");
         }
         ImGui::SameLine();
         if (ImGui::Button("Reset Custom Landmarks", ImVec2(190.f, 0.f))) {
@@ -716,7 +716,7 @@ inline void DrawDisplayRuleMatcherFields(RadarData::DisplayRule& rule, bool edit
     ImGui::BeginDisabled(!editable);
     DrawDisplayRuleCategoryChips(rule, idPrefix);
     if (!editable && ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("System-rule type filters are fixed by Radar's built-in classifier.");
+        ImGui::SetTooltip("System-rule type filters are fixed by Alt Radar's built-in classifier.");
     }
     ImGui::EndDisabled();
     ImGui::Spacing();
@@ -740,7 +740,7 @@ inline void DrawDisplayRuleMatcherFields(RadarData::DisplayRule& rule, bool edit
     DrawInlineRuleLabel("POI");
     DrawRuleSelect((std::string(idPrefix) + "##POI").c_str(), rule.poi, {"Yes", "No"}, 74.f);
     if (!editable && ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("System-rule match conditions are fixed by Radar's built-in "
+        ImGui::SetTooltip("System-rule match conditions are fixed by Alt Radar's built-in "
                           "classifier. The action style below is editable.");
     }
     ImGui::EndDisabled();
@@ -1209,7 +1209,7 @@ inline void DrawIconsTab(RadarData::RadarConfig& cfg, RadarData::IconTables& ico
                                   rule);
     }
     ImGui::SameLine();
-    if (ImGui::Button("Restore seeded defaults", ImVec2(0, 0))) {
+    if (ImGui::Button("Restore defaults", ImVec2(0, 0))) {
         RadarData::IconTables::ReplaceSeededDefaults(icons.displayRules);
     }
     ImGui::Separator();
@@ -1218,7 +1218,7 @@ inline void DrawIconsTab(RadarData::RadarConfig& cfg, RadarData::IconTables& ico
                       ImGuiWindowFlags_AlwaysVerticalScrollbar);
     DrawDisplayRuleSection("State Hides", RuleSection::StateHides, icons);
     DrawDisplayRuleSection("User Rules", RuleSection::User, icons);
-    DrawDisplayRuleSection("Seeded Defaults", RuleSection::Seeded, icons);
+    DrawDisplayRuleSection("Defaults", RuleSection::Seeded, icons);
     ImGui::EndChild();
 }
 
@@ -1580,7 +1580,7 @@ inline void DrawLandmarksTab(RadarData::RadarConfig& cfg, RadarData::TargetDatab
 inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
                          PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
                          const std::filesystem::path& pluginDir) {
-    if (ImGui::BeginTabBar("RadarTabs")) {
+    if (ImGui::BeginTabBar("AltRadarTabs")) {
         if (ImGui::BeginTabItem("General Settings")) {
             DrawGeneralTab(overlay.cfg, ui);
             ImGui::EndTabItem();
