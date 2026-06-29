@@ -111,11 +111,10 @@ struct RadarConfig {
     bool  HideWhenNotForeground = true;
     bool  HideOutsideNetworkBubble = false;
     bool  DrawWalkableMap = true;
-    bool  DrawMiniMapTerrain = true;
     bool  DrawMiniMapEntities = true;
     int   WalkableMapBorderThickness = 0;
     TerrainRenderStyle TerrainStyle = TerrainRenderStyle::Texture;
-    TerrainTextureAlignmentMode TerrainAlignment = TerrainTextureAlignmentMode::Legacy;
+    TerrainTextureAlignmentMode TerrainAlignment = TerrainTextureAlignmentMode::CellCentered;
     TerrainProjectionHeightMode TerrainHeightMode = TerrainProjectionHeightMode::Legacy;
     TerrainProjectionMode TerrainProjection = TerrainProjectionMode::Normal;
     MapLayerProjectionMode MapProjectionMode = MapLayerProjectionMode::Unified2D;
@@ -157,20 +156,25 @@ struct RadarConfig {
         HideWhenNotForeground = j.value("HideWhenNotForeground", HideWhenNotForeground);
         HideOutsideNetworkBubble = j.value("HideOutsideNetworkBubble", HideOutsideNetworkBubble);
         DrawWalkableMap = j.value("DrawWalkableMap", DrawWalkableMap);
-        DrawMiniMapTerrain = j.value("DrawMiniMapTerrain", DrawMiniMapTerrain);
+        // Legacy minimap terrain experiments were removed from runtime, but keep the old
+        // key accepted so existing settings files continue to load cleanly.
+        (void)j.value("DrawMiniMapTerrain", false);
         DrawMiniMapEntities = j.value("DrawMiniMapEntities", DrawMiniMapEntities);
         WalkableMapBorderThickness =
             std::clamp(j.value("WalkableMapBorderThickness", WalkableMapBorderThickness), 0, 8);
         TerrainStyle = static_cast<TerrainRenderStyle>(
             std::clamp(j.value("TerrainStyle", static_cast<int>(TerrainStyle)), 0, 2));
-        TerrainAlignment = static_cast<TerrainTextureAlignmentMode>(
-            std::clamp(j.value("TerrainAlignment", static_cast<int>(TerrainAlignment)), 0, 2));
+        // Terrain alignment experiments are retired; keep loading the old key but normalize
+        // runtime behavior to the working cell-centred mode.
+        (void)j.value("TerrainAlignment", static_cast<int>(TerrainAlignment));
+        TerrainAlignment = TerrainTextureAlignmentMode::CellCentered;
         TerrainHeightMode = static_cast<TerrainProjectionHeightMode>(
             std::clamp(j.value("TerrainHeightMode", static_cast<int>(TerrainHeightMode)), 0, 3));
         TerrainProjection = static_cast<TerrainProjectionMode>(
             std::clamp(j.value("TerrainProjection", static_cast<int>(TerrainProjection)), 0, 2));
-        MapProjectionMode = static_cast<MapLayerProjectionMode>(
-            std::clamp(j.value("MapLayerProjectionMode", static_cast<int>(MapProjectionMode)), 0, 1));
+        // Unified 2D is the only supported large-map projection mode now.
+        (void)j.value("MapLayerProjectionMode", static_cast<int>(MapProjectionMode));
+        MapProjectionMode = MapLayerProjectionMode::Unified2D;
         DotCellStep = std::clamp(j.value("DotCellStep", j.value("WalkableDecimation", DotCellStep)), 1, 16);
         DotSize = std::clamp(j.value("DotSize", DotSize), 0.5f, 6.0f);
         ShowPlayerNames = j.value("ShowPlayerNames", ShowPlayerNames);
@@ -211,25 +215,19 @@ struct RadarConfig {
         j["HideWhenNotForeground"] = HideWhenNotForeground;
         j["HideOutsideNetworkBubble"] = HideOutsideNetworkBubble;
         j["DrawWalkableMap"] = DrawWalkableMap;
-        j["DrawMiniMapTerrain"] = DrawMiniMapTerrain;
         j["DrawMiniMapEntities"] = DrawMiniMapEntities;
         j["WalkableMapBorderThickness"] = WalkableMapBorderThickness;
         j["TerrainStyle"] = static_cast<int>(TerrainStyle);
-        j["TerrainAlignment"] = static_cast<int>(TerrainAlignment);
         j["TerrainHeightMode"] = static_cast<int>(TerrainHeightMode);
-        j["TerrainProjection"] = static_cast<int>(TerrainProjection);
-        j["MapLayerProjectionMode"] = static_cast<int>(MapProjectionMode);
         j["DotCellStep"] = DotCellStep;
         j["DotSize"] = DotSize;
         j["WalkableDecimation"] = DotCellStep;
-        j["ShowPlayerNames"] = ShowPlayerNames;
         j["ShowImportantPOI"] = ShowImportantPOI;
         j["DrawPoiIcons"] = DrawPoiIcons;
         j["EnablePOIBackground"] = EnablePOIBackground;
         j["EdgeIndicatorMinimap"] = EdgeIndicatorMinimap;
         j["EdgeIndicatorLargemap"] = EdgeIndicatorLargemap;
         j["UseLegacyClassifier"] = UseLegacyClassifier;
-        j["LargeMapScaleMultiplier"] = LargeMapScaleMultiplier;
         j["MaxEntitiesDrawn"] = MaxEntitiesDrawn;
         j["TextureInteriorColor"] = {TextureInteriorColor.x, TextureInteriorColor.y,
                                       TextureInteriorColor.z, TextureInteriorColor.w};
@@ -244,7 +242,6 @@ struct RadarConfig {
         j["WalkableMapColor"] = {TextureInteriorColor.x, TextureInteriorColor.y,
                                   TextureInteriorColor.z, TextureInteriorColor.w};
         j["POIColor"] = {POIColor.x, POIColor.y, POIColor.z, POIColor.w};
-        j["MainMenuSize"] = {MainMenuSize.x, MainMenuSize.y};
         std::ofstream out(path);
         if (out.is_open()) out << j.dump(4);
     }

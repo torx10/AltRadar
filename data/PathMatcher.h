@@ -32,6 +32,14 @@ inline std::string NormalizePathLower(std::string_view path) {
     return out;
 }
 
+inline std::string NarrowPath(std::wstring_view path) {
+    std::string out;
+    out.reserve(path.size());
+    for (wchar_t c : path)
+        out.push_back(static_cast<char>(c));
+    return out;
+}
+
 // Suffix after ':' (e.g. "1-y:1", "[]"). Empty when path has no suffix.
 inline std::string ExtractTileSuffix(std::string_view path) {
     const auto colon = path.find(':');
@@ -84,6 +92,10 @@ inline CompiledCandidate CompileCandidate(std::string_view path) {
     c.tileSuffix = ExtractTileSuffix(path);
     c.normalized = CanonicalTerrainPath(path);
     return c;
+}
+
+inline CompiledCandidate CompileCandidate(std::wstring_view path) {
+    return CompileCandidate(NarrowPath(path));
 }
 
 inline bool MatchPattern(const CompiledPattern& pattern, const CompiledCandidate& candidate) {

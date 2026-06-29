@@ -4,7 +4,6 @@
 #include "MapProjection.h"
 #include "data/PathMatcher.h"
 #include "data/RadarConfig.h"
-#include "data/RadarLog.h"
 #include "data/TargetDatabase.h"
 #include "data/IconTables.h"
 #include "sdk/PluginSDK.h"
@@ -13,15 +12,15 @@
 #include <cmath>
 #include <imgui.h>
 #include <optional>
-#include <sstream>
 #include <unordered_map>
 #include <vector>
 
 namespace RadarRender {
 
+inline constexpr float kLargeMapPoiOffsetX = 2.0f;
+
 struct PoiDrawCache {
     std::vector<RadarData::PoiResolved> pois;
-    uint64_t                            lastDrawLogTime = 0;
 
     static RadarData::IconDef ResolvePoiIcon(const RadarData::TargetEntry& t,
                                              const RadarData::IconTables& icons) {
@@ -82,13 +81,11 @@ struct PoiDrawCache {
         const PluginSDK::Snapshot& snap,
         const std::vector<RadarData::CompiledPattern>& compiled) {
         if (compiled.empty()) return 0;
-        auto wpath = [](const std::wstring& p) { return std::string(p.begin(), p.end()); };
         int matches = 0;
         for (const auto& e : snap.Entities) {
             if (!e.IsValid) continue;
-            const std::string path = wpath(e.Path);
-            if (path.empty()) continue;
-            const auto cand = RadarData::CompileCandidate(path);
+            const auto cand = RadarData::CompileCandidate(std::wstring_view(e.Path));
+            if (cand.normalized.empty()) continue;
             for (const auto& pat : compiled) {
                 if (RadarData::MatchPattern(pat, cand)) {
                     ++matches;
@@ -256,18 +253,8 @@ struct PoiDrawCache {
         Clear();
         if (!ctx || !cfg.ShowImportantPOI) return;
 
-        const std::string areaKey =
-            db.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
         const auto targets = db.GetTargetsForArea(snap.CurrentAreaHash, snap.CurrentAreaName);
-        std::ostringstream log;
-        log << "POI rebuild hash='" << snap.CurrentAreaHash << "' name='" << snap.CurrentAreaName
-            << "' key='" << areaKey << "' targets=" << targets.size()
-            << " largeMap=" << snap.LargeMap.IsVisible;
-
-        if (targets.empty()) {
-            RadarData::RadarLog::Instance().Warn(log.str() + "' — no targets for area");
-            return;
-        }
+        if (targets.empty()) return;
 
         std::vector<RadarData::CompiledPattern> compiled;
         compiled.reserve(targets.size());
@@ -308,15 +295,8 @@ struct PoiDrawCache {
         };
         std::vector<std::vector<TgtCand>> perTarget(targets.size());
 
-        int tgtEnum = 0;
-        std::string tgtSamples;
         ctx->Terrain.EnumerateTgtLocations([&](const PluginSDK::TgtLocation& loc) {
             const auto cand = RadarData::CompileCandidate(loc.Path);
-            if (tgtEnum < 2) {
-                if (!tgtSamples.empty()) tgtSamples += " | ";
-                tgtSamples += loc.Path;
-            }
-            ++tgtEnum;
             for (size_t i = 0; i < targets.size(); ++i) {
                 if (!RadarData::MatchPattern(compiled[i], cand)) continue;
                 const auto* t = targets[i];
@@ -334,7 +314,6 @@ struct PoiDrawCache {
             return true;
         });
 
-        int tgtHits = 0;
         constexpr float kMinPoiGridSep = 80.f;
 
         for (size_t i = 0; i < targets.size(); ++i) {
@@ -439,17 +418,13 @@ struct PoiDrawCache {
                 FillMetatileCells(ctx, p, *t, compiled[i]);
                 pois.push_back(std::move(p));
                 ++placed;
-                ++tgtHits;
             }
         }
 
-        auto wpath = [](const std::wstring& p) { return std::string(p.begin(), p.end()); };
-        int entHits = 0;
         for (const auto& e : snap.Entities) {
             if (!e.IsValid) continue;
-            const std::string path = wpath(e.Path);
-            if (path.empty()) continue;
-            const auto cand = RadarData::CompileCandidate(path);
+            const auto cand = RadarData::CompileCandidate(std::wstring_view(e.Path));
+            if (cand.normalized.empty()) continue;
             for (size_t i = 0; i < targets.size(); ++i) {
                 if (!RadarData::MatchPattern(compiled[i], cand)) continue;
                 const auto* t = targets[i];
@@ -467,74 +442,42 @@ struct PoiDrawCache {
                 p.nameColor = t->nameColor;
                 p.bgColor = t->bgColor;
                 pois.push_back(std::move(p));
-                ++entHits;
             }
         }
-
-        log << " resolved=" << pois.size() << " tgtHits=" << tgtHits << " entHits=" << entHits
-            << " tgtEnum=" << tgtEnum << " enabledTargets=" << targets.size();
-        for (size_t i = 0; i < targets.size() && i < 4; ++i)
-            log << " t" << i << "='" << targets[i]->name << "' en=" << targets[i]->enabled;
-        if (!pois.empty()) {
-            log << " firstPoi='" << pois.front().name << "' grid=(" << pois.front().gridX << ","
-                << pois.front().gridY << ")";
-        }
-        if (tgtHits == 0 && !tgtSamples.empty()) log << " tgtSample='" << tgtSamples << "'";
-        RadarData::RadarLog::Instance().Info(log.str());
     }
 
     void Draw(ImDrawList* dl, const IconAtlas& atlas, const RadarData::RadarConfig& cfg,
               bool edgeLarge, bool edgeMini, PluginSDK::Context* ctx = nullptr,
               const PluginSDK::Snapshot* snap = nullptr) {
         if (!dl) return;
-        (void)cfg;
-        int visible = 0;
-        int iconDrawn = 0;
-        int dotDrawn = 0;
+        (void)ctx;
+        (void)snap;
         for (const auto& p : pois) {
             if (!p.hasScreen) continue;
-            ++visible;
             const ImU32 nameCol = p.nameColor.ToImU32();
+            const float drawX = p.screenX + ((snap && snap->LargeMap.IsVisible) ? kLargeMapPoiOffsetX : 0.0f);
 
             const bool drawIcon = cfg.DrawPoiIcons && p.showIcon && atlas.Valid();
             if (drawIcon) {
-                atlas.DrawIcon(dl, p.iconCx, p.iconCy, p.iconSize, p.screenX, p.screenY, nameCol);
-                ++iconDrawn;
+                atlas.DrawIcon(dl, p.iconCx, p.iconCy, p.iconSize, drawX, p.screenY, nameCol);
             } else {
-                dl->AddCircleFilled(ImVec2(p.screenX, p.screenY), 4.f, nameCol);
-                ++dotDrawn;
+                dl->AddCircleFilled(ImVec2(drawX, p.screenY), 4.f, nameCol);
             }
 
             const char* label = p.name.c_str();
             ImVec2 ts = ImGui::CalcTextSize(label);
             constexpr float kLabelOffsetX = 10.f;
-            ImVec2 pos(p.screenX - ts.x * 0.5f + kLabelOffsetX, p.screenY - ts.y - 8.f);
+            ImVec2 pos(drawX - ts.x * 0.5f + kLabelOffsetX, p.screenY - ts.y - 8.f);
             if (cfg.EnablePOIBackground)
                 dl->AddRectFilled(ImVec2(pos.x - 2, pos.y - 1),
                                   ImVec2(pos.x + ts.x + 2, pos.y + ts.y + 1),
                                   p.bgColor.ToImU32());
-            dl->AddLine(ImVec2(p.screenX, p.screenY), ImVec2(pos.x + ts.x * 0.5f, pos.y + ts.y),
+            dl->AddLine(ImVec2(drawX, p.screenY), ImVec2(pos.x + ts.x * 0.5f, pos.y + ts.y),
                         IM_COL32(255, 255, 255, 180), 1.f);
             dl->AddText(pos, nameCol, label);
         }
         (void)edgeLarge;
         (void)edgeMini;
-
-        if (ctx && snap && !pois.empty()
-            && snap->LastUpdateTime - lastDrawLogTime > 8000) {
-            lastDrawLogTime = snap->LastUpdateTime;
-            if (visible == 0) {
-                RadarData::RadarLog::Instance().Warn(
-                    "POI draw: " + std::to_string(pois.size())
-                    + " cached, 0 on map (open large map; TGT uses GridToLargeMap z=0)");
-            } else {
-                RadarData::RadarLog::Instance().Info(
-                    "POI draw: " + std::to_string(visible) + "/" + std::to_string(pois.size())
-                    + " on map, icons=" + std::to_string(iconDrawn)
-                    + " dots=" + std::to_string(dotDrawn)
-                    + " (dots are terrain POI, not monsters)");
-            }
-        }
     }
 
     void DrawEdgeIndicators(PluginSDK::Context* ctx, ImDrawList* dl,

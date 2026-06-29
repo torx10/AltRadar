@@ -26,7 +26,6 @@ inline void TryMigrateFromHost(const std::filesystem::path& pluginDir,
             cfg.DrawWhenNotPaused = j.value("DrawWhenNotPaused", true);
             cfg.HideOutsideNetworkBubble = j.value("HideOutsideNetworkBubble", false);
             cfg.DrawWalkableMap = j.value("DrawWalkableMap", true);
-            cfg.DrawMiniMapTerrain = true;
             cfg.DrawMiniMapEntities = true;
             cfg.WalkableMapBorderThickness = j.value("WalkableMapBorderThickness", 0);
             cfg.ShowPlayerNames = j.value("ShowPlayersNames", false);

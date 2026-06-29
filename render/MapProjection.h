@@ -173,22 +173,15 @@ inline MapLayerProjection BuildLargeMapLayerProjection(PluginSDK::Context* ctx,
                                                        const PluginSDK::Snapshot& snap,
                                                        const RadarData::RadarConfig& cfg) {
     MapLayerProjection out;
-    out.mode = cfg.MapProjectionMode;
+    (void)cfg;
+    out.mode = RadarData::MapLayerProjectionMode::Unified2D;
     out.map = snap.LargeMap;
     if (!snap.LargeMap.IsVisible) return out;
 
-    if (!ctx) {
-        out.valid = (out.mode == RadarData::MapLayerProjectionMode::NativeSdk);
-        return out;
-    }
+    if (!ctx) return out;
 
     out.transform = ctx->Render.GetLargeMapTransform();
-    if (out.mode == RadarData::MapLayerProjectionMode::Unified2D) {
-        out.valid = out.transform.IsVisible;
-        return out;
-    }
-
-    out.valid = true;
+    out.valid = out.transform.IsVisible;
     return out;
 }
 
@@ -211,22 +204,12 @@ inline ProjectedScreen ProjectGridLargeMapLayer(const MapLayerProjection& proj,
                                                 const PluginSDK::Snapshot& snap, float gx,
                                                 float gy, float terrainZ,
                                                 MapLayerSubject subject) {
+    (void)ctx;
+    (void)snap;
+    (void)terrainZ;
+    (void)subject;
     if (!proj.valid) return {};
-
-    if (proj.mode == RadarData::MapLayerProjectionMode::Unified2D)
-        return ProjectGridUnified2D(proj, gx, gy);
-
-    switch (subject) {
-        case MapLayerSubject::TargetPoi:
-            return ProjectTgtToLargeMapScreen(ctx, snap, gx, gy);
-        case MapLayerSubject::Terrain:
-        case MapLayerSubject::Poi:
-            return ProjectGridToLargeMapScreen(ctx, snap, gx, gy, terrainZ);
-        case MapLayerSubject::Entity:
-            return ProjectEntityGridToScreen(ctx, snap, gx, gy, terrainZ);
-        default:
-            return {};
-    }
+    return ProjectGridUnified2D(proj, gx, gy);
 }
 
 inline ProjectedScreen ProjectGridToMiniMapScreen(PluginSDK::Context* ctx,

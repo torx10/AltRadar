@@ -31,21 +31,10 @@ struct TerrainAnchorDelta {
 
 inline TerrainGridExtents ResolveTerrainGridExtents(const RadarData::RadarConfig& cfg,
                                                     const TerrainTexture& terrain) {
+    (void)cfg;
     TerrainGridExtents extents;
-    switch (cfg.TerrainAlignment) {
-        case RadarData::TerrainTextureAlignmentMode::CellCentered:
-            extents.gxMin = -0.5f;
-            extents.gyMin = -0.5f;
-            break;
-        case RadarData::TerrainTextureAlignmentMode::ZeroBased:
-            extents.gxMin = 0.f;
-            extents.gyMin = 0.f;
-            break;
-        default:
-            extents.gxMin = -0.25f;
-            extents.gyMin = -0.25f;
-            break;
-    }
+    extents.gxMin = -0.5f;
+    extents.gyMin = -0.5f;
     extents.gxSpan = static_cast<float>(terrain.Width());
     extents.gySpan = static_cast<float>(terrain.Height());
     return extents;
@@ -182,79 +171,6 @@ inline float TerrainBoundaryGridY(const TerrainGridExtents& extents, int cellY) 
     return extents.gyMin + static_cast<float>(cellY);
 }
 
-inline bool IsFinitePoint(const ImVec2& p) {
-    return std::isfinite(p.x) && std::isfinite(p.y);
-}
-
-inline float CrossZ(const ImVec2& a, const ImVec2& b, const ImVec2& c) {
-    const float abx = b.x - a.x;
-    const float aby = b.y - a.y;
-    const float bcx = c.x - b.x;
-    const float bcy = c.y - b.y;
-    return abx * bcy - aby * bcx;
-}
-
-inline float LengthSq(const ImVec2& a, const ImVec2& b) {
-    const float dx = b.x - a.x;
-    const float dy = b.y - a.y;
-    return dx * dx + dy * dy;
-}
-
-inline bool IsReasonableConvexQuad(const ImVec2 quad[4]) {
-    for (int i = 0; i < 4; ++i) {
-        if (!IsFinitePoint(quad[i])) return false;
-    }
-
-    const float c0 = CrossZ(quad[0], quad[1], quad[2]);
-    const float c1 = CrossZ(quad[1], quad[2], quad[3]);
-    const float c2 = CrossZ(quad[2], quad[3], quad[0]);
-    const float c3 = CrossZ(quad[3], quad[0], quad[1]);
-    const bool positive = c0 > 0.f && c1 > 0.f && c2 > 0.f && c3 > 0.f;
-    const bool negative = c0 < 0.f && c1 < 0.f && c2 < 0.f && c3 < 0.f;
-    if (!positive && !negative) return false;
-
-    const float maxEdgeSq = std::max(
-        std::max(LengthSq(quad[0], quad[1]), LengthSq(quad[1], quad[2])),
-        std::max(LengthSq(quad[2], quad[3]), LengthSq(quad[3], quad[0])));
-    if (maxEdgeSq > 20000.f) return false;
-
-    const float diag0 = LengthSq(quad[0], quad[2]);
-    const float diag1 = LengthSq(quad[1], quad[3]);
-    if (diag0 > 40000.f || diag1 > 40000.f) return false;
-
-    return true;
-}
-
-inline bool BuildTerrainQuad(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
-                             const RadarData::RadarConfig& cfg, bool useLargeMap, int gridWidth,
-                             int gridHeight, float gx0, float gy0, float gx1, float gy1,
-                             ImVec2 out[4], const TerrainAnchorDelta* anchor = nullptr,
-                             const MapLayerProjection* largeMapProj = nullptr) {
-    float sx = 0.f;
-    float sy = 0.f;
-
-    if (!ProjectTerrainGridCorner(ctx, snap, cfg, useLargeMap, gridWidth, gridHeight, gx0, gy0,
-                                  sx, sy, anchor, largeMapProj))
-        return false;
-    out[0] = ImVec2(sx, sy);
-
-    if (!ProjectTerrainGridCorner(ctx, snap, cfg, useLargeMap, gridWidth, gridHeight, gx1, gy0,
-                                  sx, sy, anchor, largeMapProj))
-        return false;
-    out[1] = ImVec2(sx, sy);
-
-    if (!ProjectTerrainGridCorner(ctx, snap, cfg, useLargeMap, gridWidth, gridHeight, gx1, gy1,
-                                  sx, sy, anchor, largeMapProj))
-        return false;
-    out[2] = ImVec2(sx, sy);
-
-    if (!ProjectTerrainGridCorner(ctx, snap, cfg, useLargeMap, gridWidth, gridHeight, gx0, gy1,
-                                  sx, sy, anchor, largeMapProj))
-        return false;
-    out[3] = ImVec2(sx, sy);
-    return true;
-}
-
 struct ProjectedTerrainVertex {
     ImVec2 pos{};
     bool   valid = false;
@@ -263,9 +179,9 @@ struct ProjectedTerrainVertex {
 inline void BuildProjectedTerrainVertexGrid(std::vector<ProjectedTerrainVertex>& out,
                                             PluginSDK::Context* ctx,
                                             const PluginSDK::Snapshot& snap,
-                                            const RadarData::RadarConfig& cfg, bool useLargeMap,
-                                            int gridWidth, int gridHeight, int cols, int rows, float gxMin,
-                                            float gyMin, float gxSpan, float gySpan,
+                                            const RadarData::RadarConfig& cfg,
+                                            int gridWidth, int gridHeight, int cols, int rows,
+                                            float gxMin, float gyMin, float gxSpan, float gySpan,
                                             const TerrainAnchorDelta* anchor = nullptr,
                                             const MapLayerProjection* largeMapProj = nullptr) {
     out.clear();
@@ -284,11 +200,8 @@ inline void BuildProjectedTerrainVertexGrid(std::vector<ProjectedTerrainVertex>&
 
             float sx = 0.f;
             float sy = 0.f;
-            vertex.valid =
-                useLargeMap ? ProjectTerrainGridCorner(ctx, snap, cfg, true, gridWidth, gridHeight,
-                                                       gx, gy, sx, sy, anchor, largeMapProj)
-                            : ProjectTerrainMiniMapCornerSafe(ctx, snap, cfg, gridWidth,
-                                                              gridHeight, gx, gy, sx, sy, anchor);
+            vertex.valid = ProjectTerrainGridCorner(ctx, snap, cfg, true, gridWidth, gridHeight,
+                                                    gx, gy, sx, sy, anchor, largeMapProj);
             if (vertex.valid) vertex.pos = ImVec2(sx, sy);
         }
     }
@@ -303,15 +216,10 @@ inline void DrawTerrainLargeMap(ImDrawList* dl, PluginSDK::Context* ctx,
     const int cols = std::clamp(terrain.Width() / 20, 36, 72);
     const int rows = std::clamp(terrain.Height() / 20, 36, 72);
     const TerrainGridExtents extents = ResolveTerrainGridExtents(cfg, terrain);
-    const bool useAnchor =
-        largeMapProj.mode == RadarData::MapLayerProjectionMode::NativeSdk;
-    const TerrainAnchorDelta anchor = useAnchor
-        ? ComputeTerrainPlayerAnchorDelta(ctx, snap, cfg, true, terrain.Width(), terrain.Height())
-        : TerrainAnchorDelta{};
     std::vector<ProjectedTerrainVertex> vertices;
-    BuildProjectedTerrainVertexGrid(vertices, ctx, snap, cfg, true, terrain.Width(),
+    BuildProjectedTerrainVertexGrid(vertices, ctx, snap, cfg, terrain.Width(),
                                     terrain.Height(), cols, rows, extents.gxMin, extents.gyMin,
-                                    extents.gxSpan, extents.gySpan, useAnchor ? &anchor : nullptr,
+                                    extents.gxSpan, extents.gySpan, nullptr,
                                     &largeMapProj);
 
     for (int row = 0; row < rows; ++row) {
@@ -337,82 +245,6 @@ inline void DrawTerrainLargeMap(ImDrawList* dl, PluginSDK::Context* ctx,
     }
 }
 
-inline bool TerrainPatchTouchesMinimap(PluginSDK::Context* ctx, const PluginSDK::MapData& map,
-                                       const ImVec2 quad[4]) {
-    auto onSurface = [&](const ImVec2& p) {
-        return IsOnMinimapSurface(ctx, map, p.x, p.y, 4.f);
-    };
-
-    for (const ImVec2& p : {quad[0], quad[1], quad[2], quad[3]}) {
-        if (onSurface(p)) return true;
-    }
-
-    const ImVec2 center((quad[0].x + quad[1].x + quad[2].x + quad[3].x) * 0.25f,
-                        (quad[0].y + quad[1].y + quad[2].y + quad[3].y) * 0.25f);
-    if (onSurface(center)) return true;
-
-    const ImVec2 mids[4] = {
-        ImVec2((quad[0].x + quad[1].x) * 0.5f, (quad[0].y + quad[1].y) * 0.5f),
-        ImVec2((quad[1].x + quad[2].x) * 0.5f, (quad[1].y + quad[2].y) * 0.5f),
-        ImVec2((quad[2].x + quad[3].x) * 0.5f, (quad[2].y + quad[3].y) * 0.5f),
-        ImVec2((quad[3].x + quad[0].x) * 0.5f, (quad[3].y + quad[0].y) * 0.5f),
-    };
-    for (const ImVec2& p : mids) {
-        if (onSurface(p)) return true;
-    }
-
-    return false;
-}
-
-inline void DrawTerrainMiniMap(ImDrawList* dl, PluginSDK::Context* ctx,
-                               const PluginSDK::Snapshot& snap, const TerrainTexture& terrain,
-                               const RadarData::RadarConfig& cfg) {
-    if (!dl || !terrain.Valid() || terrain.Width() <= 0 || terrain.Height() <= 0) return;
-
-    const int cols = std::clamp(terrain.Width() / 12, 48, 96);
-    const int rows = std::clamp(terrain.Height() / 12, 48, 96);
-    const TerrainGridExtents extents = ResolveTerrainGridExtents(cfg, terrain);
-    const TerrainAnchorDelta anchor =
-        ComputeTerrainPlayerAnchorDelta(ctx, snap, cfg, false, terrain.Width(), terrain.Height());
-    std::vector<ProjectedTerrainVertex> vertices;
-    BuildProjectedTerrainVertexGrid(vertices, ctx, snap, cfg, false, terrain.Width(),
-                                    terrain.Height(), cols, rows, extents.gxMin, extents.gyMin,
-                                    extents.gxSpan, extents.gySpan, &anchor);
-
-    for (int row = 0; row < rows; ++row) {
-        const float v0 = static_cast<float>(row) / static_cast<float>(rows);
-        const float v1 = static_cast<float>(row + 1) / static_cast<float>(rows);
-
-        for (int col = 0; col < cols; ++col) {
-            const float u0 = static_cast<float>(col) / static_cast<float>(cols);
-            const float u1 = static_cast<float>(col + 1) / static_cast<float>(cols);
-            ImVec2 quad[4];
-            const size_t row0 = static_cast<size_t>(row) * static_cast<size_t>(cols + 1);
-            const size_t row1 = static_cast<size_t>(row + 1) * static_cast<size_t>(cols + 1);
-            const auto& vtx0 = vertices[row0 + static_cast<size_t>(col)];
-            const auto& vtx1 = vertices[row0 + static_cast<size_t>(col + 1)];
-            const auto& vtx2 = vertices[row1 + static_cast<size_t>(col + 1)];
-            const auto& vtx3 = vertices[row1 + static_cast<size_t>(col)];
-            if (!vtx0.valid || !vtx1.valid || !vtx2.valid || !vtx3.valid) continue;
-            quad[0] = vtx0.pos;
-            quad[1] = vtx1.pos;
-            quad[2] = vtx2.pos;
-            quad[3] = vtx3.pos;
-
-            if (!IsReasonableConvexQuad(quad)) continue;
-
-            const ImVec2 center((quad[0].x + quad[1].x + quad[2].x + quad[3].x) * 0.25f,
-                                (quad[0].y + quad[1].y + quad[2].y + quad[3].y) * 0.25f);
-            if (!IsOnMinimapSurface(ctx, snap.MiniMap, center.x, center.y, 4.f)) continue;
-            if (!TerrainPatchTouchesMinimap(ctx, snap.MiniMap, quad)) continue;
-
-            dl->AddImageQuad(terrain.TexRef(), quad[0], quad[1], quad[2], quad[3],
-                             ImVec2(u0, v0), ImVec2(u1, v0), ImVec2(u1, v1),
-                             ImVec2(u0, v1), IM_COL32_WHITE);
-        }
-    }
-}
-
 inline void DrawTerrainDotMatrix(ImDrawList* dl, PluginSDK::Context* ctx,
                                  const PluginSDK::Snapshot& snap,
                                  const WalkableBake& walkable,
@@ -427,8 +259,7 @@ inline void DrawTerrainDotMatrix(ImDrawList* dl, PluginSDK::Context* ctx,
 
     const int step = std::max(1, cfg.DotCellStep);
     const float halfSize = std::clamp(cfg.DotSize, 0.5f, 6.0f);
-    const bool useAnchor = !useLargeMap || !largeMapProj
-                           || largeMapProj->mode == RadarData::MapLayerProjectionMode::NativeSdk;
+    const bool useAnchor = !useLargeMap;
     const TerrainAnchorDelta anchor =
         useAnchor ? ComputeTerrainPlayerAnchorDelta(ctx, snap, cfg, useLargeMap, walkable.width,
                                                     walkable.height)
@@ -477,8 +308,7 @@ inline void DrawTerrainBoundaryLines(ImDrawList* dl, PluginSDK::Context* ctx,
     const TerrainGridExtents extents = ResolveTerrainGridExtents(cfg, terrainView);
     const ImU32 lineColor = ImGui::ColorConvertFloat4ToU32(cfg.TextureWallEdgeColor);
     const float thickness = std::clamp(static_cast<float>(cfg.WalkableMapBorderThickness), 1.0f, 8.0f);
-    const bool useAnchor = !useLargeMap || !largeMapProj
-                           || largeMapProj->mode == RadarData::MapLayerProjectionMode::NativeSdk;
+    const bool useAnchor = !useLargeMap;
     const TerrainAnchorDelta anchor =
         useAnchor ? ComputeTerrainPlayerAnchorDelta(ctx, snap, cfg, useLargeMap, walkable.width,
                                                     walkable.height)
@@ -559,12 +389,16 @@ public:
     void Draw(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap) {
         if (!ShouldDraw(snap)) return;
 
+        const bool mapVisible = snap.LargeMap.IsVisible || snap.MiniMap.IsVisible;
+        if (!mapVisible) {
+            mapWasVisible = false;
+            return;
+        }
+        if (!mapWasVisible) cache.InvalidatePoi();
+        mapWasVisible = true;
+
         auto current = ctx->Terrain.GetWalkableGrid();
         if (current.Data() != walkable.Data()) walkable = std::move(current);
-
-        const bool mapVisible = snap.LargeMap.IsVisible || snap.MiniMap.IsVisible;
-        if (mapVisible && !mapWasVisible) cache.InvalidatePoi();
-        mapWasVisible = mapVisible;
 
         if (cache.NeedsFullRebuild(snap, walkable.Data())) {
             cache.RebuildAll(ctx, snap, walkable, cfg, targets, icons);
@@ -581,13 +415,12 @@ public:
             return;
         }
 
-        const bool terrainReady =
-            cfg.DrawWalkableMap && UsesTextureTerrain(cfg)
-            && terrain.EnsureBuilt(ctx->D3DDevice, cache.walkable, cfg, snap.AreaChangeCounter,
-                                   walkable.Data());
-        const MapLayerProjection largeMapProj = BuildLargeMapLayerProjection(ctx, snap, cfg);
-
         if (snap.LargeMap.IsVisible) {
+            const bool terrainReady =
+                cfg.DrawWalkableMap && UsesTextureTerrain(cfg)
+                && terrain.EnsureBuilt(ctx->D3DDevice, cache.walkable, cfg,
+                                       snap.AreaChangeCounter, walkable.Data());
+            const MapLayerProjection largeMapProj = BuildLargeMapLayerProjection(ctx, snap, cfg);
             MapClipScope clip(dl, snap.LargeMap, false);
             if (terrainReady && largeMapProj.valid)
                 DrawTerrainLargeMap(dl, ctx, snap, terrain, cfg, largeMapProj);
@@ -608,7 +441,6 @@ public:
             }
         } else if (snap.MiniMap.IsVisible) {
             MapClipScope clip(dl, snap.MiniMap, true);
-            (void)terrainReady;
             if (cfg.DrawMiniMapEntities) cache.entities.Draw(ctx, snap, dl);
             if (cfg.ShowImportantPOI) {
                 cache.pois.UpdateScreenPositions(ctx, snap);

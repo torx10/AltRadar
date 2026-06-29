@@ -22,7 +22,6 @@ struct WalkableBake {
     int                       height = 0;
     const uint8_t*            sourcePtr = nullptr;
     std::vector<uint8_t>      walkableMask;
-    std::vector<uint8_t>      baseEdgeMask;
     std::vector<BoundarySegment> boundarySegments;
     bool                      valid = false;
 
@@ -31,7 +30,6 @@ struct WalkableBake {
         height = 0;
         sourcePtr = nullptr;
         walkableMask.clear();
-        baseEdgeMask.clear();
         boundarySegments.clear();
         valid = false;
     }
@@ -99,7 +97,6 @@ struct WalkableBake {
             }
         }
 
-        baseEdgeMask.assign(cellCount, 0);
         boundarySegments.clear();
         bool anyWalkable = false;
         for (int gy = 0; gy < h; ++gy) {
@@ -109,8 +106,6 @@ struct WalkableBake {
                 if (walkableMask[idx] == 0) continue;
                 anyWalkable = true;
                 if (!IsBoundaryCell(walkableMask, w, h, gx, gy)) continue;
-
-                baseEdgeMask[idx] = 1;
 
                 if (!IsWalkable(gx, gy - 1))
                     boundarySegments.push_back(BoundarySegment{

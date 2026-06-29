@@ -13,6 +13,8 @@
 
 namespace RadarRender {
 
+inline constexpr float kLargeMapMarkerOffsetX = 2.0f;
+
 struct EntityDrawCache {
     std::vector<RadarData::EntityDrawCmd> cmds;
     uint64_t                              lastSnapshotTime = 0;
@@ -62,10 +64,6 @@ struct EntityDrawCache {
             }
         }
 
-        auto wpath = [](const std::wstring& p) -> std::string {
-            return std::string(p.begin(), p.end());
-        };
-
         int count = 0;
         for (const auto& e : snap.Entities) {
             if (count >= cfg.MaxEntitiesDrawn) break;
@@ -75,7 +73,7 @@ struct EntityDrawCache {
             if (cfg.HideOutsideNetworkBubble && e.Zone == PluginSDK::NearbyZone::Far) continue;
             if (e.EntityType == PluginSDK::EntityType::Monster && e.CurrentHP <= 0) continue;
 
-            const std::string path = wpath(e.Path);
+            const std::string path = RadarData::NarrowPath(e.Path);
             if (!path.empty() && db.ignorePatterns.MatchesAny(path)) continue;
 
             RadarData::EntityDrawCmd cmd;
@@ -128,9 +126,10 @@ struct EntityDrawCache {
                 scr = ProjectEntityGridToScreen(ctx, snap, c.gridX, c.gridY, c.terrainZ);
             }
             if (!scr.valid) continue;
-            DrawEntityMarker(dl, c.markerShape, scr.sx, scr.sy, c.markerSize, c.markerColor);
+            const float drawX = scr.sx + (snap.LargeMap.IsVisible ? kLargeMapMarkerOffsetX : 0.0f);
+            DrawEntityMarker(dl, c.markerShape, drawX, scr.sy, c.markerSize, c.markerColor);
             if (!c.label.empty())
-                dl->AddText(ImVec2(scr.sx + c.markerSize + 4.f, scr.sy - c.markerSize - 2.f),
+                dl->AddText(ImVec2(drawX + c.markerSize + 4.f, scr.sy - c.markerSize - 2.f),
                             c.markerColor, c.label.c_str());
         }
     }

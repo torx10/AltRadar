@@ -51,6 +51,50 @@ struct AreaCacheState {
         return snap.LastUpdateTime != entitySnapshotTime;
     }
 
+    bool RefreshTargetPatternCache(const PluginSDK::Snapshot& snap,
+                                   const RadarData::TargetDatabase& db) {
+        const auto targets = db.GetTargetsForArea(snap.CurrentAreaHash, snap.CurrentAreaName);
+        const auto areaKey = db.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
+        bool rebuildPatterns = areaKey != lastTgtAreaKey || targets.size() != lastTargets.size();
+        if (!rebuildPatterns) {
+            for (size_t i = 0; i < targets.size(); ++i) {
+                if (targets[i] != lastTargets[i]) {
+                    rebuildPatterns = true;
+                    break;
+                }
+            }
+        }
+
+        if (rebuildPatterns) {
+            lastTgtAreaKey = areaKey;
+            lastTargets = targets;
+            lastTargetPatterns.clear();
+            lastTargetPatterns.reserve(targets.size());
+            for (const auto* t : targets)
+                lastTargetPatterns.push_back(RadarData::CompilePattern(t->path));
+        }
+
+        if (targets.empty()) {
+            lastTgtAreaKey = areaKey;
+            lastTargets.clear();
+            lastTargetPatterns.clear();
+        }
+
+        return !lastTargetPatterns.empty();
+    }
+
+    void RefreshPoiMatchCounts(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap) {
+        if (!ctx || lastTargetPatterns.empty()) {
+            lastTgtMatchCount = -1;
+            lastEntityMatchCount = -1;
+            return;
+        }
+        lastTgtMatchCount = RadarRender::PoiDrawCache::CountMatchingTgtLocations(ctx,
+                                                                                 lastTargetPatterns);
+        lastEntityMatchCount = RadarRender::PoiDrawCache::CountMatchingEntities(snap,
+                                                                                 lastTargetPatterns);
+    }
+
     void RebuildAll(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
                     PluginSDK::WalkableGridHandle& gridHandle,
                     const RadarData::RadarConfig& cfg, const RadarData::TargetDatabase& db,
@@ -62,8 +106,12 @@ struct AreaCacheState {
         entities.Rebuild(ctx, snap, cfg, db, icons);
         entitySnapshotTime = snap.LastUpdateTime;
         poiDirty = false;
-        lastTgtMatchCount = -1;
-        lastEntityMatchCount = -1;
+        if (cfg.ShowImportantPOI && RefreshTargetPatternCache(snap, db))
+            RefreshPoiMatchCounts(ctx, snap);
+        else {
+            lastTgtMatchCount = -1;
+            lastEntityMatchCount = -1;
+        }
     }
 
     void RebuildEntitiesOnly(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
@@ -85,28 +133,7 @@ struct AreaCacheState {
         if (now - lastTgtPollTimePoint < std::chrono::milliseconds(5000)) return;
         lastTgtPollTimePoint = now;
 
-        const auto targets =
-            db.GetTargetsForArea(snap.CurrentAreaHash, snap.CurrentAreaName);
-        if (targets.empty()) return;
-
-        const auto areaKey = db.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
-        bool compilePatterns = areaKey != lastTgtAreaKey || targets.size() != lastTargets.size();
-        if (!compilePatterns) {
-            for (size_t i = 0; i < targets.size(); ++i) {
-                if (targets[i] != lastTargets[i]) {
-                    compilePatterns = true;
-                    break;
-                }
-            }
-        }
-        if (compilePatterns) {
-            lastTgtAreaKey = areaKey;
-            lastTargets = targets;
-            lastTargetPatterns.clear();
-            lastTargetPatterns.reserve(targets.size());
-            for (const auto* t : targets)
-                lastTargetPatterns.push_back(RadarData::CompilePattern(t->path));
-        }
+        if (!RefreshTargetPatternCache(snap, db)) return;
 
         const int tgtCount = RadarRender::PoiDrawCache::CountMatchingTgtLocations(ctx,
                                                                                 lastTargetPatterns);
@@ -132,10 +159,12 @@ struct AreaCacheState {
         if (!poiDirty) return;
         pois.Rebuild(ctx, snap, cfg, db, icons);
         poiDirty = false;
-        const auto targets =
-            db.GetTargetsForArea(snap.CurrentAreaHash, snap.CurrentAreaName);
-        lastTgtMatchCount = pois.CountMatchingTgtLocations(ctx, targets);
-        lastEntityMatchCount = pois.CountMatchingEntities(snap, targets);
+        if (cfg.ShowImportantPOI && RefreshTargetPatternCache(snap, db))
+            RefreshPoiMatchCounts(ctx, snap);
+        else {
+            lastTgtMatchCount = -1;
+            lastEntityMatchCount = -1;
+        }
     }
 };
 

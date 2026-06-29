@@ -137,40 +137,6 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
         drawOption(RadarData::TerrainRenderStyle::TextureAndDotMatrix);
         ImGui::EndCombo();
     };
-    auto drawTerrainAlignmentCombo = [&](const char* label) {
-        const char* preview = RadarData::TerrainTextureAlignmentModeName(cfg.TerrainAlignment);
-        ImGui::SetNextItemWidth(240.f);
-        if (!ImGui::BeginCombo(label, preview, ImGuiComboFlags_HeightLargest)) return;
-
-        const auto drawOption = [&](RadarData::TerrainTextureAlignmentMode mode) {
-            const bool selected = cfg.TerrainAlignment == mode;
-            if (ImGui::Selectable(RadarData::TerrainTextureAlignmentModeName(mode), selected))
-                cfg.TerrainAlignment = mode;
-            if (selected) ImGui::SetItemDefaultFocus();
-        };
-
-        drawOption(RadarData::TerrainTextureAlignmentMode::Legacy);
-        drawOption(RadarData::TerrainTextureAlignmentMode::CellCentered);
-        drawOption(RadarData::TerrainTextureAlignmentMode::ZeroBased);
-        ImGui::EndCombo();
-    };
-    auto drawMapProjectionModeCombo = [&](const char* label) {
-        const char* preview = RadarData::MapLayerProjectionModeName(cfg.MapProjectionMode);
-        ImGui::SetNextItemWidth(240.f);
-        if (!ImGui::BeginCombo(label, preview, ImGuiComboFlags_HeightLargest)) return;
-
-        const auto drawOption = [&](RadarData::MapLayerProjectionMode mode) {
-            const bool selected = cfg.MapProjectionMode == mode;
-            if (ImGui::Selectable(RadarData::MapLayerProjectionModeName(mode), selected))
-                cfg.MapProjectionMode = mode;
-            if (selected) ImGui::SetItemDefaultFocus();
-        };
-
-        drawOption(RadarData::MapLayerProjectionMode::Unified2D);
-        drawOption(RadarData::MapLayerProjectionMode::NativeSdk);
-        ImGui::EndCombo();
-    };
-
     bool en = cfg.OverlayEnabled;
     if (ImGui::Checkbox("Enable Radar Overlay", &en)) cfg.OverlayEnabled = en;
     ImGui::Separator();
@@ -211,19 +177,6 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
             ImGui::SameLine(160.f);
             ImGui::SetNextItemWidth(140.f);
             ImGui::SliderFloat("##DotSize", &cfg.DotSize, 0.5f, 6.0f, "%.1f");
-        }
-        ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-        ImGui::TextUnformatted("Projection / Placement");
-        drawMapProjectionModeCombo("Map Layer Projection");
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Unified 2D uses one shared player-relative 2D projection for the large map terrain and large-map markers. Minimap terrain stays disabled.");
-        }
-        drawTerrainAlignmentCombo("Terrain Alignment");
-        if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Use this to test texture/cell alignment. "
-                              "Cell-centred should usually align texels to walkable grid samples.");
         }
         ImGui::EndDisabled();
         ImGui::Unindent(12.f);
@@ -786,17 +739,9 @@ inline void DrawDisplayRuleMatcherFields(RadarData::DisplayRule& rule, bool edit
     ImGui::SameLine();
     DrawInlineRuleLabel("POI");
     DrawRuleSelect((std::string(idPrefix) + "##POI").c_str(), rule.poi, {"Yes", "No"}, 74.f);
-    ImGui::SameLine();
-    DrawInlineRuleLabel("Encounter");
-    ImGui::BeginDisabled(true);
-    DrawRuleSelect((std::string(idPrefix) + "##Encounter").c_str(), rule.encounter,
-                   {"Active", "Complete"}, 92.f);
-    ImGui::EndDisabled();
     if (!editable && ImGui::IsItemHovered()) {
         ImGui::SetTooltip("System-rule match conditions are fixed by Radar's built-in "
                           "classifier. The action style below is editable.");
-    } else if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Encounter-complete matching is not exposed by the current SDK yet.");
     }
     ImGui::EndDisabled();
     ImGui::Spacing();
@@ -924,7 +869,6 @@ inline void DrawRuleColorSourceCombo(const char* id, bool& useRuneshapeColor) {
 inline void DrawDisplayRuleStyleRow(bool hideEditable, bool& hideValue,
                                     RadarData::MarkerShape& shape, RadarData::Rgba8& color,
                                     float& size, bool labelEditable, std::string& label,
-                                    bool autoPathEditable, bool& autoPath,
                                     bool showRuneshapeColorSource = false,
                                     bool* useRuneshapeColor = nullptr) {
     ImGui::BeginDisabled(!hideEditable);
@@ -962,11 +906,6 @@ inline void DrawDisplayRuleStyleRow(bool hideEditable, bool& hideValue,
     ImGui::SetNextItemWidth(190.f);
     if (ImGui::InputTextWithHint("##Label", "label (optional)", labelBuf, sizeof(labelBuf)))
         label = labelBuf;
-    ImGui::EndDisabled();
-    ImGui::SameLine();
-    DrawInlineRuleLabel("Auto-path");
-    ImGui::BeginDisabled(!autoPathEditable);
-    ImGui::Checkbox("##AutoPath", &autoPath);
     ImGui::EndDisabled();
 }
 
@@ -1037,9 +976,8 @@ inline void DrawBuiltInRuleRow(const BuiltinRuleRef& ref, RadarData::IconTables&
         DrawDisplayRuleMatcherFields(preview, false, true, "##sys");
 
         bool hide = false;
-        bool navigable = false;
-        DrawDisplayRuleStyleRow(false, hide, def->markerShape, def->markerColor, def->scale, true,
-                                def->label, false, navigable);
+        DrawDisplayRuleStyleRow(false, hide, def->markerShape, def->markerColor, def->scale,
+                                true, def->label);
         ImGui::TreePop();
     }
     PopRuleCardStyle();
@@ -1097,8 +1035,7 @@ inline void DrawDisplayRuleRow(size_t index, RadarData::IconTables& icons, RuleS
         DrawDisplayRuleMatcherFields(rule, true, true, "##cat");
         const bool runeshapeEligible = RadarData::IsRuneshapeColourEligible(rule);
         DrawDisplayRuleStyleRow(true, rule.hide, rule.markerShape, rule.markerColor, rule.size,
-                                true, rule.label, true, rule.navigable, runeshapeEligible,
-                                &rule.useRuneshapeColor);
+                                true, rule.label, runeshapeEligible, &rule.useRuneshapeColor);
         ImGui::TreePop();
     }
     PopRuleCardStyle();
