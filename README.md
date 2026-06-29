@@ -1,6 +1,6 @@
-# Radar — Official POE2Fixer Plugin
+# Alt Radar — POE2Fixer Radar Fork
 
-Self-contained radar overlay for Path of Exile 2: walkable terrain map, entity icons, and POI labels. Replaces the host built-in Radar module. **No pathfinder / path lines.**
+Self-contained radar overlay for Path of Exile 2: walkable terrain map, entity icons, and POI labels. This fork stays distinct from the official POE2Fixer Radar release. **No pathfinder / path lines.**
 
 ## Performance
 
@@ -11,12 +11,12 @@ Self-contained radar overlay for Path of Exile 2: walkable terrain map, entity i
 
 ## Install
 
-1. Build `Radar.sln` Release|x64 → `bin/Release/Radar.dll`
+1. Build `AltRadar.sln` Release|x64 → `bin/Release/AltRadar.dll`
 2. Copy into POE2Fixer:
 
 ```
-POE2Fixer/Plugins/Radar/
-  Radar.dll
+POE2Fixer/Plugins/AltRadar/
+  AltRadar.dll
   assets/icons.png
   config/settings.json
   config/icons.json
@@ -25,7 +25,7 @@ POE2Fixer/Plugins/Radar/
   config/targets/ignore.json
 ```
 
-3. Enable **Radar** in the Plugins tab.
+3. Enable **Alt Radar** in the Plugins tab.
 
 If `assets/icons.png` is missing from the repo, run:
 
@@ -35,7 +35,7 @@ If `assets/icons.png` is missing from the repo, run:
 
 ## Settings UI
 
-Open the Plugins tab → **Radar** → three tabs:
+Open the Plugins tab → **Alt Radar** → three tabs:
 
 - **General Settings** — overlay toggle, walkable map, visibility rules
 - **Icon Management** — per-category icons and sizes
@@ -52,7 +52,7 @@ Targets Plugin SDK **v6**. Bundled headers in `sdk/` must match the host.
 ## Build
 
 ```text
-MSBuild Radar.sln -p:Configuration=Release -p:Platform=x64
+MSBuild AltRadar.sln -p:Configuration=Release -p:Platform=x64
 ```
 
 Requires Visual Studio 2022 Build Tools (v143), Windows SDK, D3D11.

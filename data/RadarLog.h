@@ -17,12 +17,12 @@ public:
 
     void Init(const std::filesystem::path& pluginDir) {
         std::lock_guard<std::mutex> lock(m_mutex);
-        m_path = pluginDir / "logs" / "radar.log";
+        m_path = pluginDir / "logs" / "altradar.log";
         std::error_code ec;
         std::filesystem::create_directories(m_path.parent_path(), ec);
         m_stream.open(m_path, std::ios::out | std::ios::app);
         if (m_stream.is_open()) {
-            m_stream << "\n--- Radar session start ---\n";
+            m_stream << "\n--- Alt Radar session start ---\n";
             m_stream.flush();
         }
     }
@@ -30,7 +30,7 @@ public:
     void Shutdown() {
         std::lock_guard<std::mutex> lock(m_mutex);
         if (m_stream.is_open()) {
-            m_stream << "--- Radar session end ---\n";
+            m_stream << "--- Alt Radar session end ---\n";
             m_stream.flush();
             m_stream.close();
         }
