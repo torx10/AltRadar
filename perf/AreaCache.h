@@ -108,12 +108,9 @@ struct AreaCacheState {
         entities.Rebuild(ctx, snap, cfg, db, icons);
         entitySnapshotTime = snap.LastUpdateTime;
         poiDirty = false;
-        if (cfg.ShowImportantPOI && RefreshTargetPatternCache(snap, db))
-            RefreshPoiMatchCounts(ctx, snap);
-        else {
-            lastTgtMatchCount = -1;
-            lastEntityMatchCount = -1;
-        }
+        if (cfg.ShowImportantPOI) (void)RefreshTargetPatternCache(snap, db);
+        lastTgtMatchCount = -1;
+        lastEntityMatchCount = -1;
     }
 
     void RebuildEntitiesOnly(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
@@ -161,12 +158,9 @@ struct AreaCacheState {
         if (!poiDirty) return;
         pois.Rebuild(ctx, snap, cfg, db, icons);
         poiDirty = false;
-        if (cfg.ShowImportantPOI && RefreshTargetPatternCache(snap, db))
-            RefreshPoiMatchCounts(ctx, snap);
-        else {
-            lastTgtMatchCount = -1;
-            lastEntityMatchCount = -1;
-        }
+        if (cfg.ShowImportantPOI) (void)RefreshTargetPatternCache(snap, db);
+        lastTgtMatchCount = -1;
+        lastEntityMatchCount = -1;
     }
 };
 
