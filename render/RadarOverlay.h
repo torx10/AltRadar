@@ -8,6 +8,7 @@
 #include "data/RadarLog.h"
 #include "data/TargetDatabase.h"
 #include "data/IconTables.h"
+#include "ui/AtlasUiBlockerDetector.h"
 #include "sdk/PluginSDK.h"
 
 #include <algorithm>
@@ -364,6 +365,7 @@ public:
     TerrainTexture                terrain;
     RadarPerf::AreaCacheState     cache;
     PluginSDK::WalkableGridHandle walkable;
+    RadarUi::AtlasUiBlockerDetector atlasUiBlocker;
     bool                          mapWasVisible = false;
 
     bool ShouldDraw(const PluginSDK::Snapshot& snap) const {
@@ -389,6 +391,9 @@ public:
     void Draw(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap) {
         if (!ShouldDraw(snap)) return;
 
+        cache.BeginOverlayFrame();
+        atlasUiBlocker.enabled = cfg.EnableUiBlockerDetection;
+
         const bool mapVisible = snap.LargeMap.IsVisible || snap.MiniMap.IsVisible;
         if (!mapVisible) {
             mapWasVisible = false;
@@ -396,6 +401,10 @@ public:
         }
         if (!mapWasVisible) cache.InvalidatePoi();
         mapWasVisible = true;
+
+        if (snap.LargeMap.IsVisible
+            && atlasUiBlocker.ShouldBlock(ctx, snap.AreaChangeCounter))
+            return;
 
         auto current = ctx->Terrain.GetWalkableGrid();
         if (current.Data() != walkable.Data()) walkable = std::move(current);
@@ -416,26 +425,49 @@ public:
         }
 
         if (snap.LargeMap.IsVisible) {
-            const bool terrainReady =
-                cfg.DrawWalkableMap && UsesTextureTerrain(cfg)
-                && terrain.EnsureBuilt(ctx->D3DDevice, cache.walkable, cfg,
-                                       snap.AreaChangeCounter, walkable.Data());
+            bool terrainReady = false;
+            if (cfg.DrawWalkableMap && UsesTextureTerrain(cfg)) {
+                const bool skipTerrainTextureBuild =
+                    cache.frameSafety.skipOptionalDetailThisFrame
+                    && !terrain.IsCurrent(ctx->D3DDevice, cache.walkable, cfg,
+                                          snap.AreaChangeCounter, walkable.Data());
+                if (skipTerrainTextureBuild) {
+                    cache.frameSafety.skippedTerrainTextureBuildThisFrame = true;
+                } else {
+                    terrainReady = terrain.EnsureBuilt(ctx->D3DDevice, cache.walkable, cfg,
+                                                      snap.AreaChangeCounter, walkable.Data());
+                }
+            }
             const MapLayerProjection largeMapProj = BuildLargeMapLayerProjection(ctx, snap, cfg);
             MapClipScope clip(dl, snap.LargeMap, false);
             if (terrainReady && largeMapProj.valid)
                 DrawTerrainLargeMap(dl, ctx, snap, terrain, cfg, largeMapProj);
-            if (cfg.DrawWalkableMap && UsesDotMatrixTerrain(cfg))
-                DrawTerrainDotMatrix(dl, ctx, snap, cache.walkable, cfg, true, &largeMapProj);
-            if (cfg.DrawWalkableMap && UsesTerrainBoundaryLines(cfg))
-                DrawTerrainBoundaryLines(dl, ctx, snap, cache.walkable, cfg, true,
-                                         &largeMapProj);
+            if (cfg.DrawWalkableMap && UsesDotMatrixTerrain(cfg)) {
+                if (cache.frameSafety.skipOptionalDetailThisFrame) {
+                    cache.frameSafety.skippedDotMatrixThisFrame = true;
+                } else {
+                    DrawTerrainDotMatrix(dl, ctx, snap, cache.walkable, cfg, true, &largeMapProj);
+                }
+            }
+            if (cfg.DrawWalkableMap && UsesTerrainBoundaryLines(cfg)) {
+                if (cache.frameSafety.skipOptionalDetailThisFrame) {
+                    cache.frameSafety.skippedBoundaryLinesThisFrame = true;
+                } else {
+                    DrawTerrainBoundaryLines(dl, ctx, snap, cache.walkable, cfg, true,
+                                             &largeMapProj);
+                }
+            }
             cache.entities.Draw(ctx, snap, dl, &largeMapProj);
             if (cfg.ShowImportantPOI) {
                 cache.pois.UpdateScreenPositions(ctx, snap, &largeMapProj);
                 cache.pois.Draw(dl, atlas, cfg, cfg.EdgeIndicatorLargemap, cfg.EdgeIndicatorMinimap,
                                 ctx, &snap);
-                cache.pois.DrawEdgeIndicators(ctx, dl, snap.LargeMap, cfg.EdgeIndicatorLargemap,
-                                              false);
+                if (cache.frameSafety.skipOptionalDetailThisFrame) {
+                    cache.frameSafety.skippedPoiEdgeIndicatorsThisFrame = true;
+                } else {
+                    cache.pois.DrawEdgeIndicators(ctx, dl, snap.LargeMap,
+                                                  cfg.EdgeIndicatorLargemap, false);
+                }
             } else {
                 cache.pois.Clear();
             }
@@ -446,7 +478,12 @@ public:
                 cache.pois.UpdateScreenPositions(ctx, snap);
                 cache.pois.Draw(dl, atlas, cfg, cfg.EdgeIndicatorLargemap, cfg.EdgeIndicatorMinimap,
                                 ctx, &snap);
-                cache.pois.DrawEdgeIndicators(ctx, dl, snap.MiniMap, cfg.EdgeIndicatorMinimap, true);
+                if (cache.frameSafety.skipOptionalDetailThisFrame) {
+                    cache.frameSafety.skippedPoiEdgeIndicatorsThisFrame = true;
+                } else {
+                    cache.pois.DrawEdgeIndicators(ctx, dl, snap.MiniMap, cfg.EdgeIndicatorMinimap,
+                                                  true);
+                }
             } else {
                 cache.pois.Clear();
             }
