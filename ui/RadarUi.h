@@ -27,6 +27,7 @@ struct UiState {
     bool        pickerEntityMode = false;
     bool        requestResetSettings = false;
     bool        requestResetCustomLandmarks = false;
+    char        landmarkSearch[128]{};
 
     bool        editModalOpen = false;
     RadarData::TargetEntry editTarget;
@@ -1263,19 +1264,33 @@ inline bool DrawPoiCategoryHeader(const char* id, const char* label, bool defaul
     return open;
 }
 
+inline bool TargetMatchesLandmarkSearch(const RadarData::TargetEntry& target,
+                                        std::string_view areaLabel,
+                                        std::string_view search) {
+    if (search.empty()) return true;
+    return ContainsCaseInsensitiveUi(target.name, search)
+           || ContainsCaseInsensitiveUi(target.path, search)
+           || ContainsCaseInsensitiveUi(target.category, search)
+           || ContainsCaseInsensitiveUi(areaLabel, search);
+}
+
 inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
                                    const std::vector<size_t>& indices,
                                    const std::string& areaKey, UiState& ui,
                                    RadarRender::RadarOverlay& overlay,
                                    RadarRender::IconAtlas& atlas,
                                    const std::filesystem::path& pluginDir,
-                                   bool userOnly = false) {
+                                   bool userOnly = false,
+                                   std::string_view search = {}) {
     if (indices.empty()) return;
+
+    const std::string areaLabel = db.DisplayNameForArea(areaKey);
 
     size_t visibleCount = 0;
     for (size_t idx : indices) {
         if (idx >= db.storage.size()) continue;
         if (userOnly && db.storage[idx].category != "User") continue;
+        if (!TargetMatchesLandmarkSearch(db.storage[idx], areaLabel, search)) continue;
         ++visibleCount;
     }
     if (visibleCount == 0) return;
@@ -1304,6 +1319,7 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
         if (idx >= db.storage.size()) continue;
         auto& t = db.storage[idx];
         if (userOnly && t.category != "User") continue;
+        if (!TargetMatchesLandmarkSearch(t, areaLabel, search)) continue;
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
         bool enabled = t.enabled;
@@ -1369,22 +1385,55 @@ inline void DrawAreaTargetTable(RadarData::TargetDatabase& db, const std::string
                                 UiState& ui, RadarRender::RadarOverlay& overlay,
                                 RadarRender::IconAtlas& atlas,
                                 const std::filesystem::path& pluginDir,
-                                bool userOnly = false) {
+                                bool userOnly = false,
+                                std::string_view search = {},
+                                std::string_view globalSource = {}) {
     const std::string key = RadarData::NormalizeAreaKey(areaKey);
     if (key == "*" || key == "GLOBAL") {
-        DrawTargetIndicesTable(db, db.actsGlobalTargets, key, ui, overlay, atlas, pluginDir, userOnly);
+        const auto& globalIndices = RadarData::MarkerShapeNameEquals(globalSource, "Endgame")
+                                        ? db.endgameGlobalTargets
+                                        : db.actsGlobalTargets;
+        DrawTargetIndicesTable(db, globalIndices, key, ui, overlay, atlas, pluginDir,
+                               userOnly, search);
         return;
     }
     auto it = db.byArea.find(key);
     if (it == db.byArea.end()) return;
-    DrawTargetIndicesTable(db, it->second, key, ui, overlay, atlas, pluginDir, userOnly);
+    DrawTargetIndicesTable(db, it->second, key, ui, overlay, atlas, pluginDir, userOnly,
+                           search);
+}
+
+inline bool AreaHasMatchingTargets(const RadarData::TargetDatabase& db, const std::string& areaKey,
+                                   bool userOnly, std::string_view search,
+                                   std::string_view globalSource = {}) {
+    const std::string key = RadarData::NormalizeAreaKey(areaKey);
+    const std::vector<size_t>* indices = nullptr;
+    if (key == "*" || key == "GLOBAL") {
+        indices = RadarData::MarkerShapeNameEquals(globalSource, "Endgame")
+                      ? &db.endgameGlobalTargets
+                      : &db.actsGlobalTargets;
+    } else if (auto it = db.byArea.find(key); it != db.byArea.end()) {
+        indices = &it->second;
+    }
+    if (!indices) return false;
+    const std::string areaLabel = db.DisplayNameForArea(areaKey);
+    for (size_t idx : *indices) {
+        if (idx >= db.storage.size()) continue;
+        const auto& target = db.storage[idx];
+        if (userOnly && target.category != "User") continue;
+        if (TargetMatchesLandmarkSearch(target, areaLabel, search)) return true;
+    }
+    return false;
 }
 
 inline bool DrawAreaSubNode(RadarData::TargetDatabase& db, const std::string& areaKey,
                             const std::string& label, bool isCurrent, bool defaultOpen,
                             UiState& ui, RadarRender::RadarOverlay& overlay,
                             const std::filesystem::path& pluginDir,
-                            bool userOnly = false) {
+                            bool userOnly = false,
+                            std::string_view search = {},
+                            std::string_view globalSource = {}) {
+    if (!AreaHasMatchingTargets(db, areaKey, userOnly, search, globalSource)) return false;
     ImGui::PushID(areaKey.c_str());
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     if (defaultOpen) flags |= ImGuiTreeNodeFlags_DefaultOpen;
@@ -1392,7 +1441,8 @@ inline bool DrawAreaSubNode(RadarData::TargetDatabase& db, const std::string& ar
     const bool open = ImGui::TreeNodeEx(label.c_str(), flags);
     if (isCurrent) ImGui::PopStyleColor();
     if (open) {
-        DrawAreaTargetTable(db, areaKey, ui, overlay, overlay.atlas, pluginDir, userOnly);
+        DrawAreaTargetTable(db, areaKey, ui, overlay, overlay.atlas, pluginDir, userOnly,
+                            search, globalSource);
         ImGui::TreePop();
     }
     ImGui::PopID();
@@ -1439,9 +1489,11 @@ inline void DrawAreaTreeSection(RadarData::TargetDatabase& db, const std::string
                                 const std::string& sourceKey, const std::string& currentArea,
                                 bool pinCurrentFirst, UiState& ui,
                                 RadarRender::RadarOverlay& overlay,
-                                const std::filesystem::path& pluginDir) {
+                                const std::filesystem::path& pluginDir,
+                                std::string_view search = {}) {
     auto areas = CollectAreasForSection(db, sourceKey);
-    const bool hasGlobal = !db.actsGlobalTargets.empty() && sourceKey == "Acts";
+    const bool hasGlobal = (sourceKey == "Acts" && !db.actsGlobalTargets.empty())
+                           || (sourceKey == "Endgame" && !db.endgameGlobalTargets.empty());
     const bool hasCurrentBucket =
         !currentArea.empty() && pinCurrentFirst
         && (db.HasAreaBucket(currentArea)
@@ -1449,17 +1501,19 @@ inline void DrawAreaTreeSection(RadarData::TargetDatabase& db, const std::string
     if (areas.empty() && !hasGlobal && !hasCurrentBucket) return;
 
     const bool sectionOpen =
-        DrawPoiCategoryHeader(sourceKey.c_str(), sourceLabel.c_str(), sourceKey == "Acts");
+        DrawPoiCategoryHeader(sourceKey.c_str(), sourceLabel.c_str(), sourceKey == "Acts" || !search.empty());
     if (!sectionOpen) return;
 
-    if (hasGlobal && sourceKey == "Acts") {
-        DrawAreaSubNode(db, "*", "Global", false, true, ui, overlay, pluginDir);
+    if (hasGlobal) {
+        DrawAreaSubNode(db, "*", "Global", false, true || !search.empty(), ui, overlay,
+                        pluginDir, false, search, sourceKey);
     }
 
     auto drawAreaNode = [&](const std::string& area, bool isCurrent) {
         std::string label = db.DisplayNameForArea(area);
         if (isCurrent) label += " [Current]";
-        DrawAreaSubNode(db, area, label, isCurrent, isCurrent, ui, overlay, pluginDir);
+        DrawAreaSubNode(db, area, label, isCurrent, isCurrent || !search.empty(), ui, overlay,
+                        pluginDir, false, search, sourceKey);
     };
 
     if (hasCurrentBucket) {
@@ -1485,8 +1539,7 @@ inline std::vector<std::string> CollectCustomAreas(const RadarData::TargetDataba
     for (const auto& [area, indices] : db.byArea) {
         bool hasUser = false;
         for (size_t idx : indices) {
-            if (idx < db.storage.size() && db.storage[idx].category == "User"
-                && db.storage[idx].enabled) {
+            if (idx < db.storage.size() && db.storage[idx].category == "User") {
                 hasUser = true;
                 break;
             }
@@ -1500,16 +1553,18 @@ inline std::vector<std::string> CollectCustomAreas(const RadarData::TargetDataba
 
 inline void DrawCustomTreeSection(RadarData::TargetDatabase& db, const std::string& currentArea,
                                   UiState& ui, RadarRender::RadarOverlay& overlay,
-                                  const std::filesystem::path& pluginDir) {
+                                  const std::filesystem::path& pluginDir,
+                                  std::string_view search = {}) {
     const auto areas = CollectCustomAreas(db);
     if (areas.empty()) return;
-    const bool sectionOpen = DrawPoiCategoryHeader("Custom", "Custom", false);
+    const bool sectionOpen = DrawPoiCategoryHeader("Custom", "Custom", !search.empty());
     if (!sectionOpen) return;
     for (const std::string& area : areas) {
         std::string label = db.DisplayNameForArea(area);
         if (RadarData::AreaKeysEqual(area, currentArea)) label += " [Current]";
         DrawAreaSubNode(db, area, label, RadarData::AreaKeysEqual(area, currentArea),
-                        RadarData::AreaKeysEqual(area, currentArea), ui, overlay, pluginDir, true);
+                        RadarData::AreaKeysEqual(area, currentArea) || !search.empty(), ui,
+                        overlay, pluginDir, true, search);
     }
     ImGui::TreePop();
 }
@@ -1576,18 +1631,23 @@ inline void DrawLandmarksTab(RadarData::RadarConfig& cfg, RadarData::TargetDatab
         ui.pickerEntityMode = true;
         ui.pickerPoiMode = false;
     }
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(260.f);
+    ImGui::InputTextWithHint("##landmarkSearch", "Search loaded landmarks...",
+                             ui.landmarkSearch, IM_ARRAYSIZE(ui.landmarkSearch));
 
     const std::string currentArea = ResolveCurrentAreaKey(snap, db);
     const std::string currentSection = ResolveCurrentAreaSection(db, currentArea);
+    const std::string landmarkSearch = ui.landmarkSearch;
 
     ImGui::PushStyleVar(ImGuiStyleVar_IndentSpacing, 12.f);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4.f, 2.f));
     ImGui::BeginChild("##poiTree", ImVec2(0, 0), false, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-    DrawCustomTreeSection(db, currentArea, ui, overlay, pluginDir);
+    DrawCustomTreeSection(db, currentArea, ui, overlay, pluginDir, landmarkSearch);
     DrawAreaTreeSection(db, "Endgame", "Endgame", currentArea, currentSection == "Endgame",
-                        ui, overlay, pluginDir);
+                        ui, overlay, pluginDir, landmarkSearch);
     DrawAreaTreeSection(db, "Acts (Level < 65)", "Acts", currentArea, currentSection != "Endgame",
-                        ui, overlay, pluginDir);
+                        ui, overlay, pluginDir, landmarkSearch);
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
 
