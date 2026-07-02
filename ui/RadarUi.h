@@ -3,6 +3,7 @@
 #include "data/RadarConfig.h"
 #include "data/IconTables.h"
 #include "data/TargetDatabase.h"
+#include "GameUiDiscovery.h"
 #include "render/EntityMarkers.h"
 #include "render/IconAtlas.h"
 #include "render/RadarOverlay.h"
@@ -28,6 +29,7 @@ struct UiState {
     bool        requestResetSettings = false;
     bool        requestResetCustomLandmarks = false;
     char        landmarkSearch[128]{};
+    UiDiscoveryState uiDiscovery;
 
     bool        editModalOpen = false;
     RadarData::TargetEntry editTarget;
@@ -121,7 +123,8 @@ inline void DrawShapePicker(UiState& ui) {
 }
 
 inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
-                           const RadarRender::RadarOverlay& overlay) {
+                           const RadarRender::RadarOverlay& overlay,
+                           PluginSDK::Context* ctx) {
     auto drawTerrainRenderStyleCombo = [&](const char* label) {
         const char* preview = RadarData::TerrainRenderStyleName(cfg.TerrainStyle);
         ImGui::SetNextItemWidth(240.f);
@@ -248,6 +251,7 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
                     overlay.cache.frameSafety.skippedBoundaryLinesThisFrame ? "yes" : "no");
         ImGui::Text("Skipped dot matrix: %s",
                     overlay.cache.frameSafety.skippedDotMatrixThisFrame ? "yes" : "no");
+        DrawUiDiscoverySection(ui.uiDiscovery, ctx);
         ImGui::Unindent(12.f);
     }
 }
@@ -1672,7 +1676,7 @@ inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
                          const std::filesystem::path& pluginDir) {
     if (ImGui::BeginTabBar("AltRadarTabs")) {
         if (ImGui::BeginTabItem("General Settings")) {
-            DrawGeneralTab(overlay.cfg, ui, overlay);
+            DrawGeneralTab(overlay.cfg, ui, overlay, ctx);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Display Rules")) {
