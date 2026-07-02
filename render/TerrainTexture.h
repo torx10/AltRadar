@@ -34,6 +34,16 @@ public:
     int Height() const { return m_height; }
     ImTextureRef TexRef() const { return ImTextureRef(reinterpret_cast<void*>(m_srv)); }
 
+    bool IsCurrent(void* d3dDevice, const WalkableBake& bake, const RadarData::RadarConfig& cfg,
+                   uint64_t areaCounter, const uint8_t* walkablePtr) const {
+        if (!m_srv || !d3dDevice || !bake.valid || bake.width <= 0 || bake.height <= 0
+            || bake.walkableMask.empty())
+            return false;
+        const PackedStyle style = PackedStyle::FromConfig(cfg);
+        return m_device == d3dDevice && m_width == bake.width && m_height == bake.height
+               && m_areaCounter == areaCounter && m_walkablePtr == walkablePtr && m_style == style;
+    }
+
     bool EnsureBuilt(void* d3dDevice, const WalkableBake& bake, const RadarData::RadarConfig& cfg,
                      uint64_t areaCounter, const uint8_t* walkablePtr) {
         if (!d3dDevice || !bake.valid || bake.width <= 0 || bake.height <= 0
@@ -43,9 +53,7 @@ public:
         }
 
         const PackedStyle style = PackedStyle::FromConfig(cfg);
-        if (m_srv && m_device == d3dDevice && m_width == bake.width && m_height == bake.height
-            && m_areaCounter == areaCounter && m_walkablePtr == walkablePtr
-            && m_style == style) {
+        if (IsCurrent(d3dDevice, bake, cfg, areaCounter, walkablePtr)) {
             return true;
         }
 

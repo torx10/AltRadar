@@ -120,7 +120,8 @@ inline void DrawShapePicker(UiState& ui) {
     ImGui::End();
 }
 
-inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
+inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
+                           const RadarRender::RadarOverlay& overlay) {
     auto drawTerrainRenderStyleCombo = [&](const char* label) {
         const char* preview = RadarData::TerrainRenderStyleName(cfg.TerrainStyle);
         ImGui::SetNextItemWidth(240.f);
@@ -235,6 +236,18 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui) {
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Delete custom map-picked landmarks saved in user.json.\nBundled curated landmarks and display rules stay unchanged.");
         }
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+        ImGui::TextDisabled("Debug");
+        ImGui::Text("Heavy rebuild this frame: %s",
+                    overlay.cache.frameSafety.heavyRebuildThisFrame ? "yes" : "no");
+        ImGui::Text("Skipped optional terrain detail: %s",
+                    overlay.cache.frameSafety.skipOptionalDetailThisFrame ? "yes" : "no");
+        ImGui::Text("Skipped boundary lines: %s",
+                    overlay.cache.frameSafety.skippedBoundaryLinesThisFrame ? "yes" : "no");
+        ImGui::Text("Skipped dot matrix: %s",
+                    overlay.cache.frameSafety.skippedDotMatrixThisFrame ? "yes" : "no");
         ImGui::Unindent(12.f);
     }
 }
@@ -1659,7 +1672,7 @@ inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
                          const std::filesystem::path& pluginDir) {
     if (ImGui::BeginTabBar("AltRadarTabs")) {
         if (ImGui::BeginTabItem("General Settings")) {
-            DrawGeneralTab(overlay.cfg, ui);
+            DrawGeneralTab(overlay.cfg, ui, overlay);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Display Rules")) {

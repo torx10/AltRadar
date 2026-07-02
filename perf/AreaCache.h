@@ -13,6 +13,24 @@
 namespace RadarPerf {
 
 struct AreaCacheState {
+    struct FrameSafetyState {
+        bool heavyRebuildThisFrame = false;
+        bool skipOptionalDetailThisFrame = false;
+        bool skippedTerrainTextureBuildThisFrame = false;
+        bool skippedBoundaryLinesThisFrame = false;
+        bool skippedDotMatrixThisFrame = false;
+        bool skippedPoiEdgeIndicatorsThisFrame = false;
+
+        void Reset() {
+            heavyRebuildThisFrame = false;
+            skipOptionalDetailThisFrame = false;
+            skippedTerrainTextureBuildThisFrame = false;
+            skippedBoundaryLinesThisFrame = false;
+            skippedDotMatrixThisFrame = false;
+            skippedPoiEdgeIndicatorsThisFrame = false;
+        }
+    };
+
     uint64_t                        areaCounter = 0;
     const uint8_t*                  walkablePtr = nullptr;
     RadarRender::WalkableBake       walkable;
@@ -26,6 +44,14 @@ struct AreaCacheState {
     std::string                     lastTgtAreaKey;
     std::vector<RadarData::CompiledPattern> lastTargetPatterns;
     std::vector<const RadarData::TargetEntry*> lastTargets;
+    FrameSafetyState                frameSafety;
+
+    void BeginOverlayFrame() { frameSafety.Reset(); }
+
+    void MarkHeavyRebuildThisFrame() {
+        frameSafety.heavyRebuildThisFrame = true;
+        frameSafety.skipOptionalDetailThisFrame = true;
+    }
 
     void Clear() {
         areaCounter = 0;
@@ -41,6 +67,7 @@ struct AreaCacheState {
         lastTgtAreaKey.clear();
         lastTargetPatterns.clear();
         lastTargets.clear();
+        frameSafety.Reset();
     }
 
     bool NeedsFullRebuild(const PluginSDK::Snapshot& snap, const uint8_t* walkData) const {
@@ -99,6 +126,7 @@ struct AreaCacheState {
                     PluginSDK::WalkableGridHandle& gridHandle,
                     const RadarData::RadarConfig& cfg, const RadarData::TargetDatabase& db,
                             const RadarData::IconTables& icons) {
+        MarkHeavyRebuildThisFrame();
         const bool areaChanged = snap.AreaChangeCounter != areaCounter;
         areaCounter = snap.AreaChangeCounter;
         walkablePtr = gridHandle.Data();
@@ -156,6 +184,7 @@ struct AreaCacheState {
                             const RadarData::TargetDatabase& db,
                             const RadarData::IconTables& icons) {
         if (!poiDirty) return;
+        MarkHeavyRebuildThisFrame();
         pois.Rebuild(ctx, snap, cfg, db, icons);
         poiDirty = false;
         if (cfg.ShowImportantPOI) (void)RefreshTargetPatternCache(snap, db);
