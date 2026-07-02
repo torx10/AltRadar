@@ -106,9 +106,11 @@ inline Rgba8 ParseRgbString(const std::string& s, Rgba8 fallback = {}) {
 
 struct RadarConfig {
     bool  OverlayEnabled = true;
+    bool  EnableDebugTools = false;
     bool  DrawWhenNotInHideoutOrTown = true;
     bool  DrawWhenNotPaused = true;
     bool  HideWhenNotForeground = true;
+    bool  EnableUiBlockerDetection = true;
     bool  HideOutsideNetworkBubble = false;
     bool  DrawWalkableMap = true;
     bool  DrawMiniMapEntities = true;
@@ -151,9 +153,11 @@ struct RadarConfig {
         };
 
         OverlayEnabled = j.value("OverlayEnabled", OverlayEnabled);
+        EnableDebugTools = j.value("EnableDebugTools", EnableDebugTools);
         DrawWhenNotInHideoutOrTown = j.value("DrawWhenNotInHideoutOrTown", DrawWhenNotInHideoutOrTown);
         DrawWhenNotPaused = j.value("DrawWhenNotPaused", DrawWhenNotPaused);
         HideWhenNotForeground = j.value("HideWhenNotForeground", HideWhenNotForeground);
+        EnableUiBlockerDetection = j.value("EnableUiBlockerDetection", EnableUiBlockerDetection);
         HideOutsideNetworkBubble = j.value("HideOutsideNetworkBubble", HideOutsideNetworkBubble);
         DrawWalkableMap = j.value("DrawWalkableMap", DrawWalkableMap);
         // Legacy minimap terrain experiments were removed from runtime, but keep the old
@@ -210,9 +214,11 @@ struct RadarConfig {
         std::filesystem::create_directories(path.parent_path(), ec);
         nlohmann::json j;
         j["OverlayEnabled"] = OverlayEnabled;
+        j["EnableDebugTools"] = EnableDebugTools;
         j["DrawWhenNotInHideoutOrTown"] = DrawWhenNotInHideoutOrTown;
         j["DrawWhenNotPaused"] = DrawWhenNotPaused;
         j["HideWhenNotForeground"] = HideWhenNotForeground;
+        j["EnableUiBlockerDetection"] = EnableUiBlockerDetection;
         j["HideOutsideNetworkBubble"] = HideOutsideNetworkBubble;
         j["DrawWalkableMap"] = DrawWalkableMap;
         j["DrawMiniMapEntities"] = DrawMiniMapEntities;

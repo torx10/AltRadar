@@ -204,6 +204,7 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
         ImGui::Checkbox("Hide in Towns/Hideouts", &cfg.DrawWhenNotInHideoutOrTown);
         ImGui::Checkbox("Hide on Pause", &cfg.DrawWhenNotPaused);
         ImGui::Checkbox("Hide when alt-tabbed", &cfg.HideWhenNotForeground);
+        ImGui::Checkbox("Enable UI Blocker Detection", &cfg.EnableUiBlockerDetection);
         ImGui::Unindent(12.f);
     }
     ImGui::Spacing();
@@ -240,18 +241,53 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
             ImGui::SetTooltip("Delete custom map-picked landmarks saved in user.json.\nBundled curated landmarks and display rules stay unchanged.");
         }
         ImGui::Spacing();
-        ImGui::Separator();
-        ImGui::Spacing();
-        ImGui::TextDisabled("Debug");
-        ImGui::Text("Heavy rebuild this frame: %s",
-                    overlay.cache.frameSafety.heavyRebuildThisFrame ? "yes" : "no");
-        ImGui::Text("Skipped optional terrain detail: %s",
-                    overlay.cache.frameSafety.skipOptionalDetailThisFrame ? "yes" : "no");
-        ImGui::Text("Skipped boundary lines: %s",
-                    overlay.cache.frameSafety.skippedBoundaryLinesThisFrame ? "yes" : "no");
-        ImGui::Text("Skipped dot matrix: %s",
-                    overlay.cache.frameSafety.skippedDotMatrixThisFrame ? "yes" : "no");
-        DrawUiDiscoverySection(ui.uiDiscovery, ctx);
+        ImGui::Checkbox("Enable debug tools / UI discovery", &cfg.EnableDebugTools);
+        if (cfg.EnableDebugTools) {
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+            ImGui::TextDisabled("Debug");
+            ImGui::Text("Heavy rebuild this frame: %s",
+                        overlay.cache.frameSafety.heavyRebuildThisFrame ? "yes" : "no");
+            ImGui::Text("Skipped optional terrain detail: %s",
+                        overlay.cache.frameSafety.skipOptionalDetailThisFrame ? "yes" : "no");
+            ImGui::Text("Skipped boundary lines: %s",
+                        overlay.cache.frameSafety.skippedBoundaryLinesThisFrame ? "yes" : "no");
+            ImGui::Text("Skipped dot matrix: %s",
+                        overlay.cache.frameSafety.skippedDotMatrixThisFrame ? "yes" : "no");
+            ImGui::Text("UI blocker enabled: %s",
+                        overlay.atlasUiBlocker.enabled ? "yes" : "no");
+            ImGui::Text("UI blocker active: %s",
+                        overlay.atlasUiBlocker.active ? "yes" : "no");
+            ImGui::Text("UI blocker path: %s", overlay.atlasUiBlocker.primary.path.c_str());
+            ImGui::Text("Primary valid: %s", overlay.atlasUiBlocker.primary.valid ? "yes" : "no");
+            ImGui::Text("Primary Ui.IsVisible: %s",
+                        overlay.atlasUiBlocker.primary.uiVisible ? "yes" : "no");
+            ImGui::Text("Primary LocalVisible: %s",
+                        overlay.atlasUiBlocker.primary.localVisible ? "yes" : "no");
+            ImGui::Text("Primary flags: 0x%08X", overlay.atlasUiBlocker.primary.flags);
+            ImGui::Text("Primary child count: %d", overlay.atlasUiBlocker.primary.childCount);
+            ImGui::Text("Optional child path: %s", overlay.atlasUiBlocker.optionalChild.path.c_str());
+            ImGui::Text("Optional child valid: %s",
+                        overlay.atlasUiBlocker.optionalChild.valid ? "yes" : "no");
+            ImGui::Text("Optional child Ui.IsVisible: %s",
+                        overlay.atlasUiBlocker.optionalChild.uiVisible ? "yes" : "no");
+            ImGui::Text("Optional child LocalVisible: %s",
+                        overlay.atlasUiBlocker.optionalChild.localVisible ? "yes" : "no");
+            ImGui::Text("Optional child flags: 0x%08X", overlay.atlasUiBlocker.optionalChild.flags);
+            ImGui::Text("Optional child child count: %d",
+                        overlay.atlasUiBlocker.optionalChild.childCount);
+            ImGui::Text("Primary rect: %s (%.0f, %.0f %.0fx%.0f)",
+                        overlay.atlasUiBlocker.primary.hasRect ? "yes" : "no",
+                        overlay.atlasUiBlocker.primary.rectX, overlay.atlasUiBlocker.primary.rectY,
+                        overlay.atlasUiBlocker.primary.rectW, overlay.atlasUiBlocker.primary.rectH);
+            const long long blockerAgeMs = overlay.atlasUiBlocker.LastScanAgeMs();
+            if (blockerAgeMs >= 0)
+                ImGui::Text("UI blocker last scan age: %lld ms", blockerAgeMs);
+            else
+                ImGui::TextDisabled("UI blocker has not scanned yet.");
+            DrawUiDiscoverySection(ui.uiDiscovery, ctx);
+        }
         ImGui::Unindent(12.f);
     }
 }
