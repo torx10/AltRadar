@@ -862,8 +862,6 @@ inline void DrawUiDiscoveryLiveList(UiDiscoveryState& state, PluginSDK::Context*
 }
 
 inline void DrawPinnedCandidatesSection(UiDiscoveryState& state, PluginSDK::Context* ctx) {
-    if (!ImGui::TreeNodeEx("Pinned Candidates / Watch List", ImGuiTreeNodeFlags_DefaultOpen)) return;
-
     ImGui::TextUnformatted("Add suspicious root/path candidates and compare only those paths.");
     ImGui::SetNextItemWidth(120.f);
     if (ImGui::BeginCombo("Root", kDiscoveryRootLabels[state.manualRootIndex])) {
@@ -927,7 +925,6 @@ inline void DrawPinnedCandidatesSection(UiDiscoveryState& state, PluginSDK::Cont
 
     if (state.pins.empty()) {
         ImGui::TextDisabled("No pinned candidates yet.");
-        ImGui::TreePop();
         return;
     }
 
@@ -1000,16 +997,11 @@ inline void DrawPinnedCandidatesSection(UiDiscoveryState& state, PluginSDK::Cont
         ImGui::Separator();
         ImGui::PopID();
     }
-    ImGui::TreePop();
 }
 
-inline void DrawUiDiscoverySection(UiDiscoveryState& state, PluginSDK::Context* ctx) {
-    if (!ImGui::CollapsingHeader("UI Discovery", ImGuiTreeNodeFlags_DefaultOpen)) return;
-
-    ImGui::Indent(12.f);
+inline void DrawUiDiscoverySection(UiDiscoveryState& state, PluginSDK::Context* ctx,
+                                   bool autoRefreshEnabled) {
     if (ImGui::Button("Refresh UI Candidates", ImVec2(180.f, 0.f))) state.requestedRefresh = true;
-    ImGui::SameLine();
-    ImGui::Checkbox("Auto refresh", &state.autoRefresh);
     ImGui::SameLine();
     ImGui::SetNextItemWidth(90.f);
     ImGui::SliderInt("Interval ms", &state.scanIntervalMs, 250, 2000, "%d");
@@ -1018,7 +1010,8 @@ inline void DrawUiDiscoverySection(UiDiscoveryState& state, PluginSDK::Context* 
     const bool intervalElapsed = state.lastScanTime.time_since_epoch().count() == 0
                                  || now - state.lastScanTime
                                         >= std::chrono::milliseconds(state.scanIntervalMs);
-    if (state.requestedRefresh || (state.autoRefresh && intervalElapsed)) {
+    state.autoRefresh = autoRefreshEnabled;
+    if (state.requestedRefresh || (autoRefreshEnabled && intervalElapsed)) {
         state.requestedRefresh = false;
         RefreshUiDiscovery(state, ctx);
     }
@@ -1070,12 +1063,9 @@ inline void DrawUiDiscoverySection(UiDiscoveryState& state, PluginSDK::Context* 
                            state.lastError.c_str());
     }
 
-    DrawPinnedCandidatesSection(state, ctx);
     DrawUiDiscoveryDiffRows(state, ctx);
     DrawUiDiscoveryTopLevelSummary(state, ctx);
     DrawUiDiscoveryLiveList(state, ctx);
-
-    ImGui::Unindent(12.f);
 }
 
 } // namespace RadarUi

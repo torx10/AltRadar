@@ -110,6 +110,7 @@
     <ClInclude Include="render\WalkableBake.h" />
     <ClInclude Include="render\WalkableGridView.h" />
     <ClInclude Include="ui\RadarUi.h" />
+    <ClInclude Include="ui\UiBlockerDetector.h" />
     <ClInclude Include="sdk\PluginAbi.h" />
     <ClInclude Include="sdk\PluginSDK.h" />
     <ClInclude Include="imgui\imgui.h" />

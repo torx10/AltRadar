@@ -27,7 +27,9 @@ inline void TryMigrateFromHost(const std::filesystem::path& pluginDir,
             cfg.HideOutsideNetworkBubble = j.value("HideOutsideNetworkBubble", false);
             cfg.DrawWalkableMap = j.value("DrawWalkableMap", true);
             cfg.DrawMiniMapEntities = true;
-            cfg.WalkableMapBorderThickness = j.value("WalkableMapBorderThickness", 0);
+            const int legacyBoundaryThickness = j.value("WalkableMapBorderThickness", 0);
+            cfg.ShowBoundaryEdges = legacyBoundaryThickness > 0;
+            cfg.WalkableMapBorderThickness = SanitizeBoundaryEdgeThickness(legacyBoundaryThickness);
             cfg.ShowPlayerNames = j.value("ShowPlayersNames", false);
             cfg.ShowImportantPOI = j.value("ShowImportantPOI", true);
             cfg.EnablePOIBackground = j.value("EnablePOIBackground", true);

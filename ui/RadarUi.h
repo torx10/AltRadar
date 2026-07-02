@@ -124,7 +124,8 @@ inline void DrawShapePicker(UiState& ui) {
 
 inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
                            const RadarRender::RadarOverlay& overlay,
-                           PluginSDK::Context* ctx) {
+                           PluginSDK::Context* ctx,
+                           const PluginSDK::Snapshot& snap) {
     auto drawTerrainRenderStyleCombo = [&](const char* label) {
         const char* preview = RadarData::TerrainRenderStyleName(cfg.TerrainStyle);
         ImGui::SetNextItemWidth(240.f);
@@ -142,6 +143,58 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
         drawOption(RadarData::TerrainRenderStyle::TextureAndDotMatrix);
         ImGui::EndCombo();
     };
+    auto drawBoundaryQualityCombo = [&](const char* label) {
+        const char* preview = RadarData::TerrainBoundaryQualityModeName(cfg.BoundaryQuality);
+        ImGui::SetNextItemWidth(240.f);
+        if (!ImGui::BeginCombo(label, preview, ImGuiComboFlags_HeightLargest)) return;
+        for (int i = 0; i <= static_cast<int>(RadarData::TerrainBoundaryQualityMode::Unlimited); ++i) {
+            const auto mode = static_cast<RadarData::TerrainBoundaryQualityMode>(i);
+            const bool selected = cfg.BoundaryQuality == mode;
+            if (ImGui::Selectable(RadarData::TerrainBoundaryQualityModeName(mode), selected))
+                cfg.BoundaryQuality = mode;
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    };
+    auto drawBoundaryRenderModeCombo = [&](const char* label) {
+        const char* preview = RadarData::TerrainBoundaryRenderModeName(cfg.BoundaryRenderMode);
+        ImGui::SetNextItemWidth(240.f);
+        if (!ImGui::BeginCombo(label, preview, ImGuiComboFlags_HeightLargest)) return;
+        for (int i = 0; i <= static_cast<int>(RadarData::TerrainBoundaryRenderMode::Off); ++i) {
+            const auto mode = static_cast<RadarData::TerrainBoundaryRenderMode>(i);
+            const bool selected = cfg.BoundaryRenderMode == mode;
+            if (ImGui::Selectable(RadarData::TerrainBoundaryRenderModeName(mode), selected))
+                cfg.BoundaryRenderMode = mode;
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    };
+    auto drawDotRenderModeCombo = [&](const char* label) {
+        const char* preview = RadarData::DotMatrixRenderModeName(cfg.DotRenderMode);
+        ImGui::SetNextItemWidth(240.f);
+        if (!ImGui::BeginCombo(label, preview, ImGuiComboFlags_HeightLargest)) return;
+        for (int i = 0; i <= static_cast<int>(RadarData::DotMatrixRenderMode::VectorDotsDebug); ++i) {
+            const auto mode = static_cast<RadarData::DotMatrixRenderMode>(i);
+            const bool selected = cfg.DotRenderMode == mode;
+            if (ImGui::Selectable(RadarData::DotMatrixRenderModeName(mode), selected))
+                cfg.DotRenderMode = mode;
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    };
+    auto drawBoundaryScopeCombo = [&](const char* label) {
+        const char* preview = RadarData::TerrainBoundaryScopeModeName(cfg.BoundaryScope);
+        ImGui::SetNextItemWidth(240.f);
+        if (!ImGui::BeginCombo(label, preview, ImGuiComboFlags_HeightLargest)) return;
+        for (int i = 0; i <= static_cast<int>(RadarData::TerrainBoundaryScopeMode::NearPlayerOnly); ++i) {
+            const auto mode = static_cast<RadarData::TerrainBoundaryScopeMode>(i);
+            const bool selected = cfg.BoundaryScope == mode;
+            if (ImGui::Selectable(RadarData::TerrainBoundaryScopeModeName(mode), selected))
+                cfg.BoundaryScope = mode;
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    };
     bool en = cfg.OverlayEnabled;
     if (ImGui::Checkbox("Enable Alt Radar Overlay", &en)) cfg.OverlayEnabled = en;
     ImGui::Separator();
@@ -151,6 +204,11 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
                                  || cfg.TerrainStyle == RadarData::TerrainRenderStyle::TextureAndDotMatrix;
         const bool usesDot = cfg.TerrainStyle == RadarData::TerrainRenderStyle::DotMatrix
                              || cfg.TerrainStyle == RadarData::TerrainRenderStyle::TextureAndDotMatrix;
+        const auto effectiveDotMode = RadarData::EffectiveDotMatrixRenderMode(cfg.EnableDebugTools,
+                                                                              cfg.DotRenderMode);
+        const bool supportsBoundaryEdges = usesTexture
+                                           || (cfg.TerrainStyle == RadarData::TerrainRenderStyle::DotMatrix
+                                               && effectiveDotMode == RadarData::DotMatrixRenderMode::CachedTexture);
         ImGui::Indent(12.f);
         ImGui::Checkbox("Enable Terrain Overlay", &cfg.DrawWalkableMap);
         ImGui::BeginDisabled(!cfg.DrawWalkableMap);
@@ -159,14 +217,6 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
             ImGui::SetNextItemWidth(240.f);
             ImGui::ColorEdit4("Texture Interior Fill", &cfg.TextureInteriorColor.x,
                               ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-            ImGui::SetNextItemWidth(240.f);
-            ImGui::ColorEdit4("Texture Wall Edge", &cfg.TextureWallEdgeColor.x,
-                              ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
-            ImGui::AlignTextToFramePadding();
-            ImGui::TextUnformatted("Edge Thickness");
-            ImGui::SameLine(160.f);
-            ImGui::SetNextItemWidth(140.f);
-            ImGui::SliderInt("##EdgeThickness", &cfg.WalkableMapBorderThickness, 0, 8, "%d");
         }
         if (usesDot) {
             ImGui::SetNextItemWidth(240.f);
@@ -182,6 +232,23 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
             ImGui::SameLine(160.f);
             ImGui::SetNextItemWidth(140.f);
             ImGui::SliderFloat("##DotSize", &cfg.DotSize, 0.5f, 6.0f, "%.1f");
+        }
+        if (supportsBoundaryEdges) {
+            ImGui::Spacing();
+            ImGui::SeparatorText("Boundary / Wall Edge");
+            cfg.WalkableMapBorderThickness = RadarData::SanitizeBoundaryEdgeThickness(
+                cfg.WalkableMapBorderThickness);
+            ImGui::Checkbox("Show Boundary / Wall Edges", &cfg.ShowBoundaryEdges);
+            ImGui::BeginDisabled(!cfg.ShowBoundaryEdges);
+            ImGui::SetNextItemWidth(240.f);
+            ImGui::ColorEdit4("Boundary Edge Colour", &cfg.TextureWallEdgeColor.x,
+                              ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar);
+            ImGui::AlignTextToFramePadding();
+            ImGui::TextUnformatted("Edge Thickness");
+            ImGui::SameLine(160.f);
+            ImGui::SetNextItemWidth(140.f);
+            ImGui::SliderInt("##EdgeThickness", &cfg.WalkableMapBorderThickness, 1, 3, "%d");
+            ImGui::EndDisabled();
         }
         ImGui::EndDisabled();
         ImGui::Unindent(12.f);
@@ -240,53 +307,256 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Delete custom map-picked landmarks saved in user.json.\nBundled curated landmarks and display rules stay unchanged.");
         }
-        ImGui::Spacing();
-        ImGui::Checkbox("Enable debug tools / UI discovery", &cfg.EnableDebugTools);
+        ImGui::Unindent(12.f);
+    }
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
+    if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Indent(12.f);
+        ImGui::Checkbox("Enable Debug Tools", &cfg.EnableDebugTools);
         if (cfg.EnableDebugTools) {
-            ImGui::Spacing();
-            ImGui::Separator();
-            ImGui::Spacing();
-            ImGui::TextDisabled("Debug");
-            ImGui::Text("Heavy rebuild this frame: %s",
-                        overlay.cache.frameSafety.heavyRebuildThisFrame ? "yes" : "no");
-            ImGui::Text("Skipped optional terrain detail: %s",
-                        overlay.cache.frameSafety.skipOptionalDetailThisFrame ? "yes" : "no");
-            ImGui::Text("Skipped boundary lines: %s",
-                        overlay.cache.frameSafety.skippedBoundaryLinesThisFrame ? "yes" : "no");
-            ImGui::Text("Skipped dot matrix: %s",
-                        overlay.cache.frameSafety.skippedDotMatrixThisFrame ? "yes" : "no");
-            ImGui::Text("UI blocker enabled: %s",
-                        overlay.atlasUiBlocker.enabled ? "yes" : "no");
-            ImGui::Text("UI blocker active: %s",
-                        overlay.atlasUiBlocker.active ? "yes" : "no");
-            ImGui::Text("UI blocker path: %s", overlay.atlasUiBlocker.primary.path.c_str());
-            ImGui::Text("Primary valid: %s", overlay.atlasUiBlocker.primary.valid ? "yes" : "no");
-            ImGui::Text("Primary Ui.IsVisible: %s",
-                        overlay.atlasUiBlocker.primary.uiVisible ? "yes" : "no");
-            ImGui::Text("Primary LocalVisible: %s",
-                        overlay.atlasUiBlocker.primary.localVisible ? "yes" : "no");
-            ImGui::Text("Primary flags: 0x%08X", overlay.atlasUiBlocker.primary.flags);
-            ImGui::Text("Primary child count: %d", overlay.atlasUiBlocker.primary.childCount);
-            ImGui::Text("Optional child path: %s", overlay.atlasUiBlocker.optionalChild.path.c_str());
-            ImGui::Text("Optional child valid: %s",
-                        overlay.atlasUiBlocker.optionalChild.valid ? "yes" : "no");
-            ImGui::Text("Optional child Ui.IsVisible: %s",
-                        overlay.atlasUiBlocker.optionalChild.uiVisible ? "yes" : "no");
-            ImGui::Text("Optional child LocalVisible: %s",
-                        overlay.atlasUiBlocker.optionalChild.localVisible ? "yes" : "no");
-            ImGui::Text("Optional child flags: 0x%08X", overlay.atlasUiBlocker.optionalChild.flags);
-            ImGui::Text("Optional child child count: %d",
-                        overlay.atlasUiBlocker.optionalChild.childCount);
-            ImGui::Text("Primary rect: %s (%.0f, %.0f %.0fx%.0f)",
-                        overlay.atlasUiBlocker.primary.hasRect ? "yes" : "no",
-                        overlay.atlasUiBlocker.primary.rectX, overlay.atlasUiBlocker.primary.rectY,
-                        overlay.atlasUiBlocker.primary.rectW, overlay.atlasUiBlocker.primary.rectH);
-            const long long blockerAgeMs = overlay.atlasUiBlocker.LastScanAgeMs();
-            if (blockerAgeMs >= 0)
-                ImGui::Text("UI blocker last scan age: %lld ms", blockerAgeMs);
-            else
-                ImGui::TextDisabled("UI blocker has not scanned yet.");
-            DrawUiDiscoverySection(ui.uiDiscovery, ctx);
+            if (ImGui::CollapsingHeader("Performance Timing", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Checkbox("Show performance timing debug panel", &cfg.ShowPerfTimingPanel);
+                if (cfg.ShowPerfTimingPanel) {
+                    ImGui::Indent(12.f);
+                    ImGui::Checkbox("Enable perf timing capture", &cfg.EnablePerfTimingCapture);
+                    ImGui::Checkbox("Freeze timing display", &const_cast<RadarPerf::OverlayPerfTiming&>(overlay.perf).freezeDisplay);
+                    if (ImGui::Button("Reset Timing Samples", ImVec2(150.f, 0.f)))
+                        const_cast<RadarPerf::OverlayPerfTiming&>(overlay.perf).Reset();
+                    if (ImGui::Button("Copy Last Frame Timings", ImVec2(150.f, 0.f))) {
+                        const std::string report = overlay.perf.BuildLastFrameReport();
+                        ImGui::SetClipboardText(report.c_str());
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Copy Rolling Timing Summary", ImVec2(170.f, 0.f))) {
+                        const std::string report = overlay.perf.BuildRollingSummary();
+                        ImGui::SetClipboardText(report.c_str());
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Copy Full Perf Report", ImVec2(150.f, 0.f))) {
+                        const std::string report = overlay.perf.BuildFullReport(snap);
+                        ImGui::SetClipboardText(report.c_str());
+                    }
+                    ImGui::Text("Samples: %zu",
+                                overlay.perf.Stats(RadarPerf::OverlayPerfTiming::Section::DrawUiTotal).sampleCount);
+                    ImGui::Text("DrawUI total: last %.2f ms avg %.2f ms max %.2f ms",
+                                overlay.perf.Stats(RadarPerf::OverlayPerfTiming::Section::DrawUiTotal).lastMs,
+                                overlay.perf.Stats(RadarPerf::OverlayPerfTiming::Section::DrawUiTotal).avgMs,
+                                overlay.perf.Stats(RadarPerf::OverlayPerfTiming::Section::DrawUiTotal).maxMs);
+                    for (size_t i = 1; i < RadarPerf::OverlayPerfTiming::kSectionCount; ++i) {
+                        const auto section = static_cast<RadarPerf::OverlayPerfTiming::Section>(i);
+                        const auto& stats = overlay.perf.Stats(section);
+                        ImGui::Text("%s: last %.2f ms avg %.2f ms max %.2f ms samples %zu ran %s",
+                                    RadarPerf::OverlayPerfTiming::Name(section), stats.lastMs,
+                                    stats.avgMs, stats.maxMs, stats.sampleCount,
+                                    stats.ranThisFrame ? "yes" : "no");
+                    }
+                    ImGui::Unindent(12.f);
+                }
+            }
+            if (ImGui::CollapsingHeader("UI Discovery", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Checkbox("Enable UI Discovery tools", &cfg.EnableUiDiscoveryTools);
+                if (cfg.EnableUiDiscoveryTools) {
+                    ImGui::Indent(12.f);
+                    ImGui::Checkbox("Auto refresh", &cfg.EnableUiDiscoveryAutoRefresh);
+                    DrawUiDiscoverySection(ui.uiDiscovery, ctx, cfg.EnableUiDiscoveryAutoRefresh);
+                    ImGui::Unindent(12.f);
+                } else {
+                    ui.uiDiscovery.autoRefresh = false;
+                }
+            }
+            if (ImGui::CollapsingHeader("Pinned UI Candidate Watch", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::BeginDisabled(!cfg.EnableUiDiscoveryTools);
+                ImGui::Checkbox("Enable pinned UI candidate watch/resolve", &cfg.EnablePinnedUiWatch);
+                ImGui::EndDisabled();
+                if (cfg.EnableUiDiscoveryTools && cfg.EnablePinnedUiWatch) {
+                    ImGui::Indent(12.f);
+                    ImGui::Text("Pinned candidates: %zu", ui.uiDiscovery.pins.size());
+                    ImGui::Text("Pinned baseline results: %zu", ui.uiDiscovery.pinnedBaseline.size());
+                    ImGui::Text("Pinned current results: %zu", ui.uiDiscovery.pinnedCurrent.size());
+                    ImGui::Text("Show pinned compare: %s",
+                                ui.uiDiscovery.showPinnedCompare ? "yes" : "no");
+                    DrawPinnedCandidatesSection(ui.uiDiscovery, ctx);
+                    ImGui::Unindent(12.f);
+                } else {
+                    ui.uiDiscovery.showPinnedCompare = false;
+                }
+            }
+            if (ImGui::CollapsingHeader("UI Blocker Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Checkbox("Enable UI blocker debug details", &cfg.ShowUiBlockerDebugDetails);
+                if (cfg.ShowUiBlockerDebugDetails) {
+                    ImGui::Indent(12.f);
+                    ImGui::Text("UI blocker enabled: %s",
+                                overlay.uiBlocker.enabled ? "yes" : "no");
+                    ImGui::Text("UI blocker active: %s",
+                                overlay.uiBlocker.active ? "yes" : "no");
+                    ImGui::Text("Blocker rule: %s",
+                                overlay.uiBlocker.match.ruleName.empty()
+                                    ? "(none)"
+                                    : overlay.uiBlocker.match.ruleName.c_str());
+                    ImGui::Text("Blocker reason: %s",
+                                overlay.uiBlocker.match.reason.empty()
+                                    ? "(none)"
+                                    : overlay.uiBlocker.match.reason.c_str());
+                    ImGui::Text("Atlas compatibility path: %s", overlay.uiBlocker.primary.path.c_str());
+                    if (overlay.uiBlocker.match.hasRect) {
+                        ImGui::Text("Blocker rect: (%.0f, %.0f %.0fx%.0f)",
+                                    overlay.uiBlocker.match.rectX,
+                                    overlay.uiBlocker.match.rectY,
+                                    overlay.uiBlocker.match.rectW,
+                                    overlay.uiBlocker.match.rectH);
+                    } else {
+                        ImGui::Text("Blocker rect: (none)");
+                    }
+                    if (overlay.uiBlocker.match.hasOverlap) {
+                        ImGui::Text("Blocker overlap: (%.0f, %.0f %.0fx%.0f) area %.0f",
+                                    overlay.uiBlocker.match.overlapX,
+                                    overlay.uiBlocker.match.overlapY,
+                                    overlay.uiBlocker.match.overlapW,
+                                    overlay.uiBlocker.match.overlapH,
+                                    overlay.uiBlocker.match.overlapArea);
+                    } else {
+                        ImGui::Text("Blocker overlap: (none)");
+                    }
+                    ImGui::Text("Built-in rules only. Rejected paths stay context-only.");
+                    ImGui::SeparatorText("Atlas-specific details");
+                    ImGui::Text("Primary valid: %s", overlay.uiBlocker.primary.valid ? "yes" : "no");
+                    ImGui::Text("Primary Ui.IsVisible: %s",
+                                overlay.uiBlocker.primary.uiVisible ? "yes" : "no");
+                    ImGui::Text("Primary LocalVisible: %s",
+                                overlay.uiBlocker.primary.localVisible ? "yes" : "no");
+                    ImGui::Text("Primary flags: 0x%08X", overlay.uiBlocker.primary.flags);
+                    ImGui::Text("Primary child count: %d", overlay.uiBlocker.primary.childCount);
+                    ImGui::Text("Optional child path: %s", overlay.uiBlocker.optionalChild.path.c_str());
+                    ImGui::Text("Optional child valid: %s",
+                                overlay.uiBlocker.optionalChild.valid ? "yes" : "no");
+                    ImGui::Text("Optional child Ui.IsVisible: %s",
+                                overlay.uiBlocker.optionalChild.uiVisible ? "yes" : "no");
+                    ImGui::Text("Optional child LocalVisible: %s",
+                                overlay.uiBlocker.optionalChild.localVisible ? "yes" : "no");
+                    ImGui::Text("Optional child flags: 0x%08X", overlay.uiBlocker.optionalChild.flags);
+                    ImGui::Text("Optional child child count: %d",
+                                overlay.uiBlocker.optionalChild.childCount);
+                    const long long blockerAgeMs = overlay.uiBlocker.LastScanAgeMs();
+                    if (blockerAgeMs >= 0)
+                        ImGui::Text("UI blocker last scan age: %lld ms", blockerAgeMs);
+                    else
+                        ImGui::TextDisabled("UI blocker has not scanned yet.");
+                    ImGui::Unindent(12.f);
+                }
+            }
+            if (ImGui::CollapsingHeader("Terrain / Texture Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Checkbox("Show terrain texture debug", &cfg.ShowTerrainTextureDebug);
+                if (cfg.ShowTerrainTextureDebug) {
+                    ImGui::Indent(12.f);
+                    ImGui::Text("Heavy rebuild this frame: %s",
+                                overlay.cache.frameSafety.heavyRebuildThisFrame ? "yes" : "no");
+                    ImGui::Text("Skipped optional terrain detail: %s",
+                                overlay.cache.frameSafety.skipOptionalDetailThisFrame ? "yes" : "no");
+                    ImGui::Text("TerrainTextureBuildCalled: %s",
+                                overlay.perf.flags.terrainTextureBuildCalled ? "yes" : "no");
+                    ImGui::Text("TerrainTextureWidth: %d", overlay.perf.flags.terrainTextureWidth);
+                    ImGui::Text("TerrainTextureHeight: %d", overlay.perf.flags.terrainTextureHeight);
+                    ImGui::Text("TerrainTexturePixelsWritten: %d",
+                                overlay.perf.flags.terrainTexturePixelsWritten);
+                    ImGui::Text("TerrainTextureNonTransparentPixels: %d",
+                                overlay.perf.flags.terrainTextureNonTransparentPixels);
+                    ImGui::Text("TerrainTextureUploadCalled: %s",
+                                overlay.perf.flags.terrainTextureUploadCalled ? "yes" : "no");
+                    ImGui::Text("TerrainTextureUploadSucceeded: %s",
+                                overlay.perf.flags.terrainTextureUploadSucceeded ? "yes" : "no");
+                    ImGui::Text("TerrainTextureDrawSubmitted: %s",
+                                overlay.perf.flags.terrainTextureDrawSubmitted ? "yes" : "no");
+                    ImGui::Text("TerrainTextureDrawSkippedReason: %s",
+                                overlay.perf.flags.terrainTextureDrawSkippedReason
+                                    ? overlay.perf.flags.terrainTextureDrawSkippedReason
+                                    : "(none)");
+                    ImGui::Text("TerrainTextureDrawTintAlpha: %.2f",
+                                overlay.perf.flags.terrainTextureDrawTintAlpha);
+                    if (overlay.perf.flags.terrainTextureDrawRectValid) {
+                        ImGui::Text("TerrainTextureDrawRect: [%.1f, %.1f] -> [%.1f, %.1f]",
+                                    overlay.perf.flags.terrainTextureDrawRectMinX,
+                                    overlay.perf.flags.terrainTextureDrawRectMinY,
+                                    overlay.perf.flags.terrainTextureDrawRectMaxX,
+                                    overlay.perf.flags.terrainTextureDrawRectMaxY);
+                    } else {
+                        ImGui::Text("TerrainTextureDrawRect: (none)");
+                    }
+                    ImGui::Unindent(12.f);
+                }
+            }
+            if (ImGui::CollapsingHeader("Dot Matrix Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Checkbox("Show dot matrix debug", &cfg.ShowDotMatrixDebug);
+                if (cfg.ShowDotMatrixDebug) {
+                    ImGui::Indent(12.f);
+                    drawDotRenderModeCombo("Dot Matrix Render Mode");
+                    ImGui::Text("DotCandidatesTotal: %d", overlay.perf.flags.dotCandidatesTotal);
+                    ImGui::Text("DotUserCellStep: %d", overlay.perf.flags.dotUserCellStep);
+                    ImGui::Text("DotEffectiveCellStep: %d", overlay.perf.flags.dotEffectiveCellStep);
+                    ImGui::Text("DotAdaptiveSamplingActive: %s",
+                                overlay.perf.flags.dotAdaptiveSamplingActive ? "yes" : "no");
+                    ImGui::Text("DotCandidatesDrawn: %d", overlay.perf.flags.dotCandidatesDrawn);
+                    ImGui::Text("DotMatrixDotsRasterized: %d", overlay.perf.flags.dotMatrixDotsRasterized);
+                    ImGui::Text("DotMatrixTextureRebuilt: %s",
+                                overlay.perf.flags.dotTextureRebuilt ? "yes" : "no");
+                    ImGui::Text("DotMatrixTextureBuildMs: %.2f", overlay.perf.flags.dotTextureBuildMs);
+                    ImGui::Text("DotMatrixVectorDotsDrawn: %d", overlay.perf.flags.dotVectorDotsDrawn);
+                    ImGui::Text("DotMatrixVectorDotsCulled: %d", overlay.perf.flags.dotVectorDotsCulled);
+                    ImGui::Text("DotCandidatesCulled: %d", overlay.perf.flags.dotCandidatesCulled);
+                    ImGui::Text("DotCullProjectionFailed: %d", overlay.perf.flags.dotCullProjectionFailed);
+                    ImGui::Text("DotCullOutsideSurface: %d", overlay.perf.flags.dotCullOutsideSurface);
+                    ImGui::Text("DotCullBudget: %d", overlay.perf.flags.dotCullBudget);
+                    ImGui::Text("DotBudgetHit: %s", overlay.perf.flags.dotBudgetHit ? "yes" : "no");
+                    ImGui::Text("DotSkipReason: %s",
+                                overlay.perf.flags.dotSkipReason ? overlay.perf.flags.dotSkipReason : "(none)");
+                    ImGui::Unindent(12.f);
+                }
+            }
+            if (ImGui::CollapsingHeader("Boundary Debug", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Checkbox("Show boundary debug", &cfg.ShowBoundaryDebug);
+                if (cfg.ShowBoundaryDebug) {
+                    ImGui::Indent(12.f);
+                    drawBoundaryRenderModeCombo("Boundary Render Mode");
+                    drawBoundaryQualityCombo("Boundary Quality");
+                    drawBoundaryScopeCombo("Boundary Scope");
+                    if (cfg.BoundaryScope == RadarData::TerrainBoundaryScopeMode::NearPlayerOnly) {
+                        ImGui::AlignTextToFramePadding();
+                        ImGui::TextUnformatted("Boundary Radius");
+                        ImGui::SameLine(160.f);
+                        ImGui::SetNextItemWidth(140.f);
+                        ImGui::SliderFloat("##BoundaryRadius", &cfg.BoundaryNearPlayerRadius, 50.f, 5000.f,
+                                           "%.0f");
+                    }
+                    ImGui::Text("Skipped boundary lines: %s",
+                                overlay.cache.frameSafety.skippedBoundaryLinesThisFrame ? "yes" : "no");
+                    ImGui::Text("Skipped dot matrix: %s",
+                                overlay.cache.frameSafety.skippedDotMatrixThisFrame ? "yes" : "no");
+                    ImGui::Text("BoundaryRenderMode: %s",
+                                overlay.perf.flags.boundaryRenderMode ? overlay.perf.flags.boundaryRenderMode : "(none)");
+                    ImGui::Text("BoundaryQualityMode: %s", overlay.perf.flags.boundaryQualityMode);
+                    ImGui::Text("BoundaryScopeMode: %s", overlay.perf.flags.boundaryScopeMode);
+                    ImGui::Text("BoundaryTargetDrawCount: %d", overlay.perf.flags.boundaryTargetDrawCount);
+                    ImGui::Text("BoundarySegmentsTotal: %d", overlay.perf.flags.boundarySegmentsTotal);
+                    ImGui::Text("BoundarySegmentsEligible: %d", overlay.perf.flags.boundarySegmentsEligible);
+                    ImGui::Text("BoundarySegmentsDrawn: %d", overlay.perf.flags.boundarySegmentsDrawn);
+                    ImGui::Text("BoundarySegmentsRasterized: %d", overlay.perf.flags.boundarySegmentsRasterized);
+                    ImGui::Text("BoundarySegmentsCulled: %d", overlay.perf.flags.boundarySegmentsCulled);
+                    ImGui::Text("BoundaryStride: %d", overlay.perf.flags.boundaryStride);
+                    ImGui::Text("BoundaryBudgetHit: %s",
+                                overlay.perf.flags.boundaryBudgetHit ? "yes" : "no");
+                    ImGui::Text("BoundaryTimeBudgetHit: %s",
+                                overlay.perf.flags.boundaryTimeBudgetHit ? "yes" : "no");
+                    ImGui::Text("BoundaryTimeBudgetMs: %.2f", overlay.perf.flags.boundaryTimeBudgetMs);
+                    ImGui::Text("BoundaryTextureRebuilt: %s",
+                                overlay.perf.flags.boundaryTextureRebuilt ? "yes" : "no");
+                    ImGui::Text("BoundaryTextureBuildMs: %.2f", overlay.perf.flags.boundaryTextureBuildMs);
+                    ImGui::Text("BoundarySkipReason: %s",
+                                overlay.perf.flags.boundarySkipReason ? overlay.perf.flags.boundarySkipReason : "(none)");
+                    ImGui::Unindent(12.f);
+                }
+            }
         }
         ImGui::Unindent(12.f);
     }
@@ -1710,9 +1980,9 @@ inline void DrawLandmarksTab(RadarData::RadarConfig& cfg, RadarData::TargetDatab
 inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
                          PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
                          const std::filesystem::path& pluginDir) {
-    if (ImGui::BeginTabBar("AltRadarTabs")) {
+        if (ImGui::BeginTabBar("AltRadarTabs")) {
         if (ImGui::BeginTabItem("General Settings")) {
-            DrawGeneralTab(overlay.cfg, ui, overlay, ctx);
+            DrawGeneralTab(overlay.cfg, ui, overlay, ctx, snap);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Display Rules")) {

@@ -20,6 +20,7 @@ struct WalkableBake {
 
     int                       width = 0;
     int                       height = 0;
+    int                       walkableCellCount = 0;
     const uint8_t*            sourcePtr = nullptr;
     std::vector<uint8_t>      walkableMask;
     std::vector<BoundarySegment> boundarySegments;
@@ -28,6 +29,7 @@ struct WalkableBake {
     void Clear() {
         width = 0;
         height = 0;
+        walkableCellCount = 0;
         sourcePtr = nullptr;
         walkableMask.clear();
         boundarySegments.clear();
@@ -94,6 +96,7 @@ struct WalkableBake {
                 const size_t idx = static_cast<size_t>(gy) * static_cast<size_t>(w)
                                  + static_cast<size_t>(gx);
                 walkableMask[idx] = 1;
+                ++walkableCellCount;
             }
         }
 

@@ -13,6 +13,26 @@
 namespace RadarPerf {
 
 struct AreaCacheState {
+    struct PerfDebugState {
+        bool captureThisFrame = false;
+        bool walkableRebuildRan = false;
+        bool poiRebuildRan = false;
+        bool entityRebuildRan = false;
+        double walkableRebuildMs = 0.0;
+        double poiRebuildMs = 0.0;
+        double entityRebuildMs = 0.0;
+
+        void Reset(bool capture) {
+            captureThisFrame = capture;
+            walkableRebuildRan = false;
+            poiRebuildRan = false;
+            entityRebuildRan = false;
+            walkableRebuildMs = 0.0;
+            poiRebuildMs = 0.0;
+            entityRebuildMs = 0.0;
+        }
+    };
+
     struct FrameSafetyState {
         bool heavyRebuildThisFrame = false;
         bool skipOptionalDetailThisFrame = false;
@@ -20,6 +40,7 @@ struct AreaCacheState {
         bool skippedBoundaryLinesThisFrame = false;
         bool skippedDotMatrixThisFrame = false;
         bool skippedPoiEdgeIndicatorsThisFrame = false;
+        const char* optionalDetailSkipReason = nullptr;
 
         void Reset() {
             heavyRebuildThisFrame = false;
@@ -28,6 +49,13 @@ struct AreaCacheState {
             skippedBoundaryLinesThisFrame = false;
             skippedDotMatrixThisFrame = false;
             skippedPoiEdgeIndicatorsThisFrame = false;
+            optionalDetailSkipReason = nullptr;
+        }
+
+        void PromoteHeavy(const char* reason) {
+            heavyRebuildThisFrame = true;
+            skipOptionalDetailThisFrame = true;
+            if (!optionalDetailSkipReason) optionalDetailSkipReason = reason;
         }
     };
 
@@ -45,12 +73,15 @@ struct AreaCacheState {
     std::vector<RadarData::CompiledPattern> lastTargetPatterns;
     std::vector<const RadarData::TargetEntry*> lastTargets;
     FrameSafetyState                frameSafety;
+    PerfDebugState                  perfDebug;
 
-    void BeginOverlayFrame() { frameSafety.Reset(); }
+    void BeginOverlayFrame(bool capturePerf = false) {
+        frameSafety.Reset();
+        perfDebug.Reset(capturePerf);
+    }
 
     void MarkHeavyRebuildThisFrame() {
-        frameSafety.heavyRebuildThisFrame = true;
-        frameSafety.skipOptionalDetailThisFrame = true;
+        frameSafety.PromoteHeavy("heavy rebuild");
     }
 
     void Clear() {
@@ -68,6 +99,7 @@ struct AreaCacheState {
         lastTargetPatterns.clear();
         lastTargets.clear();
         frameSafety.Reset();
+        perfDebug.Reset(false);
     }
 
     bool NeedsFullRebuild(const PluginSDK::Snapshot& snap, const uint8_t* walkData) const {
@@ -126,26 +158,56 @@ struct AreaCacheState {
                     PluginSDK::WalkableGridHandle& gridHandle,
                     const RadarData::RadarConfig& cfg, const RadarData::TargetDatabase& db,
                             const RadarData::IconTables& icons) {
+        const auto totalStart = std::chrono::steady_clock::now();
         MarkHeavyRebuildThisFrame();
         const bool areaChanged = snap.AreaChangeCounter != areaCounter;
         areaCounter = snap.AreaChangeCounter;
         walkablePtr = gridHandle.Data();
+        const auto walkableStart = std::chrono::steady_clock::now();
         walkable.Rebuild(ctx, gridHandle, cfg);
+        if (perfDebug.captureThisFrame) {
+            perfDebug.walkableRebuildRan = true;
+            perfDebug.walkableRebuildMs = std::chrono::duration<double, std::milli>(
+                                           std::chrono::steady_clock::now() - walkableStart)
+                                           .count();
+        }
+        const auto poiStart = std::chrono::steady_clock::now();
         pois.Rebuild(ctx, snap, cfg, db, icons);
+        if (perfDebug.captureThisFrame) {
+            perfDebug.poiRebuildRan = true;
+            perfDebug.poiRebuildMs = std::chrono::duration<double, std::milli>(
+                                      std::chrono::steady_clock::now() - poiStart)
+                                      .count();
+        }
         if (areaChanged) entities.Clear();
+        const auto entityStart = std::chrono::steady_clock::now();
         entities.Rebuild(ctx, snap, cfg, db, icons);
+        if (perfDebug.captureThisFrame) {
+            perfDebug.entityRebuildRan = true;
+            perfDebug.entityRebuildMs = std::chrono::duration<double, std::milli>(
+                                         std::chrono::steady_clock::now() - entityStart)
+                                         .count();
+        }
         entitySnapshotTime = snap.LastUpdateTime;
         poiDirty = false;
         if (cfg.ShowImportantPOI) (void)RefreshTargetPatternCache(snap, db);
         lastTgtMatchCount = -1;
         lastEntityMatchCount = -1;
+        (void)totalStart;
     }
 
     void RebuildEntitiesOnly(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
                              const RadarData::RadarConfig& cfg,
                              const RadarData::TargetDatabase& db,
                             const RadarData::IconTables& icons) {
+        const auto entityStart = std::chrono::steady_clock::now();
         entities.Rebuild(ctx, snap, cfg, db, icons);
+        if (perfDebug.captureThisFrame) {
+            perfDebug.entityRebuildRan = true;
+            perfDebug.entityRebuildMs = std::chrono::duration<double, std::milli>(
+                                         std::chrono::steady_clock::now() - entityStart)
+                                         .count();
+        }
         entitySnapshotTime = snap.LastUpdateTime;
     }
 
@@ -185,7 +247,14 @@ struct AreaCacheState {
                             const RadarData::IconTables& icons) {
         if (!poiDirty) return;
         MarkHeavyRebuildThisFrame();
+        const auto poiStart = std::chrono::steady_clock::now();
         pois.Rebuild(ctx, snap, cfg, db, icons);
+        if (perfDebug.captureThisFrame) {
+            perfDebug.poiRebuildRan = true;
+            perfDebug.poiRebuildMs = std::chrono::duration<double, std::milli>(
+                                      std::chrono::steady_clock::now() - poiStart)
+                                      .count();
+        }
         poiDirty = false;
         if (cfg.ShowImportantPOI) (void)RefreshTargetPatternCache(snap, db);
         lastTgtMatchCount = -1;

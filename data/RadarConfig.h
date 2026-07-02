@@ -81,6 +81,72 @@ inline const char* TerrainRenderStyleName(TerrainRenderStyle style) {
     }
 }
 
+enum class TerrainBoundaryQualityMode : int {
+    Off = 0,
+    Low = 1,
+    Medium = 2,
+    High = 3,
+    Unlimited = 4,
+};
+
+inline const char* TerrainBoundaryQualityModeName(TerrainBoundaryQualityMode mode) {
+    switch (mode) {
+        case TerrainBoundaryQualityMode::Off: return "Off";
+        case TerrainBoundaryQualityMode::Low: return "Low";
+        case TerrainBoundaryQualityMode::Medium: return "Medium";
+        case TerrainBoundaryQualityMode::High: return "High";
+        case TerrainBoundaryQualityMode::Unlimited: return "Unlimited / Debug";
+        default: return "Medium";
+    }
+}
+
+enum class TerrainBoundaryRenderMode : int {
+    CachedTexture = 0,
+    VectorLinesDebug = 1,
+    Off = 2,
+};
+
+inline const char* TerrainBoundaryRenderModeName(TerrainBoundaryRenderMode mode) {
+    switch (mode) {
+        case TerrainBoundaryRenderMode::VectorLinesDebug: return "Vector Lines / Debug";
+        case TerrainBoundaryRenderMode::Off: return "Off";
+        default: return "Cached Texture / Rasterized Edges";
+    }
+}
+
+enum class DotMatrixRenderMode : int {
+    CachedTexture = 0,
+    VectorDotsDebug = 1,
+};
+
+inline const char* DotMatrixRenderModeName(DotMatrixRenderMode mode) {
+    switch (mode) {
+        case DotMatrixRenderMode::VectorDotsDebug: return "Vector Dots / Debug";
+        default: return "Cached Texture / Rasterized Dots";
+    }
+}
+
+inline DotMatrixRenderMode EffectiveDotMatrixRenderMode(bool debugToolsEnabled,
+                                                        DotMatrixRenderMode configuredMode) {
+    return debugToolsEnabled ? configuredMode : DotMatrixRenderMode::CachedTexture;
+}
+
+inline int SanitizeBoundaryEdgeThickness(int thickness) {
+    return std::clamp(thickness, 1, 3);
+}
+
+enum class TerrainBoundaryScopeMode : int {
+    VisibleMapBudgeted = 0,
+    NearPlayerOnly = 1,
+};
+
+inline const char* TerrainBoundaryScopeModeName(TerrainBoundaryScopeMode mode) {
+    switch (mode) {
+        case TerrainBoundaryScopeMode::NearPlayerOnly: return "Near Player Only";
+        default: return "Visible Map / Budgeted";
+    }
+}
+
 enum class MapLayerProjectionMode : int {
     NativeSdk = 0,
     Unified2D = 1,
@@ -107,6 +173,15 @@ inline Rgba8 ParseRgbString(const std::string& s, Rgba8 fallback = {}) {
 struct RadarConfig {
     bool  OverlayEnabled = true;
     bool  EnableDebugTools = false;
+    bool  EnablePerfTimingCapture = false;
+    bool  ShowPerfTimingPanel = false;
+    bool  EnableUiDiscoveryTools = false;
+    bool  EnableUiDiscoveryAutoRefresh = false;
+    bool  EnablePinnedUiWatch = false;
+    bool  ShowUiBlockerDebugDetails = false;
+    bool  ShowTerrainTextureDebug = false;
+    bool  ShowDotMatrixDebug = false;
+    bool  ShowBoundaryDebug = false;
     bool  DrawWhenNotInHideoutOrTown = true;
     bool  DrawWhenNotPaused = true;
     bool  HideWhenNotForeground = true;
@@ -114,7 +189,13 @@ struct RadarConfig {
     bool  HideOutsideNetworkBubble = false;
     bool  DrawWalkableMap = true;
     bool  DrawMiniMapEntities = true;
-    int   WalkableMapBorderThickness = 0;
+    bool  ShowBoundaryEdges = false;
+    int   WalkableMapBorderThickness = 1;
+    DotMatrixRenderMode       DotRenderMode = DotMatrixRenderMode::CachedTexture;
+    TerrainBoundaryRenderMode  BoundaryRenderMode = TerrainBoundaryRenderMode::CachedTexture;
+    TerrainBoundaryQualityMode BoundaryQuality = TerrainBoundaryQualityMode::Medium;
+    TerrainBoundaryScopeMode   BoundaryScope = TerrainBoundaryScopeMode::VisibleMapBudgeted;
+    float BoundaryNearPlayerRadius = 500.f;
     TerrainRenderStyle TerrainStyle = TerrainRenderStyle::Texture;
     TerrainTextureAlignmentMode TerrainAlignment = TerrainTextureAlignmentMode::CellCentered;
     TerrainProjectionHeightMode TerrainHeightMode = TerrainProjectionHeightMode::Legacy;
@@ -154,6 +235,17 @@ struct RadarConfig {
 
         OverlayEnabled = j.value("OverlayEnabled", OverlayEnabled);
         EnableDebugTools = j.value("EnableDebugTools", EnableDebugTools);
+        EnablePerfTimingCapture = j.value("EnablePerfTimingCapture", EnablePerfTimingCapture);
+        ShowPerfTimingPanel = j.value("ShowPerfTimingPanel", ShowPerfTimingPanel);
+        EnableUiDiscoveryTools = j.value("EnableUiDiscoveryTools", EnableUiDiscoveryTools);
+        EnableUiDiscoveryAutoRefresh = j.value("EnableUiDiscoveryAutoRefresh", EnableUiDiscoveryAutoRefresh);
+        EnablePinnedUiWatch = j.value("EnablePinnedUiWatch", EnablePinnedUiWatch);
+        ShowUiBlockerDebugDetails = j.value("ShowUiBlockerDebugDetails",
+                                            j.value("ShowAtlasBlockerDebug",
+                                                    ShowUiBlockerDebugDetails));
+        ShowTerrainTextureDebug = j.value("ShowTerrainTextureDebug", ShowTerrainTextureDebug);
+        ShowDotMatrixDebug = j.value("ShowDotMatrixDebug", ShowDotMatrixDebug);
+        ShowBoundaryDebug = j.value("ShowBoundaryDebug", ShowBoundaryDebug);
         DrawWhenNotInHideoutOrTown = j.value("DrawWhenNotInHideoutOrTown", DrawWhenNotInHideoutOrTown);
         DrawWhenNotPaused = j.value("DrawWhenNotPaused", DrawWhenNotPaused);
         HideWhenNotForeground = j.value("HideWhenNotForeground", HideWhenNotForeground);
@@ -164,8 +256,22 @@ struct RadarConfig {
         // key accepted so existing settings files continue to load cleanly.
         (void)j.value("DrawMiniMapTerrain", false);
         DrawMiniMapEntities = j.value("DrawMiniMapEntities", DrawMiniMapEntities);
-        WalkableMapBorderThickness =
-            std::clamp(j.value("WalkableMapBorderThickness", WalkableMapBorderThickness), 0, 8);
+        const int loadedBoundaryThickness =
+            j.value("WalkableMapBorderThickness", WalkableMapBorderThickness);
+        DotRenderMode = static_cast<DotMatrixRenderMode>(
+            std::clamp(j.value("DotRenderMode", static_cast<int>(DotRenderMode)), 0, 1));
+        BoundaryRenderMode = static_cast<TerrainBoundaryRenderMode>(
+            std::clamp(j.value("BoundaryRenderMode", static_cast<int>(BoundaryRenderMode)), 0, 2));
+        BoundaryQuality = static_cast<TerrainBoundaryQualityMode>(
+            std::clamp(j.value("BoundaryQuality", static_cast<int>(BoundaryQuality)), 0, 4));
+        BoundaryScope = static_cast<TerrainBoundaryScopeMode>(
+            std::clamp(j.value("BoundaryScope", static_cast<int>(BoundaryScope)), 0, 1));
+        BoundaryNearPlayerRadius = std::clamp(j.value("BoundaryNearPlayerRadius", BoundaryNearPlayerRadius),
+                                              50.f, 5000.f);
+        const bool legacyBoundaryEnabled = loadedBoundaryThickness > 0
+                                           && BoundaryRenderMode != TerrainBoundaryRenderMode::Off;
+        ShowBoundaryEdges = j.value("ShowBoundaryEdges", legacyBoundaryEnabled);
+        WalkableMapBorderThickness = SanitizeBoundaryEdgeThickness(loadedBoundaryThickness);
         TerrainStyle = static_cast<TerrainRenderStyle>(
             std::clamp(j.value("TerrainStyle", static_cast<int>(TerrainStyle)), 0, 2));
         // Terrain alignment experiments are retired; keep loading the old key but normalize
@@ -215,6 +321,16 @@ struct RadarConfig {
         nlohmann::json j;
         j["OverlayEnabled"] = OverlayEnabled;
         j["EnableDebugTools"] = EnableDebugTools;
+        j["EnablePerfTimingCapture"] = EnablePerfTimingCapture;
+        j["ShowPerfTimingPanel"] = ShowPerfTimingPanel;
+        j["EnableUiDiscoveryTools"] = EnableUiDiscoveryTools;
+        j["EnableUiDiscoveryAutoRefresh"] = EnableUiDiscoveryAutoRefresh;
+        j["EnablePinnedUiWatch"] = EnablePinnedUiWatch;
+        j["ShowUiBlockerDebugDetails"] = ShowUiBlockerDebugDetails;
+        j["ShowAtlasBlockerDebug"] = ShowUiBlockerDebugDetails;
+        j["ShowTerrainTextureDebug"] = ShowTerrainTextureDebug;
+        j["ShowDotMatrixDebug"] = ShowDotMatrixDebug;
+        j["ShowBoundaryDebug"] = ShowBoundaryDebug;
         j["DrawWhenNotInHideoutOrTown"] = DrawWhenNotInHideoutOrTown;
         j["DrawWhenNotPaused"] = DrawWhenNotPaused;
         j["HideWhenNotForeground"] = HideWhenNotForeground;
@@ -222,7 +338,13 @@ struct RadarConfig {
         j["HideOutsideNetworkBubble"] = HideOutsideNetworkBubble;
         j["DrawWalkableMap"] = DrawWalkableMap;
         j["DrawMiniMapEntities"] = DrawMiniMapEntities;
-        j["WalkableMapBorderThickness"] = WalkableMapBorderThickness;
+        j["ShowBoundaryEdges"] = ShowBoundaryEdges;
+        j["WalkableMapBorderThickness"] = SanitizeBoundaryEdgeThickness(WalkableMapBorderThickness);
+        j["DotRenderMode"] = static_cast<int>(DotRenderMode);
+        j["BoundaryRenderMode"] = static_cast<int>(BoundaryRenderMode);
+        j["BoundaryQuality"] = static_cast<int>(BoundaryQuality);
+        j["BoundaryScope"] = static_cast<int>(BoundaryScope);
+        j["BoundaryNearPlayerRadius"] = BoundaryNearPlayerRadius;
         j["TerrainStyle"] = static_cast<int>(TerrainStyle);
         j["TerrainHeightMode"] = static_cast<int>(TerrainHeightMode);
         j["DotCellStep"] = DotCellStep;
