@@ -3,6 +3,7 @@
 #include "sdk/PluginSDK.h"
 
 #include "data/Migration.h"
+#include "data/DisplayRulesStore.h"
 #include "data/RadarDefaults.h"
 #include "data/RadarLog.h"
 #include "render/RadarOverlay.h"
@@ -44,6 +45,7 @@ public:
 
         m_overlay.cfg.Load(pluginDir);
         m_overlay.icons.Load(pluginDir);
+        RadarData::DisplayRulesStore::Load(pluginDir, m_overlay.icons.displayRules);
         m_overlay.targets.Load(pluginDir);
         if (RadarData::TargetDatabase::SyncBundledTargetsFromHost(pluginDir, hostDir, true,
                                                                 &m_overlay.targets))
@@ -114,6 +116,7 @@ public:
         const auto dir = DirectoryPath();
         m_overlay.cfg.Save(dir);
         m_overlay.icons.Save(dir);
+        RadarData::DisplayRulesStore::Save(dir, m_overlay.icons.displayRules);
         m_overlay.targets.SaveUser(dir);
     }
 
