@@ -8,6 +8,7 @@
 #include "data/RadarLog.h"
 #include "data/TargetDatabase.h"
 #include "data/IconTables.h"
+#include "ui/AtlasUiBlockerDetector.h"
 #include "sdk/PluginSDK.h"
 
 #include <algorithm>
@@ -364,6 +365,7 @@ public:
     TerrainTexture                terrain;
     RadarPerf::AreaCacheState     cache;
     PluginSDK::WalkableGridHandle walkable;
+    RadarUi::AtlasUiBlockerDetector atlasUiBlocker;
     bool                          mapWasVisible = false;
 
     bool ShouldDraw(const PluginSDK::Snapshot& snap) const {
@@ -390,6 +392,7 @@ public:
         if (!ShouldDraw(snap)) return;
 
         cache.BeginOverlayFrame();
+        atlasUiBlocker.enabled = cfg.EnableUiBlockerDetection;
 
         const bool mapVisible = snap.LargeMap.IsVisible || snap.MiniMap.IsVisible;
         if (!mapVisible) {
@@ -398,6 +401,10 @@ public:
         }
         if (!mapWasVisible) cache.InvalidatePoi();
         mapWasVisible = true;
+
+        if (snap.LargeMap.IsVisible
+            && atlasUiBlocker.ShouldBlock(ctx, snap.AreaChangeCounter))
+            return;
 
         auto current = ctx->Terrain.GetWalkableGrid();
         if (current.Data() != walkable.Data()) walkable = std::move(current);
