@@ -427,35 +427,32 @@ struct IconTables {
         breachIcons.clear();
         deliriumIcons.clear();
         expeditionIcons.clear();
-        displayRules.clear();
+        poiMonsterDefault = IconDef{12, 44, 30, MarkerShape::Skull};
+        otherImportantDefault = IconDef{1, 37, 30, MarkerShape::None};
+        maxCx = 14;
+        maxCy = 71;
         const auto path = pluginDir / "config" / "icons.json";
         if (!std::filesystem::exists(path)) {
-            SeedDefaults();
+            SeedIconDefaults();
             return;
         }
         std::ifstream in(path);
         if (!in.is_open()) {
-            SeedDefaults();
+            SeedIconDefaults();
             return;
         }
         nlohmann::json j;
-        in >> j;
+        try {
+            in >> j;
+        } catch (...) {
+            SeedIconDefaults();
+            return;
+        }
         LoadMap(j.value("BaseIcons", nlohmann::json::object()), baseIcons, maxCx, maxCy);
         LoadMap(j.value("ChestIcons", nlohmann::json::object()), chestIcons, maxCx, maxCy);
         LoadMap(j.value("BreachIcons", nlohmann::json::object()), breachIcons, maxCx, maxCy);
         LoadMap(j.value("DeliriumIcons", nlohmann::json::object()), deliriumIcons, maxCx, maxCy);
         LoadMap(j.value("ExpeditionIcons", nlohmann::json::object()), expeditionIcons, maxCx, maxCy);
-        if (j.contains("DisplayRules") && j["DisplayRules"].is_array()) {
-            for (const auto& entry : j["DisplayRules"]) {
-                auto rule = ParseDisplayRule(entry);
-                NormalizeDisplayRule(rule);
-                displayRules.push_back(std::move(rule));
-            }
-        }
-        const int schemaVersion = j.value("RuleSchemaVersion", 0);
-        if (schemaVersion < kRuleSchemaVersion) {
-            displayRules = DefaultDisplayRules();
-        }
         if (j.contains("POIMonsters"))
             for (auto& [k, v] : j["POIMonsters"].items()) {
                 poiMonsterDefault = ParseIconDef(k, v, MarkerShape::Skull);
@@ -481,16 +478,13 @@ struct IconTables {
             return o;
         };
         nlohmann::json j;
-        j["RuleSchemaVersion"] = kRuleSchemaVersion;
         j["BaseIcons"] = writeMap(baseIcons);
         j["ChestIcons"] = writeMap(chestIcons);
         j["BreachIcons"] = writeMap(breachIcons);
         j["DeliriumIcons"] = writeMap(deliriumIcons);
         j["ExpeditionIcons"] = writeMap(expeditionIcons);
-        j["DisplayRules"] = nlohmann::json::array();
-        for (const auto& rule : displayRules) j["DisplayRules"].push_back(WriteDisplayRule(rule));
         j["POIMonsters"] = {{"-1", {{"CX", poiMonsterDefault.cx},
-                                      {"CY", poiMonsterDefault.cy},
+                                       {"CY", poiMonsterDefault.cy},
                                       {"Scale", poiMonsterDefault.scale},
                                       {"Shape", MarkerShapeName(poiMonsterDefault.markerShape)},
                                       {"Color", WriteColor(poiMonsterDefault.markerColor)},
@@ -509,7 +503,7 @@ struct IconTables {
         if (out.is_open()) out << j.dump(4);
     }
 
-    void SeedDefaults() {
+    void SeedIconDefaults() {
         auto put = [](auto& m, const char* n, int cx, int cy, float sc,
                       MarkerShape shape = MarkerShape::None,
                       Rgba8 color = {}) {
@@ -545,7 +539,6 @@ struct IconTables {
         put(expeditionIcons, "Chest Quantity Remnant", 11, 40, 60);
         put(expeditionIcons, "Logbook", 4, 40, 50);
         put(expeditionIcons, "Splinter Chest", 4, 40, 55);
-        displayRules = DefaultDisplayRules();
         maxCx = 14;
         maxCy = 71;
     }
