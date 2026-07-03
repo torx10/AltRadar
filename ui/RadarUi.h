@@ -5,7 +5,6 @@
 #include "data/TargetDatabase.h"
 #include "GameUiDiscovery.h"
 #include "render/EntityMarkers.h"
-#include "render/IconAtlas.h"
 #include "render/RadarOverlay.h"
 
 #include <imgui.h>
@@ -1528,9 +1527,9 @@ inline void DrawDisplayRuleSection(const char* label, RuleSection section,
     if (!any) ImGui::TextDisabled("No rules in this section.");
 }
 
-inline void DrawIconsTab(RadarData::RadarConfig& cfg, RadarData::IconTables& icons, UiState& ui,
-                         RadarRender::IconAtlas&, PluginSDK::Context* ctx,
-                         const PluginSDK::Snapshot& snap) {
+inline void DrawDisplayRulesTab(RadarData::RadarConfig& cfg, RadarData::IconTables& icons,
+                                UiState& ui, PluginSDK::Context* ctx,
+                                const PluginSDK::Snapshot& snap) {
     ImGui::Checkbox("Edge Indicators (Minimap)", &cfg.EdgeIndicatorMinimap);
     ImGui::SameLine();
     ImGui::Checkbox("Edge Indicators (Large Map)", &cfg.EdgeIndicatorLargemap);
@@ -1601,7 +1600,6 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
                                    const std::vector<size_t>& indices,
                                    const std::string& areaKey, UiState& ui,
                                    RadarRender::RadarOverlay& overlay,
-                                   RadarRender::IconAtlas& atlas,
                                    const std::filesystem::path& pluginDir,
                                    bool userOnly = false,
                                    std::string_view search = {}) {
@@ -1660,11 +1658,15 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
         ImGui::TableSetColumnIndex(2);
         ImGui::TextUnformatted(t.path.c_str());
         ImGui::TableSetColumnIndex(3);
-        if (t.showIcon && atlas.Valid()) {
+        if (t.showIcon) {
             const auto iconDef = RadarRender::PoiDrawCache::ResolvePoiIcon(t, overlay.icons);
             ImVec2 p = ImGui::GetCursorScreenPos();
-            atlas.DrawIcon(ImGui::GetWindowDrawList(), iconDef.cx, iconDef.cy, 18.f,
-                           p.x + 12.f, p.y + 10.f);
+            const auto shape = iconDef.markerShape == RadarData::MarkerShape::None
+                                   ? RadarData::MarkerShape::Circle
+                                   : iconDef.markerShape;
+            RadarRender::DrawEntityMarker(ImGui::GetWindowDrawList(), shape,
+                                          p.x + 12.f, p.y + 10.f, 5.f,
+                                          iconDef.markerColor.ToImU32());
         }
         ImGui::TableSetColumnIndex(4);
         ImGui::Text("%.0f", t.iconSize);
@@ -1706,7 +1708,6 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
 
 inline void DrawAreaTargetTable(RadarData::TargetDatabase& db, const std::string& areaKey,
                                 UiState& ui, RadarRender::RadarOverlay& overlay,
-                                RadarRender::IconAtlas& atlas,
                                 const std::filesystem::path& pluginDir,
                                 bool userOnly = false,
                                 std::string_view search = {},
@@ -1716,13 +1717,13 @@ inline void DrawAreaTargetTable(RadarData::TargetDatabase& db, const std::string
         const auto& globalIndices = RadarData::MarkerShapeNameEquals(globalSource, "Endgame")
                                         ? db.endgameGlobalTargets
                                         : db.actsGlobalTargets;
-        DrawTargetIndicesTable(db, globalIndices, key, ui, overlay, atlas, pluginDir,
+        DrawTargetIndicesTable(db, globalIndices, key, ui, overlay, pluginDir,
                                userOnly, search);
         return;
     }
     auto it = db.byArea.find(key);
     if (it == db.byArea.end()) return;
-    DrawTargetIndicesTable(db, it->second, key, ui, overlay, atlas, pluginDir, userOnly,
+    DrawTargetIndicesTable(db, it->second, key, ui, overlay, pluginDir, userOnly,
                            search);
 }
 
@@ -1764,7 +1765,7 @@ inline bool DrawAreaSubNode(RadarData::TargetDatabase& db, const std::string& ar
     const bool open = ImGui::TreeNodeEx(label.c_str(), flags);
     if (isCurrent) ImGui::PopStyleColor();
     if (open) {
-        DrawAreaTargetTable(db, areaKey, ui, overlay, overlay.atlas, pluginDir, userOnly,
+        DrawAreaTargetTable(db, areaKey, ui, overlay, pluginDir, userOnly,
                             search, globalSource);
         ImGui::TreePop();
     }
@@ -1986,7 +1987,7 @@ inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Display Rules")) {
-            DrawIconsTab(overlay.cfg, overlay.icons, ui, overlay.atlas, ctx, snap);
+            DrawDisplayRulesTab(overlay.cfg, overlay.icons, ui, ctx, snap);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Landmarks")) {

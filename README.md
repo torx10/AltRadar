@@ -17,33 +17,21 @@ Self-contained radar overlay for Path of Exile 2: walkable terrain map, entity i
 ```
 POE2Fixer/Plugins/AltRadar/
   AltRadar.dll
-  assets/icons.png
-  config/settings.json
-  config/icons.json
-  config/targets/acts.json
-  config/targets/endgame.json
-  config/targets/ignore.json
 ```
 
 3. Enable **Alt Radar** in the Plugins tab.
 
-If `assets/icons.png` is missing from the repo, run:
-
-```powershell
-.\scripts\copy-radar-assets.ps1
-```
+On first run, Alt Radar creates `logs/`, `config/`, `config/settings.json`,
+`config/display_rules.json`, and `config/targets/`. Optional target JSON files in
+`config/targets/` add curated landmarks; missing files are skipped.
 
 ## Settings UI
 
 Open the Plugins tab → **Alt Radar** → three tabs:
 
 - **General Settings** — overlay toggle, walkable map, visibility rules
-- **Icon Management** — per-category icons and sizes
+- **Display Rules** — generated vector marker rules and sizes
 - **Objects** — POI targets by area, Add POI/Entity from map
-
-## First-run migration
-
-If plugin `config/` is empty, the plugin may import once from legacy host paths next to Fixer.exe (`Configs/radar/`, `Resources/radar/`), then never read them again.
 
 ## SDK
 

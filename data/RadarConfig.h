@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RadarLog.h"
 #include "RadarTypes.h"
 
 #include <algorithm>
@@ -224,7 +225,15 @@ struct RadarConfig {
         std::ifstream in(path);
         if (!in.is_open()) return;
         nlohmann::json j;
-        in >> j;
+        try {
+            in >> j;
+        } catch (const std::exception& ex) {
+            RadarLog::Instance().Warn(std::string("settings.json parse failed; using defaults: ") + ex.what());
+            return;
+        } catch (...) {
+            RadarLog::Instance().Warn("settings.json parse failed; using defaults");
+            return;
+        }
         auto readColor = [&](const char* key, ImVec4& out) {
             if (!j.contains(key) || !j[key].is_array() || j[key].size() < 4) return false;
             auto& a = j[key];
@@ -233,6 +242,7 @@ struct RadarConfig {
             return true;
         };
 
+        try {
         OverlayEnabled = j.value("OverlayEnabled", OverlayEnabled);
         EnableDebugTools = j.value("EnableDebugTools", EnableDebugTools);
         EnablePerfTimingCapture = j.value("EnablePerfTimingCapture", EnablePerfTimingCapture);
@@ -311,6 +321,11 @@ struct RadarConfig {
             && j["MainMenuSize"].size() >= 2) {
             MainMenuSize.x = j["MainMenuSize"][0].get<float>();
             MainMenuSize.y = j["MainMenuSize"][1].get<float>();
+        }
+        } catch (const std::exception& ex) {
+            RadarLog::Instance().Warn(std::string("settings.json invalid; using loaded defaults where possible: ") + ex.what());
+        } catch (...) {
+            RadarLog::Instance().Warn("settings.json invalid; using loaded defaults where possible");
         }
     }
 

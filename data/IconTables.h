@@ -448,21 +448,25 @@ struct IconTables {
             SeedIconDefaults();
             return;
         }
-        LoadMap(j.value("BaseIcons", nlohmann::json::object()), baseIcons, maxCx, maxCy);
-        LoadMap(j.value("ChestIcons", nlohmann::json::object()), chestIcons, maxCx, maxCy);
-        LoadMap(j.value("BreachIcons", nlohmann::json::object()), breachIcons, maxCx, maxCy);
-        LoadMap(j.value("DeliriumIcons", nlohmann::json::object()), deliriumIcons, maxCx, maxCy);
-        LoadMap(j.value("ExpeditionIcons", nlohmann::json::object()), expeditionIcons, maxCx, maxCy);
-        if (j.contains("POIMonsters"))
-            for (auto& [k, v] : j["POIMonsters"].items()) {
-                poiMonsterDefault = ParseIconDef(k, v, MarkerShape::Skull);
-                break;
-            }
-        if (j.contains("OtherImportantObjects"))
-            for (auto& [k, v] : j["OtherImportantObjects"].items()) {
-                otherImportantDefault = ParseIconDef(k, v, MarkerShape::None);
-                break;
-            }
+        try {
+            LoadMap(j.value("BaseIcons", nlohmann::json::object()), baseIcons, maxCx, maxCy);
+            LoadMap(j.value("ChestIcons", nlohmann::json::object()), chestIcons, maxCx, maxCy);
+            LoadMap(j.value("BreachIcons", nlohmann::json::object()), breachIcons, maxCx, maxCy);
+            LoadMap(j.value("DeliriumIcons", nlohmann::json::object()), deliriumIcons, maxCx, maxCy);
+            LoadMap(j.value("ExpeditionIcons", nlohmann::json::object()), expeditionIcons, maxCx, maxCy);
+            if (j.contains("POIMonsters"))
+                for (auto& [k, v] : j["POIMonsters"].items()) {
+                    poiMonsterDefault = ParseIconDef(k, v, MarkerShape::Skull);
+                    break;
+                }
+            if (j.contains("OtherImportantObjects"))
+                for (auto& [k, v] : j["OtherImportantObjects"].items()) {
+                    otherImportantDefault = ParseIconDef(k, v, MarkerShape::None);
+                    break;
+                }
+        } catch (...) {
+            SeedIconDefaults();
+        }
     }
 
     void Save(const std::filesystem::path& pluginDir) const {

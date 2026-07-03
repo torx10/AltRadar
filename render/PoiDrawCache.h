@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IconAtlas.h"
+#include "EntityMarkers.h"
 #include "MapProjection.h"
 #include "data/PathMatcher.h"
 #include "data/RadarConfig.h"
@@ -413,6 +413,10 @@ struct PoiDrawCache {
                 const auto iconDef = ResolvePoiIcon(*t, icons);
                 p.iconCx = iconDef.cx;
                 p.iconCy = iconDef.cy;
+                p.markerShape = iconDef.markerShape == RadarData::MarkerShape::None
+                                    ? RadarData::MarkerShape::Circle
+                                    : iconDef.markerShape;
+                p.markerColor = iconDef.markerColor;
                 p.nameColor = t->nameColor;
                 p.bgColor = t->bgColor;
                 FillMetatileCells(ctx, p, *t, compiled[i]);
@@ -439,6 +443,10 @@ struct PoiDrawCache {
                 const auto iconDef = ResolvePoiIcon(*t, icons);
                 p.iconCx = iconDef.cx;
                 p.iconCy = iconDef.cy;
+                p.markerShape = iconDef.markerShape == RadarData::MarkerShape::None
+                                    ? RadarData::MarkerShape::Circle
+                                    : iconDef.markerShape;
+                p.markerColor = iconDef.markerColor;
                 p.nameColor = t->nameColor;
                 p.bgColor = t->bgColor;
                 pois.push_back(std::move(p));
@@ -446,8 +454,8 @@ struct PoiDrawCache {
         }
     }
 
-    void Draw(ImDrawList* dl, const IconAtlas& atlas, const RadarData::RadarConfig& cfg,
-              bool edgeLarge, bool edgeMini, PluginSDK::Context* ctx = nullptr,
+    void Draw(ImDrawList* dl, const RadarData::RadarConfig& cfg, bool edgeLarge, bool edgeMini,
+              PluginSDK::Context* ctx = nullptr,
               const PluginSDK::Snapshot* snap = nullptr) {
         if (!dl) return;
         (void)ctx;
@@ -457,9 +465,11 @@ struct PoiDrawCache {
             const ImU32 nameCol = p.nameColor.ToImU32();
             const float drawX = p.screenX + ((snap && snap->LargeMap.IsVisible) ? kLargeMapPoiOffsetX : 0.0f);
 
-            const bool drawIcon = cfg.DrawPoiIcons && p.showIcon && atlas.Valid();
+            const bool drawIcon = cfg.DrawPoiIcons && p.showIcon;
             if (drawIcon) {
-                atlas.DrawIcon(dl, p.iconCx, p.iconCy, p.iconSize, drawX, p.screenY, nameCol);
+                const float radius = std::clamp(p.iconSize * 0.20f, 3.f, 16.f);
+                DrawEntityMarker(dl, p.markerShape, drawX, p.screenY, radius,
+                                 p.markerColor.a ? p.markerColor.ToImU32() : nameCol);
             } else {
                 dl->AddCircleFilled(ImVec2(drawX, p.screenY), 4.f, nameCol);
             }

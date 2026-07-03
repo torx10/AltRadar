@@ -2,7 +2,6 @@
 
 #include "sdk/PluginSDK.h"
 
-#include "data/Migration.h"
 #include "data/DisplayRulesStore.h"
 #include "data/RadarDefaults.h"
 #include "data/RadarLog.h"
@@ -11,6 +10,7 @@
 
 #include <imgui.h>
 #include <cmath>
+#include <filesystem>
 #include <optional>
 #include <string>
 
@@ -23,6 +23,15 @@ std::string PathBaseName(const std::string& path) {
     if (const size_t slash = path.find_last_of('/'); slash != std::string::npos)
         return path.substr(slash + 1);
     return path;
+}
+
+void EnsureRuntimeDirectories(const std::filesystem::path& pluginDir) {
+    std::error_code ec;
+    std::filesystem::create_directories(pluginDir / "logs", ec);
+    ec.clear();
+    std::filesystem::create_directories(pluginDir / "config", ec);
+    ec.clear();
+    std::filesystem::create_directories(pluginDir / "config" / "targets", ec);
 }
 
 } // namespace
@@ -38,20 +47,17 @@ public:
             ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx()->ImGuiContext));
 
         const auto pluginDir = DirectoryPath();
+        EnsureRuntimeDirectories(pluginDir);
         RadarData::RadarLog::Instance().Init(pluginDir);
 
-        const auto hostDir = pluginDir.parent_path().parent_path();
-        RadarData::TryMigrateFromHost(pluginDir, hostDir);
-
+        std::error_code ec;
+        const bool hadSettings = std::filesystem::exists(pluginDir / "config" / "settings.json", ec);
         m_overlay.cfg.Load(pluginDir);
+        if (!hadSettings) m_overlay.cfg.Save(pluginDir);
         m_overlay.icons.Load(pluginDir);
         RadarData::DisplayRulesStore::Load(pluginDir, m_overlay.icons.displayRules);
         m_overlay.targets.Load(pluginDir);
-        if (RadarData::TargetDatabase::SyncBundledTargetsFromHost(pluginDir, hostDir, true,
-                                                                &m_overlay.targets))
-            m_overlay.cache.InvalidatePoi();
         m_overlay.walkable = ctx()->Terrain.GetWalkableGrid();
-        m_overlay.EnsureAtlas(const_cast<PluginSDK::Context*>(ctx()), pluginDir);
 
         RadarData::RadarLog::Instance().Info("Alt Radar plugin enabled");
         ctx()->Log.Info("Alt Radar plugin enabled — see logs/altradar.log in plugin folder");
@@ -61,7 +67,6 @@ public:
         EndPickerMode();
         m_overlay.walkable.Reset();
         m_overlay.terrain.Release();
-        m_overlay.atlas.Release();
         m_overlay.cache.Clear();
         RadarData::RadarLog::Instance().Info("Alt Radar plugin disabled");
         RadarData::RadarLog::Instance().Shutdown();
@@ -91,7 +96,6 @@ public:
         }
 
         const auto snap = ctx()->Game.GetSnapshot();
-        m_overlay.EnsureAtlas(const_cast<PluginSDK::Context*>(ctx()), pluginDir);
         const bool perfCaptureEnabled =
             m_overlay.cfg.EnableDebugTools && m_overlay.cfg.EnablePerfTimingCapture;
         const auto settingsStart = perfCaptureEnabled ? std::optional(std::chrono::steady_clock::now())
@@ -118,8 +122,6 @@ public:
             DrawPicker(snap);
             return;
         }
-
-        m_overlay.EnsureAtlas(const_cast<PluginSDK::Context*>(ctx()), DirectoryPath());
         m_overlay.Draw(const_cast<PluginSDK::Context*>(ctx()), snap);
     }
 

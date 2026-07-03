@@ -1,6 +1,5 @@
 #pragma once
 
-#include "IconAtlas.h"
 #include "MapProjection.h"
 #include "TerrainTexture.h"
 #include "perf/AreaCache.h"
@@ -570,7 +569,6 @@ public:
     RadarData::RadarConfig        cfg;
     RadarData::TargetDatabase     targets;
     RadarData::IconTables         icons;
-    IconAtlas                     atlas;
     TerrainTexture                terrain;
     RadarPerf::AreaCacheState     cache;
     RadarPerf::OverlayPerfTiming  perf;
@@ -586,16 +584,6 @@ public:
         if (cfg.DrawWhenNotPaused && snap.IsPaused) return false;
         if (cfg.HideWhenNotForeground && !snap.GameWindowForeground) return false;
         return true;
-    }
-
-    void EnsureAtlas(PluginSDK::Context* ctx, const std::filesystem::path& pluginDir) {
-        if (atlas.Valid()) return;
-        const auto path = pluginDir / "assets" / "icons.png";
-        if (!atlas.Load(ctx->D3DDevice, path, icons.maxCx, icons.maxCy)) {
-            RadarData::RadarLog::Instance().Error("Failed to load icon atlas: " + path.string());
-        } else {
-            RadarData::RadarLog::Instance().Info("Icon atlas loaded: " + path.string());
-        }
     }
 
     void Draw(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap) {
@@ -900,7 +888,7 @@ public:
             if (cfg.ShowImportantPOI) {
                 cache.pois.UpdateScreenPositions(ctx, snap, &largeMapProj);
                 const auto poiDrawStart = std::chrono::steady_clock::now();
-                cache.pois.Draw(dl, atlas, cfg, cfg.EdgeIndicatorLargemap, cfg.EdgeIndicatorMinimap,
+                cache.pois.Draw(dl, cfg, cfg.EdgeIndicatorLargemap, cfg.EdgeIndicatorMinimap,
                                 ctx, &snap);
                 perf.Record(RadarPerf::OverlayPerfTiming::Section::PoiDraw,
                             std::chrono::duration<double, std::milli>(
@@ -935,7 +923,7 @@ public:
             if (cfg.ShowImportantPOI) {
                 cache.pois.UpdateScreenPositions(ctx, snap);
                 const auto poiDrawStart = std::chrono::steady_clock::now();
-                cache.pois.Draw(dl, atlas, cfg, cfg.EdgeIndicatorLargemap, cfg.EdgeIndicatorMinimap,
+                cache.pois.Draw(dl, cfg, cfg.EdgeIndicatorLargemap, cfg.EdgeIndicatorMinimap,
                                 ctx, &snap);
                 perf.Record(RadarPerf::OverlayPerfTiming::Section::PoiDraw,
                             std::chrono::duration<double, std::milli>(

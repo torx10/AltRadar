@@ -282,6 +282,8 @@ struct PoiResolved {
     float       iconSize = 30.f;
     int         iconCx = 1;
     int         iconCy = 37;
+    MarkerShape markerShape = MarkerShape::Circle;
+    Rgba8       markerColor;
     Rgba8       nameColor;
     Rgba8       bgColor;
 };

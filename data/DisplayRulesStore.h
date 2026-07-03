@@ -68,33 +68,6 @@ public:
         }
     }
 
-    static bool TryLoadLegacyIconsRules(const std::filesystem::path& pluginDir,
-                                        std::vector<DisplayRule>& outRules,
-                                        std::string& note) {
-        const auto path = pluginDir / "config" / "icons.json";
-        if (!std::filesystem::exists(path)) return false;
-        std::ifstream in(path);
-        if (!in.is_open()) return false;
-
-        try {
-            nlohmann::json j;
-            in >> j;
-            if (!j.is_object() || !j.contains("DisplayRules") || !j["DisplayRules"].is_array())
-                return false;
-
-            std::vector<DisplayRule> parsed;
-            for (const auto& entry : j["DisplayRules"])
-                parsed.push_back(IconTables::ParseDisplayRule(entry));
-            parsed = SanitizeRules(std::move(parsed));
-            if (!HasUsableRules(parsed)) return false;
-            outRules = std::move(parsed);
-            note = "Migrated legacy rules from config/icons.json";
-            return true;
-        } catch (...) {
-            return false;
-        }
-    }
-
     static void Save(const std::filesystem::path& pluginDir,
                      const std::vector<DisplayRule>& rules) {
         nlohmann::json j;
@@ -120,16 +93,13 @@ public:
 
         if (!note.empty()) RadarLog::Instance().Warn(note + "; seeding or migrating rules");
 
-        if (TryLoadLegacyIconsRules(pluginDir, loaded, note)) {
-            rules = std::move(loaded);
-            Save(pluginDir, rules);
-            RadarLog::Instance().Info(note);
-            return;
-        }
-
         rules = SeededDefaults();
-        Save(pluginDir, rules);
-        RadarLog::Instance().Info("Seeded default display rules into config/display_rules.json");
+        if (note.empty()) {
+            Save(pluginDir, rules);
+            RadarLog::Instance().Info("Seeded default display rules into config/display_rules.json");
+        } else {
+            RadarLog::Instance().Warn("Using default display rules in memory; existing display_rules.json left unchanged");
+        }
     }
 };
 

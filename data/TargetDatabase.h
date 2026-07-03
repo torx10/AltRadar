@@ -56,26 +56,32 @@ public:
         std::ifstream in(path);
         if (!in.is_open()) return;
         nlohmann::json j;
-        in >> j;
-        if (!j.is_object()) return;
-        for (auto it = j.begin(); it != j.end(); ++it) {
-            if (!it.value().is_array()) continue;
-            const std::string areaKey = NormalizeAreaKey(it.key());
-            std::string display = it.key();
-            if (display == "*") display = "Global";
-            areaDisplayNames[areaKey] = display;
-            if (category != "User" || !areaSource.count(areaKey))
-                areaSource[areaKey] = category;
-            for (const auto& entry : it.value()) {
-                size_t idx = storage.size();
-                storage.push_back(ParseTarget(entry, category));
-                if (areaKey == "*" || areaKey == "GLOBAL") {
-                    if (category == "Endgame") endgameGlobalTargets.push_back(idx);
-                    else actsGlobalTargets.push_back(idx);
+        try {
+            in >> j;
+            if (!j.is_object()) return;
+            for (auto it = j.begin(); it != j.end(); ++it) {
+                if (!it.value().is_array()) continue;
+                const std::string areaKey = NormalizeAreaKey(it.key());
+                std::string display = it.key();
+                if (display == "*") display = "Global";
+                areaDisplayNames[areaKey] = display;
+                if (category != "User" || !areaSource.count(areaKey))
+                    areaSource[areaKey] = category;
+                for (const auto& entry : it.value()) {
+                    size_t idx = storage.size();
+                    storage.push_back(ParseTarget(entry, category));
+                    if (areaKey == "*" || areaKey == "GLOBAL") {
+                        if (category == "Endgame") endgameGlobalTargets.push_back(idx);
+                        else actsGlobalTargets.push_back(idx);
+                    }
+                    else
+                        byArea[areaKey].push_back(idx);
                 }
-                else
-                    byArea[areaKey].push_back(idx);
             }
+        } catch (const std::exception& ex) {
+            RadarLog::Instance().Warn("Skipping target file " + path.string() + ": " + ex.what());
+        } catch (...) {
+            RadarLog::Instance().Warn("Skipping target file " + path.string() + ": parse failed");
         }
     }
 
@@ -84,18 +90,24 @@ public:
         std::ifstream in(path);
         if (!in.is_open()) return;
         nlohmann::json j;
-        in >> j;
-        auto loadArr = [&](const nlohmann::json& arr) {
-            if (!arr.is_array()) return;
-            for (const auto& e : arr) {
-                if (e.is_string()) ignorePatterns.Add(e.get<std::string>());
-                else if (e.is_object() && e.contains("Path"))
-                    ignorePatterns.Add(e["Path"].get<std::string>());
-            }
-        };
-        if (j.is_array()) loadArr(j);
-        else if (j.is_object())
-            for (auto it = j.begin(); it != j.end(); ++it) loadArr(it.value());
+        try {
+            in >> j;
+            auto loadArr = [&](const nlohmann::json& arr) {
+                if (!arr.is_array()) return;
+                for (const auto& e : arr) {
+                    if (e.is_string()) ignorePatterns.Add(e.get<std::string>());
+                    else if (e.is_object() && e.contains("Path"))
+                        ignorePatterns.Add(e["Path"].get<std::string>());
+                }
+            };
+            if (j.is_array()) loadArr(j);
+            else if (j.is_object())
+                for (auto it = j.begin(); it != j.end(); ++it) loadArr(it.value());
+        } catch (const std::exception& ex) {
+            RadarLog::Instance().Warn("Skipping ignore file " + path.string() + ": " + ex.what());
+        } catch (...) {
+            RadarLog::Instance().Warn("Skipping ignore file " + path.string() + ": parse failed");
+        }
     }
 
     void Load(const std::filesystem::path& pluginDir) {
@@ -178,59 +190,6 @@ public:
         if (HasAreaBucket(hash)) return hash;
         if (!name.empty()) return name;
         return hash;
-    }
-
-    static bool SyncBundledTargetsFromHost(const std::filesystem::path& pluginDir,
-                                           const std::filesystem::path& hostExeDir,
-                                           bool forceReload, TargetDatabase* db) {
-        bool updated = false;
-        auto syncOne = [&](const char* name) {
-            const auto src = hostExeDir / "Resources" / "radar" / name;
-            const auto dst = pluginDir / "config" / "targets" / name;
-            if (!std::filesystem::exists(src)) return;
-            if (std::filesystem::exists(dst)) {
-                std::error_code ec;
-                const auto srcTime = std::filesystem::last_write_time(src, ec);
-                const auto dstTime = std::filesystem::last_write_time(dst, ec);
-                if (!ec && srcTime <= dstTime) return;
-            }
-            std::error_code ec;
-            std::filesystem::create_directories(dst.parent_path(), ec);
-            std::filesystem::copy_file(src, dst, std::filesystem::copy_options::overwrite_existing,
-                                       ec);
-            if (!ec) {
-                updated = true;
-                RadarLog::Instance().Info(std::string("Synced target data from host: ") + name);
-            }
-        };
-        syncOne("acts.json");
-        syncOne("endgame.json");
-        syncOne("ignore.json");
-
-        const auto srcIcons = hostExeDir / "Resources" / "radar" / "icons.png";
-        const auto dstIcons = pluginDir / "assets" / "icons.png";
-        if (std::filesystem::exists(srcIcons)) {
-            bool copyIcons = !std::filesystem::exists(dstIcons);
-            if (!copyIcons) {
-                std::error_code ec;
-                copyIcons = std::filesystem::last_write_time(srcIcons, ec)
-                            > std::filesystem::last_write_time(dstIcons, ec);
-            }
-            if (copyIcons) {
-                std::error_code ec;
-                std::filesystem::create_directories(dstIcons.parent_path(), ec);
-                std::filesystem::copy_file(srcIcons, dstIcons,
-                                           std::filesystem::copy_options::overwrite_existing,
-                                           ec);
-                if (!ec) {
-                    updated = true;
-                    RadarLog::Instance().Info("Synced icon atlas from host");
-                }
-            }
-        }
-
-        if (updated && forceReload && db) db->Load(pluginDir);
-        return updated;
     }
 
     std::vector<std::string> ListAreas(const std::string& source) const {

@@ -83,7 +83,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Radar.cpp" />
-    <ClCompile Include="render\IconAtlas.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
     <ClCompile Include="imgui\imgui_draw.cpp" />
     <ClCompile Include="imgui\imgui_tables.cpp" />
@@ -93,7 +92,6 @@
     <ClInclude Include="data\IconTables.h" />
     <ClInclude Include="data\RadarDefaults.h" />
     <ClInclude Include="data\RadarLog.h" />
-    <ClInclude Include="data\Migration.h" />
     <ClInclude Include="data\PathMatcher.h" />
     <ClInclude Include="data\RadarConfig.h" />
     <ClInclude Include="data\RadarTypes.h" />
@@ -103,7 +101,6 @@
     <ClInclude Include="render\EntityClassifier.h" />
     <ClInclude Include="render\EntityDrawCache.h" />
     <ClInclude Include="render\EntityMarkers.h" />
-    <ClInclude Include="render\IconAtlas.h" />
     <ClInclude Include="render\PoiDrawCache.h" />
     <ClInclude Include="render\RadarOverlay.h" />
     <ClInclude Include="render\TerrainTexture.h" />
