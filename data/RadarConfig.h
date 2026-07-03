@@ -218,7 +218,7 @@ struct RadarConfig {
     bool  EnablePOIBackground = true;
     bool  RuneShapeShowWeights = false;
     int   RuneShapeMinimumWeight = 0;
-    std::array<int, kRuneShapeRareCount> RuneShapeRareWeights{};
+    std::array<int, kRuneShapeRareCount> RuneShapeRareWeights{100, 100, 75, 0, 25, 25, 50, 0, 25, 75, 0};
     std::array<int, kRuneShapeCommonCount> RuneShapeCommonWeights{};
     bool  EdgeIndicatorMinimap = true;
     bool  EdgeIndicatorLargemap = true;

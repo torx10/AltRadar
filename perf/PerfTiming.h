@@ -54,6 +54,9 @@ public:
         float uiBlockerOverlapW = 0.0f;
         float uiBlockerOverlapH = 0.0f;
         float uiBlockerOverlapArea = 0.0f;
+        int  uiBlockerMatchedRuleCount = 0;
+        int  uiBlockerEvaluatedRuleCount = 0;
+        std::string uiBlockerRejectedRulesSummary;
         bool heavyRebuildFrame = false;
         bool skippedOptionalDetail = false;
         const char* optionalDetailSkipReason = nullptr;
@@ -252,6 +255,12 @@ public:
         } else {
             out << "UiBlockerOverlap: (none)\n";
         }
+        out << "UiBlockerMatchedRuleCount: " << flags.uiBlockerMatchedRuleCount << "\n";
+        out << "UiBlockerEvaluatedRuleCount: " << flags.uiBlockerEvaluatedRuleCount << "\n";
+        out << "UiBlockerRejectedRules: "
+            << (flags.uiBlockerRejectedRulesSummary.empty() ? "(none)"
+                                                            : flags.uiBlockerRejectedRulesSummary)
+            << "\n";
         out << "HeavyRebuildFrame: " << (flags.heavyRebuildFrame ? "yes" : "no") << "\n";
         out << "SkippedOptionalDetail: " << (flags.skippedOptionalDetail ? "yes" : "no") << "\n";
         out << "OptionalDetailSkipReason: "

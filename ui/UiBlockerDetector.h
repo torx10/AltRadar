@@ -6,6 +6,7 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -48,11 +49,32 @@ struct UiBlockerDetector {
         bool        hasOverlap = false;
     };
 
+    struct RuleDebugState {
+        std::string rootName;
+        std::string ruleName;
+        std::string path;
+        std::string blockerType;
+        std::string expectedShapeGate;
+        std::string rejectedReason;
+        NodeStatus  node;
+        bool        enabled = false;
+        bool        matched = false;
+        float       overlapX = 0.f;
+        float       overlapY = 0.f;
+        float       overlapW = 0.f;
+        float       overlapH = 0.f;
+        float       overlapArea = 0.f;
+        bool        hasOverlap = false;
+    };
+
     bool        active = false;
     bool        enabled = true;
     MatchState  match{};
     NodeStatus  primary{"root/1/22"};
     NodeStatus  optionalChild{"root/1/22/0/6"};
+    std::vector<RuleDebugState> builtInRuleStates;
+    std::vector<RuleDebugState> matchedRuleStates;
+    std::vector<RuleDebugState> contextOnlyStates;
     std::chrono::steady_clock::time_point lastScanTime = std::chrono::steady_clock::time_point{};
     uint64_t    lastAreaCounter = 0;
 
@@ -150,39 +172,62 @@ struct UiBlockerDetector {
         optionalChild = NodeStatus{"root/1/22/0/6"};
         match = {};
         active = false;
+        builtInRuleStates.clear();
+        matchedRuleStates.clear();
+        contextOnlyStates.clear();
         lastAreaCounter = snap.AreaChangeCounter;
         lastScanTime = std::chrono::steady_clock::now();
         if (!ctx || !enabled) return;
 
         const uintptr_t topUiRoot = WalkUpToRoot(ctx, ctx->Ui.GetUiRoot());
-        if (topUiRoot == 0) return;
-
-        primary = ResolveNode(ctx, topUiRoot, "root/1/22");
-        optionalChild = ResolveNode(ctx, topUiRoot, "root/1/22/0/6");
+        if (topUiRoot != 0) {
+            primary = ResolveNode(ctx, topUiRoot, "root/1/22");
+            optionalChild = ResolveNode(ctx, topUiRoot, "root/1/22/0/6");
+        }
 
         for (const RuleDef& rule : BuiltInRules()) {
             const NodeStatus node = rule.isAtlasCompatibility ? primary : ResolveNode(ctx, topUiRoot, rule.path);
-            if (!MatchesRule(rule, node, ctx, snap)) continue;
-
-            const OverlapInfo overlap = ComputeMapOverlap(ctx, snap, node);
-            if (!overlap.hasOverlap) continue;
+            RuleDebugState state = EvaluateRule(rule, node, ctx, snap, enabled);
+            builtInRuleStates.push_back(state);
+            if (!state.matched) continue;
+            matchedRuleStates.push_back(state);
+            if (active) continue;
 
             match.blocked = true;
-            match.ruleName = rule.name;
+            match.ruleName = state.ruleName;
             match.reason = rule.reason;
-            match.hasRect = node.hasRect;
-            match.rectX = node.rectX;
-            match.rectY = node.rectY;
-            match.rectW = node.rectW;
-            match.rectH = node.rectH;
-            match.hasOverlap = overlap.hasOverlap;
-            match.overlapX = overlap.x;
-            match.overlapY = overlap.y;
-            match.overlapW = overlap.w;
-            match.overlapH = overlap.h;
-            match.overlapArea = overlap.area;
+            match.hasRect = state.node.hasRect;
+            match.rectX = state.node.rectX;
+            match.rectY = state.node.rectY;
+            match.rectW = state.node.rectW;
+            match.rectH = state.node.rectH;
+            match.hasOverlap = state.hasOverlap;
+            match.overlapX = state.overlapX;
+            match.overlapY = state.overlapY;
+            match.overlapW = state.overlapW;
+            match.overlapH = state.overlapH;
+            match.overlapArea = state.overlapArea;
             active = true;
-            return;
+        }
+
+        for (const char* path : ContextOnlyPaths()) {
+            RuleDebugState state;
+            state.rootName = "TopUiRoot";
+            state.ruleName = "ContextOnlyPath";
+            state.path = path;
+            state.blockerType = "ContextOnly";
+            state.expectedShapeGate = "None";
+            state.enabled = false;
+            state.node = ResolveNode(ctx, topUiRoot, path);
+            const OverlapInfo overlap = ComputeMapOverlap(ctx, snap, state.node);
+            state.hasOverlap = overlap.hasOverlap;
+            state.overlapX = overlap.x;
+            state.overlapY = overlap.y;
+            state.overlapW = overlap.w;
+            state.overlapH = overlap.h;
+            state.overlapArea = overlap.area;
+            state.rejectedReason = "context-only path (not blocker rule)";
+            contextOnlyStates.push_back(std::move(state));
         }
     }
 
@@ -207,6 +252,27 @@ struct UiBlockerDetector {
             .count();
     }
 
+    int EvaluatedRuleCount() const {
+        return static_cast<int>(builtInRuleStates.size());
+    }
+
+    int MatchedRuleCount() const {
+        return static_cast<int>(matchedRuleStates.size());
+    }
+
+    std::string RejectedRulesSummary() const {
+        std::ostringstream out;
+        bool first = true;
+        for (const auto& state : builtInRuleStates) {
+            if (state.matched) continue;
+            if (!first) out << "; ";
+            out << state.ruleName << '=' << state.rejectedReason;
+            first = false;
+        }
+        if (first) return {};
+        return out.str();
+    }
+
 private:
     enum class Shape {
         Any,
@@ -216,8 +282,11 @@ private:
 
     struct RuleDef {
         const char* name;
+        const char* rootName;
         const char* path;
         const char* reason;
+        const char* blockerType;
+        bool        builtInEnabled;
         uint16_t    elementType;
         int         childCount;
         Shape       shape;
@@ -235,14 +304,28 @@ private:
 
     static const std::array<RuleDef, 6>& BuiltInRules() {
         static const std::array<RuleDef, 6> rules{{
-            {"TopUiRootAtlasBlocker", "root/1/22", "Atlas UI visible", 0, -1, Shape::Any, true},
-            {"TopUiRootPassiveTreeFullscreen", "root/1/24", "Passive tree fullscreen UI visible", 0x5921, 8, Shape::Fullscreen, false},
-            {"TopUiRootAtlasSkillsTreeFullscreen", "root/1/25", "Atlas skills tree fullscreen UI visible", 0x5921, 9, Shape::Fullscreen, false},
-            {"TopUiRootMtxStoreFullscreen", "root/1/29", "MTX store fullscreen UI visible", 0x0, 10, Shape::Fullscreen, false},
-            {"TopUiRootMarketPanel", "root/1/98", "Market UI visible", 0x0, -1, Shape::LeftPanel, false},
-            {"TopUiRootLeftSidePanel", "root/1/38", "Large left-side UI panel visible", 0x0, -1, Shape::LeftPanel, false},
+            {"TopUiRootAtlasBlocker", "TopUiRoot", "root/1/22", "Atlas UI visible", "AtlasCompatibility", true, 0, -1, Shape::Any, true},
+            {"TopUiRootPassiveTreeFullscreen", "TopUiRoot", "root/1/24", "Passive tree fullscreen UI visible", "FullscreenPanel", true, 0x5921, 8, Shape::Fullscreen, false},
+            {"TopUiRootAtlasSkillsTreeFullscreen", "TopUiRoot", "root/1/25", "Atlas skills tree fullscreen UI visible", "FullscreenPanel", true, 0x5921, 9, Shape::Fullscreen, false},
+            {"TopUiRootMtxStoreFullscreen", "TopUiRoot", "root/1/29", "MTX store fullscreen UI visible", "FullscreenPanel", true, 0x0, 10, Shape::Fullscreen, false},
+            {"TopUiRootMarketPanel", "TopUiRoot", "root/1/98/1", "Market fullscreen child visible", "FullscreenPanel", true, 0x0, 1, Shape::Fullscreen, false},
+            {"TopUiRootLeftSidePanel", "TopUiRoot", "root/1/38", "Large left-side UI panel visible", "LeftPanel", false, 0x0, -1, Shape::LeftPanel, false},
         }};
         return rules;
+    }
+
+    static const std::array<const char*, 3>& ContextOnlyPaths() {
+        static const std::array<const char*, 3> paths{{"root/1/25/1", "root/1/25/7", "root/1/97/9"}};
+        return paths;
+    }
+
+    static const char* ShapeName(Shape shape) {
+        switch (shape) {
+            case Shape::Fullscreen: return "Fullscreen";
+            case Shape::LeftPanel: return "LeftPanel";
+            case Shape::Any:
+            default: return "Any";
+        }
     }
 
     static bool IntersectRects(float ax, float ay, float aw, float ah,
@@ -313,25 +396,92 @@ private:
                && node.rectH >= screenH * 0.90f && node.rectW >= screenW * 0.18f;
     }
 
-    static bool MatchesRule(const RuleDef& rule, const NodeStatus& node,
-                            PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap) {
-        if (!node.exists || !node.valid || !node.localVisible || !node.uiVisible || !node.hasRect)
-            return false;
-        if (node.path != rule.path) return false;
-        if (rule.childCount >= 0 && node.childCount != rule.childCount) return false;
-        if (node.path == "root/1/25/1" || node.path == "root/1/25/7" || node.path == "root/1/97/9")
-            return false;
-        if (!rule.isAtlasCompatibility && node.elementType != rule.elementType) return false;
+    static RuleDebugState EvaluateRule(const RuleDef& rule, const NodeStatus& node,
+                                       PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
+                                       bool detectorEnabled) {
+        RuleDebugState out;
+        out.rootName = rule.rootName;
+        out.ruleName = rule.name;
+        out.path = rule.path;
+        out.blockerType = rule.blockerType;
+        out.expectedShapeGate = ShapeName(rule.shape);
+        out.enabled = detectorEnabled && rule.builtInEnabled;
+        out.node = node;
 
         const OverlapInfo overlap = ComputeMapOverlap(ctx, snap, node);
-        if (!overlap.hasOverlap) return false;
+        out.hasOverlap = overlap.hasOverlap;
+        out.overlapX = overlap.x;
+        out.overlapY = overlap.y;
+        out.overlapW = overlap.w;
+        out.overlapH = overlap.h;
+        out.overlapArea = overlap.area;
+
+        if (!detectorEnabled) {
+            out.rejectedReason = "detector disabled";
+            return out;
+        }
+        if (!rule.builtInEnabled) {
+            out.rejectedReason = "rule disabled";
+            return out;
+        }
+        if (!node.exists) {
+            out.rejectedReason = "node missing";
+            return out;
+        }
+        if (!node.valid) {
+            out.rejectedReason = "node invalid";
+            return out;
+        }
+        if (!node.localVisible) {
+            out.rejectedReason = "LocalVisible=no";
+            return out;
+        }
+        if (!node.uiVisible) {
+            out.rejectedReason = "UiIsVisible=no";
+            return out;
+        }
+        if (!node.hasRect) {
+            out.rejectedReason = "HasRect=no";
+            return out;
+        }
+        if (node.path != rule.path) {
+            out.rejectedReason = "path mismatch";
+            return out;
+        }
+        if (rule.childCount >= 0 && node.childCount != rule.childCount) {
+            out.rejectedReason = "child count mismatch";
+            return out;
+        }
+        if (!rule.isAtlasCompatibility && node.elementType != rule.elementType) {
+            out.rejectedReason = "ElementType mismatch";
+            return out;
+        }
+        if (!overlap.hasOverlap) {
+            out.rejectedReason = "no map overlap";
+            return out;
+        }
 
         switch (rule.shape) {
-            case Shape::Fullscreen: return CoversFullscreen(node, snap);
-            case Shape::LeftPanel: return CoversLeftPanel(node, snap);
+            case Shape::Fullscreen:
+                if (!CoversFullscreen(node, snap)) {
+                    out.rejectedReason = "fullscreen gate failed";
+                    return out;
+                }
+                break;
+            case Shape::LeftPanel:
+                if (!CoversLeftPanel(node, snap)) {
+                    out.rejectedReason = "left-panel gate failed";
+                    return out;
+                }
+                break;
             case Shape::Any:
-            default: return true;
+            default:
+                break;
         }
+
+        out.matched = true;
+        out.rejectedReason = "matched";
+        return out;
     }
 };
 

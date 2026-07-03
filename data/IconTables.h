@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <unordered_map>
 
 #include "../third_party/json.hpp"
@@ -15,6 +16,7 @@ inline bool IsIconVisible(const IconDef& d) { return d.scale > 0.f; }
 
 struct IconTables {
     static constexpr int kRuleSchemaVersion = 3;
+    static constexpr const char* kRuneShapeOwnedSource = "RuneShape";
 
     std::unordered_map<std::string, IconDef> baseIcons;
     std::unordered_map<std::string, IconDef> chestIcons;
@@ -262,6 +264,7 @@ struct IconTables {
                                                  MarkerShape::Square, {38, 230, 217, 255}, 7.f,
                                                  "Expedition", false, true, true);
         expedition.useRuneshapeColor = true;
+        expedition.source = kRuneShapeOwnedSource;
         rules.push_back(std::move(expedition));
         rules.push_back(MakeDisplayRule("stock.ritual", seeded, "Ritual",
                                         {"Ritual"}, {"Object", "Other"}, {}, {},
@@ -374,6 +377,31 @@ struct IconTables {
 
     static void NormalizeDisplayRule(DisplayRule& rule) {
         if (rule.source.empty()) rule.source = "User";
+        if (IsRuneshapeColourEligible(rule)) {
+            rule.id = "stock.expedition";
+            rule.source = kRuneShapeOwnedSource;
+            if (rule.name.empty()) rule.name = "Expedition";
+            if (rule.label.empty()) rule.label = "Expedition";
+        }
+    }
+
+    static bool IsRuneShapeOwnedRule(const DisplayRule& rule) {
+        return MarkerShapeNameEquals(rule.source, kRuneShapeOwnedSource)
+               || rule.id == "stock.expedition";
+    }
+
+    static void NormalizeDisplayRules(std::vector<DisplayRule>& rules) {
+        for (auto& rule : rules) NormalizeDisplayRule(rule);
+        size_t keepIndex = SIZE_MAX;
+        for (size_t i = 0; i < rules.size(); ++i) {
+            if (!IsRuneShapeOwnedRule(rules[i])) continue;
+            if (keepIndex == SIZE_MAX) {
+                keepIndex = i;
+                continue;
+            }
+            rules.erase(rules.begin() + static_cast<std::ptrdiff_t>(i));
+            --i;
+        }
     }
 
     static bool IsStateHideRule(const DisplayRule& rule) {
@@ -392,22 +420,45 @@ struct IconTables {
     static std::vector<DisplayRule> UserRulesOnly(const std::vector<DisplayRule>& rules) {
         std::vector<DisplayRule> out;
         for (const auto& rule : rules) {
-            if (!MarkerShapeNameEquals(rule.source, "Seeded")) out.push_back(rule);
+            if (!MarkerShapeNameEquals(rule.source, "Seeded") && !IsRuneShapeOwnedRule(rule))
+                out.push_back(rule);
         }
         return out;
     }
 
     static void ReplaceSeededDefaults(std::vector<DisplayRule>& rules) {
         std::vector<DisplayRule> merged;
+        std::optional<DisplayRule> expeditionRule;
+        for (const auto& rule : rules) {
+            if (!IsRuneShapeOwnedRule(rule)) continue;
+            expeditionRule = rule;
+            break;
+        }
         for (const auto& def : DefaultDisplayRules()) {
             if (IsStateHideRule(def)) merged.push_back(def);
         }
         for (const auto& rule : rules) {
-            if (!MarkerShapeNameEquals(rule.source, "Seeded")) merged.push_back(rule);
+            if (!MarkerShapeNameEquals(rule.source, "Seeded") && !IsRuneShapeOwnedRule(rule))
+                merged.push_back(rule);
+        }
+        if (expeditionRule) {
+            NormalizeDisplayRule(*expeditionRule);
+            merged.push_back(*expeditionRule);
         }
         for (const auto& def : DefaultDisplayRules()) {
-            if (!IsStateHideRule(def)) merged.push_back(def);
+            if (!IsStateHideRule(def) && !IsRuneShapeOwnedRule(def)) merged.push_back(def);
         }
+        if (!expeditionRule) {
+            DisplayRule expedition = MakeDisplayRule("stock.expedition", kRuneShapeOwnedSource,
+                                                     "Expedition",
+                                                     {"Expedition2/Expedition2Encounter"},
+                                                     {"Other"}, {}, {}, MarkerShape::Square,
+                                                     {38, 230, 217, 255}, 7.f, "Expedition",
+                                                     false, true, true);
+            expedition.useRuneshapeColor = true;
+            merged.push_back(std::move(expedition));
+        }
+        NormalizeDisplayRules(merged);
         rules = std::move(merged);
     }
 

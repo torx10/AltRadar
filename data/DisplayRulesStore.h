@@ -23,7 +23,7 @@ public:
     static bool HasUsableRules(const std::vector<DisplayRule>& rules) { return !rules.empty(); }
 
     static std::vector<DisplayRule> SanitizeRules(std::vector<DisplayRule> rules) {
-        for (auto& rule : rules) IconTables::NormalizeDisplayRule(rule);
+        IconTables::NormalizeDisplayRules(rules);
         return rules;
     }
 

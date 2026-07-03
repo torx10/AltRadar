@@ -12,10 +12,12 @@
 #include "sdk/PluginSDK.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <filesystem>
 #include <imgui.h>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -59,6 +61,159 @@ struct TerrainTextureDrawStats {
     float minY = 0.0f;
     float maxX = 0.0f;
     float maxY = 0.0f;
+};
+
+class RuneIconCache {
+public:
+    struct Entry {
+        ID3D11ShaderResourceView* srv = nullptr;
+        int width = 0;
+        int height = 0;
+        bool missing = false;
+    };
+
+    ~RuneIconCache() { Release(); }
+
+    void SetPluginDir(std::filesystem::path pluginDir) {
+        if (pluginDir == pluginDir_) return;
+        pluginDir_ = std::move(pluginDir);
+        directoryScanned_ = false;
+        fileMap_.clear();
+        ReleaseEntries();
+    }
+
+    void Release() {
+        ReleaseEntries();
+        fileMap_.clear();
+        directoryScanned_ = false;
+        pluginDir_.clear();
+        device_ = nullptr;
+    }
+
+    const Entry* FindOrLoad(void* d3dDevice, std::string_view runeName) {
+        if (runeName.empty()) return nullptr;
+        if (device_ && d3dDevice && device_ != d3dDevice) ReleaseEntries();
+        if (d3dDevice) device_ = d3dDevice;
+        const std::string key = NormalizeName(runeName);
+        if (key.empty()) return nullptr;
+        auto it = entries_.find(key);
+        if (it != entries_.end()) return it->second.missing ? nullptr : &it->second;
+
+        Entry entry;
+        if (!LoadEntry(d3dDevice, runeName, entry)) entry.missing = true;
+        auto result = entries_.emplace(key, std::move(entry));
+        return result.first->second.missing ? nullptr : &result.first->second;
+    }
+
+private:
+    std::filesystem::path pluginDir_;
+    void* device_ = nullptr;
+    bool directoryScanned_ = false;
+    std::unordered_map<std::string, std::filesystem::path> fileMap_;
+    std::unordered_map<std::string, Entry> entries_;
+
+    static std::string NormalizeName(std::string_view value) {
+        std::string out;
+        out.reserve(value.size());
+        for (const unsigned char ch : value) {
+            if (std::isalnum(ch) == 0) continue;
+            out.push_back(static_cast<char>(std::tolower(ch)));
+        }
+        return out;
+    }
+
+    void ReleaseEntries() {
+        for (auto& [_, entry] : entries_) {
+            if (entry.srv) entry.srv->Release();
+        }
+        entries_.clear();
+    }
+
+    std::filesystem::path ResolveIconDirectory() const {
+        const std::filesystem::path relative = std::filesystem::path("Resources") / "runeshape" / "runes";
+        std::error_code ec;
+        if (!pluginDir_.empty()) {
+            const auto candidate = pluginDir_ / relative;
+            if (std::filesystem::exists(candidate, ec)) return candidate;
+        }
+        ec.clear();
+        const auto cwdCandidate = std::filesystem::current_path(ec) / relative;
+        if (!ec && std::filesystem::exists(cwdCandidate, ec)) return cwdCandidate;
+        return {};
+    }
+
+    void EnsureDirectoryIndex() {
+        if (directoryScanned_) return;
+        directoryScanned_ = true;
+        fileMap_.clear();
+        std::error_code ec;
+        const auto dir = ResolveIconDirectory();
+        if (dir.empty() || !std::filesystem::exists(dir, ec)) return;
+        for (const auto& entry : std::filesystem::directory_iterator(dir, ec)) {
+            if (ec || !entry.is_regular_file()) continue;
+            const auto ext = NormalizeName(entry.path().extension().string());
+            if (ext != "png") continue;
+            const auto stem = NormalizeName(entry.path().stem().string());
+            if (!stem.empty()) fileMap_.emplace(stem, entry.path());
+        }
+    }
+
+    std::filesystem::path ResolveIconPath(std::string_view runeName) {
+        EnsureDirectoryIndex();
+        const auto key = NormalizeName(runeName);
+        const auto it = fileMap_.find(key);
+        if (it == fileMap_.end()) return {};
+        return it->second;
+    }
+
+    bool LoadEntry(void* d3dDevice, std::string_view runeName, Entry& out) {
+        auto* dev = static_cast<ID3D11Device*>(d3dDevice);
+        if (!dev) return false;
+        if (device_ && device_ != d3dDevice) {
+            ReleaseEntries();
+        }
+        device_ = d3dDevice;
+
+        const auto path = ResolveIconPath(runeName);
+        if (path.empty()) return false;
+        int width = 0;
+        int height = 0;
+        int channels = 0;
+        stbi_uc* pixels = stbi_load(path.string().c_str(), &width, &height, &channels, 4);
+        if (!pixels || width <= 0 || height <= 0) {
+            if (pixels) stbi_image_free(pixels);
+            return false;
+        }
+
+        D3D11_TEXTURE2D_DESC desc{};
+        desc.Width = static_cast<UINT>(width);
+        desc.Height = static_cast<UINT>(height);
+        desc.MipLevels = 1;
+        desc.ArraySize = 1;
+        desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        desc.SampleDesc.Count = 1;
+        desc.Usage = D3D11_USAGE_DEFAULT;
+        desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+        D3D11_SUBRESOURCE_DATA sub{};
+        sub.pSysMem = pixels;
+        sub.SysMemPitch = static_cast<UINT>(width * 4);
+
+        ID3D11Texture2D* tex = nullptr;
+        ID3D11ShaderResourceView* srv = nullptr;
+        const HRESULT texHr = dev->CreateTexture2D(&desc, &sub, &tex);
+        if (SUCCEEDED(texHr) && tex)
+            dev->CreateShaderResourceView(tex, nullptr, &srv);
+        if (tex) tex->Release();
+        stbi_image_free(pixels);
+        if (!srv) return false;
+
+        out.srv = srv;
+        out.width = width;
+        out.height = height;
+        out.missing = false;
+        return true;
+    }
 };
 
 inline int ResolveBoundaryTargetDrawCount(RadarData::TerrainBoundaryQualityMode mode) {
@@ -121,11 +276,87 @@ inline ImU32 RuneshapeSdkColorToImU32(uint32_t color) {
     return IM_COL32(r, g, b, a);
 }
 
+inline ImU32 RuneshapeWeightTextColor(int weight) {
+    if (weight > 0) return IM_COL32(90, 230, 120, 255);
+    if (weight < 0) return IM_COL32(255, 105, 105, 255);
+    return IM_COL32(168, 174, 182, 255);
+}
+
+inline std::string FormatRuneshapeWeight(int weight) {
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%+d", weight);
+    if (weight == 0) std::snprintf(buf, sizeof(buf), "%d", weight);
+    return std::string(buf);
+}
+
+inline std::string ExtractRuneshapeGlyph(std::string_view anchorName) {
+    std::string glyph;
+    glyph.reserve(2);
+    bool takeNext = true;
+    for (const unsigned char ch : anchorName) {
+        if (std::isalnum(ch) != 0) {
+            if (takeNext) glyph.push_back(static_cast<char>(std::toupper(ch)));
+            if (glyph.size() >= 2) break;
+            takeNext = false;
+        } else {
+            takeNext = true;
+        }
+    }
+    return glyph;
+}
+
+inline void DrawRuneshapeBadgeIcon(ImDrawList* dl, const ImVec2& min, const ImVec2& max,
+                                   RuneIconCache* iconCache, void* d3dDevice,
+                                   std::string_view runeName, ImU32 accentColor) {
+    if (!dl) return;
+    dl->AddRectFilled(min, max, IM_COL32(24, 28, 34, 220), 4.f);
+    const RuneIconCache::Entry* icon =
+        iconCache ? iconCache->FindOrLoad(d3dDevice, runeName) : nullptr;
+    if (icon && icon->srv) {
+        dl->AddImage(ImTextureRef(reinterpret_cast<void*>(icon->srv)), min, max);
+        dl->AddRect(min, max, accentColor, 4.f, 0, 1.0f);
+        return;
+    }
+    dl->AddRect(min, max, accentColor, 4.f, 0, 1.0f);
+    dl->AddRectFilled(ImVec2(min.x + 3.f, min.y + 3.f), ImVec2(max.x - 3.f, max.y - 3.f),
+                      accentColor, 2.f);
+}
+
+inline void DrawRuneshapeWeightBadge(ImDrawList* dl, float x, float y,
+                                     const PluginSDK::Runeshape& runeshape,
+                                     RuneIconCache* iconCache = nullptr,
+                                     void* d3dDevice = nullptr) {
+    if (!dl) return;
+    const ImU32 accentColor = RuneshapeSdkColorToImU32(runeshape.color);
+    const ImU32 weightColor = RuneshapeWeightTextColor(runeshape.comboWeight);
+    const std::string weightText = FormatRuneshapeWeight(runeshape.comboWeight);
+    const ImVec2 textSize = ImGui::CalcTextSize(weightText.c_str());
+    constexpr float kPadX = 6.f;
+    constexpr float kPadY = 4.f;
+    constexpr float kGap = 6.f;
+    constexpr float kMarkerSize = 20.f;
+    const float badgeH = std::max(18.f, textSize.y + kPadY * 2.f);
+    const float markerY = y + (badgeH - kMarkerSize) * 0.5f;
+    const float textX = x + kPadX + kMarkerSize + kGap;
+    const float badgeW = kPadX + kMarkerSize + kGap + textSize.x + kPadX;
+    const ImVec2 min(x, y);
+    const ImVec2 max(x + badgeW, y + badgeH);
+
+    dl->AddRectFilled(min, max, IM_COL32(10, 12, 16, 190), 6.f);
+    dl->AddRect(min, max, IM_COL32(0, 0, 0, 120), 6.f, 0, 1.0f);
+    DrawRuneshapeBadgeIcon(dl, ImVec2(x + kPadX, markerY),
+                           ImVec2(x + kPadX + kMarkerSize, markerY + kMarkerSize),
+                           iconCache, d3dDevice, runeshape.anchorName, accentColor);
+    dl->AddText(ImVec2(textX, y + (badgeH - textSize.y) * 0.5f), weightColor, weightText.c_str());
+}
+
 inline void DrawRuneShapeSdkOverlay(ImDrawList* dl, PluginSDK::Context* ctx,
                                     const PluginSDK::Snapshot& snap,
                                     const RadarData::RadarConfig& cfg,
+                                    const RadarData::IconTables& icons,
+                                    RuneIconCache* iconCache = nullptr,
                                     const MapLayerProjection* largeMapProj = nullptr) {
-    if (!dl || !ctx || !cfg.RuneShapeShowWeights) return;
+    if (!dl || !ctx) return;
     std::vector<PluginSDK::Runeshape> runeshapes;
     try {
         runeshapes = ctx->Runeshape.Runeshapes();
@@ -133,6 +364,14 @@ inline void DrawRuneShapeSdkOverlay(ImDrawList* dl, PluginSDK::Context* ctx,
         return;
     }
     if (runeshapes.empty()) return;
+
+    const RadarData::DisplayRule* expeditionRule = nullptr;
+    for (const auto& rule : icons.displayRules) {
+        if (RadarData::IconTables::IsRuneShapeOwnedRule(rule)) {
+            expeditionRule = &rule;
+            break;
+        }
+    }
 
     std::unordered_map<uint32_t, const PluginSDK::Entity*> entitiesById;
     entitiesById.reserve(snap.Entities.size());
@@ -143,10 +382,13 @@ inline void DrawRuneShapeSdkOverlay(ImDrawList* dl, PluginSDK::Context* ctx,
     for (const auto& runeshape : runeshapes) {
         if (runeshape.entityId == 0 || runeshape.entityId > 0xFFFFFFFFull) continue;
         if (runeshape.completed) continue;
-        if (runeshape.comboWeight < cfg.RuneShapeMinimumWeight) continue;
         const auto it = entitiesById.find(static_cast<uint32_t>(runeshape.entityId));
         if (it == entitiesById.end() || !it->second || !it->second->IsValid) continue;
         const auto& e = *it->second;
+        const std::string path = RadarData::NarrowPath(e.Path);
+        if (!RadarData::ContainsCaseInsensitiveRuleText(path,
+                                                        "Expedition2/Expedition2Encounter"))
+            continue;
 
         ProjectedScreen scr;
         if (snap.LargeMap.IsVisible && largeMapProj
@@ -160,11 +402,23 @@ inline void DrawRuneShapeSdkOverlay(ImDrawList* dl, PluginSDK::Context* ctx,
         }
         if (!scr.valid) continue;
 
-        const ImU32 color = RuneshapeSdkColorToImU32(runeshape.color);
         const float drawX = scr.sx + (snap.LargeMap.IsVisible ? kLargeMapMarkerOffsetX : 0.0f);
-        char buf[32];
-        snprintf(buf, sizeof(buf), "%d", runeshape.comboWeight);
-        dl->AddText(ImVec2(drawX + 8.f, scr.sy - 16.f), color, buf);
+        if (cfg.RuneShapeShowWeights) {
+            if (runeshape.comboWeight < cfg.RuneShapeMinimumWeight) continue;
+            DrawRuneshapeWeightBadge(dl, drawX + 8.f, scr.sy - 20.f, runeshape, iconCache,
+                                     ctx ? ctx->D3DDevice : nullptr);
+            continue;
+        }
+        if (!expeditionRule || !expeditionRule->enabled) continue;
+        ImU32 glyphColor = expeditionRule->markerColor.ToImU32();
+        if (expeditionRule->useRuneshapeColor)
+            glyphColor = RuneshapeSdkColorToImU32(runeshape.color);
+        DrawEntityMarker(dl, expeditionRule->markerShape, drawX, scr.sy,
+                         std::clamp(expeditionRule->size, 1.5f, 22.f), glyphColor);
+        if (!expeditionRule->label.empty())
+            dl->AddText(ImVec2(drawX + expeditionRule->size + 4.f,
+                               scr.sy - expeditionRule->size - 2.f),
+                        glyphColor, expeditionRule->label.c_str());
     }
 }
 
@@ -633,6 +887,8 @@ public:
     RadarPerf::OverlayPerfTiming  perf;
     PluginSDK::WalkableGridHandle walkable;
     RadarUi::UiBlockerDetector    uiBlocker;
+    RuneIconCache                 runeIcons;
+    std::filesystem::path         pluginDir;
     bool                          mapWasVisible = false;
 
     bool ShouldDraw(const PluginSDK::Snapshot& snap) const {
@@ -710,6 +966,9 @@ public:
         perf.flags.uiBlockerOverlapW = uiBlocker.match.overlapW;
         perf.flags.uiBlockerOverlapH = uiBlocker.match.overlapH;
         perf.flags.uiBlockerOverlapArea = uiBlocker.match.overlapArea;
+        perf.flags.uiBlockerMatchedRuleCount = uiBlocker.MatchedRuleCount();
+        perf.flags.uiBlockerEvaluatedRuleCount = uiBlocker.EvaluatedRuleCount();
+        perf.flags.uiBlockerRejectedRulesSummary = uiBlocker.RejectedRulesSummary();
         if (uiBlocked) {
             perf.flags.heavyRebuildFrame = cache.frameSafety.heavyRebuildThisFrame;
             perf.flags.skippedOptionalDetail = cache.frameSafety.skipOptionalDetailThisFrame;
@@ -939,7 +1198,7 @@ public:
             }
             const auto entityDrawStart = std::chrono::steady_clock::now();
             cache.entities.Draw(ctx, snap, dl, &largeMapProj);
-            DrawRuneShapeSdkOverlay(dl, ctx, snap, cfg, &largeMapProj);
+            DrawRuneShapeSdkOverlay(dl, ctx, snap, cfg, icons, &runeIcons, &largeMapProj);
             perf.Record(RadarPerf::OverlayPerfTiming::Section::EntityDraw,
                         std::chrono::duration<double, std::milli>(
                             std::chrono::steady_clock::now() - entityDrawStart)
@@ -972,7 +1231,7 @@ public:
             if (cfg.DrawMiniMapEntities) {
                 const auto entityDrawStart = std::chrono::steady_clock::now();
                 cache.entities.Draw(ctx, snap, dl);
-                DrawRuneShapeSdkOverlay(dl, ctx, snap, cfg);
+                DrawRuneShapeSdkOverlay(dl, ctx, snap, cfg, icons, &runeIcons);
                 perf.Record(RadarPerf::OverlayPerfTiming::Section::EntityDraw,
                             std::chrono::duration<double, std::milli>(
                                 std::chrono::steady_clock::now() - entityDrawStart)

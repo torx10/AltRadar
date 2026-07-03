@@ -5,6 +5,8 @@
 #include "data/DisplayRulesStore.h"
 #include "data/RadarDefaults.h"
 #include "data/RadarLog.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "third_party/stb_image.h"
 #include "render/RadarOverlay.h"
 #include "ui/RadarUi.h"
 
@@ -48,6 +50,8 @@ public:
 
         const auto pluginDir = DirectoryPath();
         EnsureRuntimeDirectories(pluginDir);
+        m_overlay.pluginDir = pluginDir;
+        m_overlay.runeIcons.SetPluginDir(pluginDir);
         RadarData::RadarLog::Instance().Init(pluginDir);
 
         std::error_code ec;
@@ -67,6 +71,7 @@ public:
         EndPickerMode();
         m_overlay.walkable.Reset();
         m_overlay.terrain.Release();
+        m_overlay.runeIcons.Release();
         m_overlay.cache.Clear();
         RadarData::RadarLog::Instance().Info("Alt Radar plugin disabled");
         RadarData::RadarLog::Instance().Shutdown();
@@ -78,6 +83,8 @@ public:
             ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx()->ImGuiContext));
 
         const auto pluginDir = DirectoryPath();
+        m_overlay.pluginDir = pluginDir;
+        m_overlay.runeIcons.SetPluginDir(pluginDir);
         if (m_ui.requestResetSettings) {
             m_ui.requestResetSettings = false;
             RadarData::ResetSettingsToDefaults(pluginDir, m_overlay.cfg);
@@ -117,6 +124,7 @@ public:
             ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx()->ImGuiContext));
 
         const auto snap = ctx()->Game.GetSnapshot();
+        m_overlay.runeIcons.SetPluginDir(DirectoryPath());
 
         if (m_ui.pickerPoiMode || m_ui.pickerEntityMode) {
             DrawPicker(snap);

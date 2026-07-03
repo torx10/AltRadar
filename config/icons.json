@@ -1,226 +1,432 @@
-﻿{
-    "ChestIcons":  {
-                       "All Other Chest":  {
-                                               "Scale":  15.0,
-                                               "Path":  "Resources/radar/icons.png",
-                                               "CX":  10.0,
-                                               "CY":  10.0
-                                           },
-                       "Jeweller\u0027s Strongbox":  {
-                                                         "Scale":  35.0,
-                                                         "Path":  "Resources/radar/icons.png",
-                                                         "CX":  11.0,
-                                                         "CY":  60.0
-                                                     },
-                       "Large Strongbox":  {
-                                               "Scale":  35.0,
-                                               "Path":  "Resources/radar/icons.png",
-                                               "CX":  8.0,
-                                               "CY":  62.0
-                                           },
-                       "Magic Chests":  {
-                                            "Scale":  25.0,
-                                            "Path":  "Resources/radar/icons.png",
-                                            "CX":  2.0,
-                                            "CY":  70.0
-                                        },
-                       "Omen Chest":  {
-                                          "Scale":  40.0,
-                                          "Path":  "Resources/radar/icons.png",
-                                          "CX":  3.0,
-                                          "CY":  58.0
-                                      },
-                       "Rare Chests":  {
-                                           "Scale":  30.0,
-                                           "Path":  "Resources/radar/icons.png",
-                                           "CX":  1.0,
-                                           "CY":  70.0
-                                       },
-                       "Researcher\u0027s Strongbox":  {
-                                                           "Scale":  35.0,
-                                                           "Path":  "Resources/radar/icons.png",
-                                                           "CX":  6.0,
-                                                           "CY":  62.0
-                                                       },
-                       "Strongbox":  {
-                                         "Scale":  30.0,
-                                         "Path":  "Resources/radar/icons.png",
-                                         "CX":  1.0,
-                                         "CY":  58.0
-                                     }
-                   },
-    "POIMonsters":  {
-                        "-1":  {
-                                   "Scale":  30.0,
-                                   "Path":  "Resources/radar/icons.png",
-                                   "CX":  12.0,
-                                   "CY":  44.0
-                               }
-                    },
-    "ExpeditionIcons":  {
-                            "Armour Chest":  {
-                                                 "Scale":  0.0,
-                                                 "Path":  "Resources/radar/icons.png",
-                                                 "CX":  1.0,
-                                                 "CY":  39.0
-                                             },
-                            "Cavern Entrance":  {
-                                                    "Scale":  50.0,
-                                                    "Path":  "Resources/radar/icons.png",
-                                                    "CX":  0.0,
-                                                    "CY":  2.0
-                                                },
-                            "Chest Quantity Remnant":  {
-                                                           "Scale":  60.0,
-                                                           "Path":  "Resources/radar/icons.png",
-                                                           "CX":  11.0,
-                                                           "CY":  40.0
-                                                       },
-                            "Currency Chest":  {
-                                                   "Scale":  0.0,
-                                                   "Path":  "Resources/radar/icons.png",
-                                                   "CX":  10.0,
-                                                   "CY":  38.0
-                                               },
-                            "Generic Expedition Chests":  {
-                                                              "Scale":  0.0,
-                                                              "Path":  "Resources/radar/icons.png",
-                                                              "CX":  4.0,
-                                                              "CY":  41.0
-                                                          },
-                            "Logbook":  {
-                                            "Scale":  50.0,
-                                            "Path":  "Resources/radar/icons.png",
-                                            "CX":  4.0,
-                                            "CY":  40.0
-                                        },
-                            "Maps Chest":  {
-                                               "Scale":  0.0,
-                                               "Path":  "Resources/radar/icons.png",
-                                               "CX":  13.0,
-                                               "CY":  38.0
-                                           },
-                            "Splinter Chest":  {
-                                                   "Scale":  55.0,
-                                                   "Path":  "Resources/radar/icons.png",
-                                                   "CX":  4.0,
-                                                   "CY":  40.0
-                                               },
-                            "Trinkets Chest":  {
-                                                   "Scale":  0.0,
-                                                   "Path":  "Resources/radar/icons.png",
-                                                   "CX":  0.0,
-                                                   "CY":  39.0
-                                               },
-                            "Weapon Chest":  {
-                                                 "Scale":  0.0,
-                                                 "Path":  "Resources/radar/icons.png",
-                                                 "CX":  2.0,
-                                                 "CY":  39.0
-                                             }
-                        },
-    "BaseIcons":  {
-                      "Friendly":  {
-                                       "Scale":  15.0,
-                                       "Path":  "Resources/radar/icons.png",
-                                       "CX":  1.0,
-                                       "CY":  0.0
-                                   },
-                      "Leader":  {
-                                     "Scale":  25.0,
-                                     "Path":  "Resources/radar/icons.png",
-                                     "CX":  3.0,
-                                     "CY":  1.0
-                                 },
-                      "Magic Monster":  {
-                                            "Scale":  30.0,
-                                            "Path":  "Resources/radar/icons.png",
-                                            "CX":  6.0,
-                                            "CY":  3.0
-                                        },
-                      "NPC":  {
-                                  "Scale":  15.0,
-                                  "Path":  "Resources/radar/icons.png",
-                                  "CX":  3.0,
-                                  "CY":  0.0
-                              },
-                      "Normal Monster":  {
-                                             "Scale":  30.0,
-                                             "Path":  "Resources/radar/icons.png",
-                                             "CX":  0.0,
-                                             "CY":  14.0
-                                         },
-                      "Pinnacle Boss Not Attackable":  {
-                                                           "Scale":  30.0,
-                                                           "Path":  "Resources/radar/icons.png",
-                                                           "CX":  6.0,
-                                                           "CY":  6.0
-                                                       },
-                      "Player":  {
-                                     "Scale":  15.0,
-                                     "Path":  "Resources/radar/icons.png",
-                                     "CX":  2.0,
-                                     "CY":  0.0
-                                 },
-                      "Rare Monster":  {
-                                           "Scale":  30.0,
-                                           "Path":  "Resources/radar/icons.png",
-                                           "CX":  4.0,
-                                           "CY":  57.0
-                                       },
-                      "Self":  {
-                                   "Scale":  15.0,
-                                   "Path":  "Resources/radar/icons.png",
-                                   "CX":  0.0,
-                                   "CY":  0.0
-                               },
-                      "Shrine":  {
-                                     "Scale":  30.0,
-                                     "Path":  "Resources/radar/icons.png",
-                                     "CX":  7.0,
-                                     "CY":  0.0
-                                 },
-                      "Special NPC":  {
-                                          "Scale":  30.0,
-                                          "Path":  "Resources/radar/icons.png",
-                                          "CX":  13.0,
-                                          "CY":  42.0
-                                      },
-                      "Unique Monster":  {
-                                             "Scale":  30.0,
-                                             "Path":  "Resources/radar/icons.png",
-                                             "CX":  6.0,
-                                             "CY":  57.0
-                                         }
-                  },
-    "DeliriumIcons":  {
-                          "Delirium Bomb":  {
-                                                "Scale":  15.0,
-                                                "Path":  "Resources/radar/icons.png",
-                                                "CX":  11.0,
-                                                "CY":  37.0
-                                            },
-                          "Delirium Spawner":  {
-                                                   "Scale":  15.0,
-                                                   "Path":  "Resources/radar/icons.png",
-                                                   "CX":  1.0,
-                                                   "CY":  40.0
-                                               }
-                      },
-    "OtherImportantObjects":  {
-                                  "-1":  {
-                                             "Scale":  30.0,
-                                             "Path":  "Resources/radar/icons.png",
-                                             "CX":  1.0,
-                                             "CY":  37.0
-                                         }
-                              },
-    "BreachIcons":  {
-                        "Breach Chest":  {
-                                             "Scale":  20.0,
-                                             "Path":  "Resources/radar/icons.png",
-                                             "CX":  1.0,
-                                             "CY":  2.0
-                                         }
-                    }
+{
+    "BaseIcons": {
+        "Checkpoint": {
+            "CX": 13,
+            "CY": 42,
+            "Color": [
+                255,
+                217,
+                51,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Flag"
+        },
+        "Friendly": {
+            "CX": 1,
+            "CY": 0,
+            "Color": [
+                102,
+                255,
+                153,
+                235
+            ],
+            "Label": "",
+            "Scale": 15.0,
+            "Shape": "Person"
+        },
+        "Leader": {
+            "CX": 3,
+            "CY": 1,
+            "Color": [
+                77,
+                242,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 25.0,
+            "Shape": "Crown"
+        },
+        "Magic Monster": {
+            "CX": 6,
+            "CY": 3,
+            "Color": [
+                115,
+                166,
+                255,
+                247
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Fang"
+        },
+        "NPC": {
+            "CX": 3,
+            "CY": 0,
+            "Color": [
+                255,
+                217,
+                51,
+                242
+            ],
+            "Label": "",
+            "Scale": 15.0,
+            "Shape": "Chat"
+        },
+        "Normal Monster": {
+            "CX": 0,
+            "CY": 14,
+            "Color": [
+                255,
+                51,
+                51,
+                242
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Circle"
+        },
+        "Pinnacle Boss Not Attackable": {
+            "CX": 6,
+            "CY": 6,
+            "Color": [
+                255,
+                115,
+                0,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Skull"
+        },
+        "Player": {
+            "CX": 2,
+            "CY": 0,
+            "Color": [
+                77,
+                242,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 15.0,
+            "Shape": "Person"
+        },
+        "Rare Monster": {
+            "CX": 4,
+            "CY": 57,
+            "Color": [
+                255,
+                217,
+                38,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Claw"
+        },
+        "Self": {
+            "CX": 0,
+            "CY": 0,
+            "Color": [
+                77,
+                242,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 15.0,
+            "Shape": "Ring"
+        },
+        "Shrine": {
+            "CX": 7,
+            "CY": 0,
+            "Color": [
+                64,
+                235,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "MapPin"
+        },
+        "Special NPC": {
+            "CX": 13,
+            "CY": 42,
+            "Color": [
+                255,
+                217,
+                51,
+                242
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Chat"
+        },
+        "Transition": {
+            "CX": 10,
+            "CY": 2,
+            "Color": [
+                102,
+                255,
+                153,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Stairs"
+        },
+        "Unique Monster": {
+            "CX": 6,
+            "CY": 57,
+            "Color": [
+                255,
+                115,
+                0,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Skull"
+        },
+        "Waypoint": {
+            "CX": 7,
+            "CY": 0,
+            "Color": [
+                64,
+                235,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "MapPin"
+        }
+    },
+    "BreachIcons": {
+        "Breach Chest": {
+            "CX": 1,
+            "CY": 2,
+            "Color": [
+                242,
+                89,
+                242,
+                255
+            ],
+            "Label": "",
+            "Scale": 20.0,
+            "Shape": "Chest"
+        }
+    },
+    "ChestIcons": {
+        "All Other Chest": {
+            "CX": 10,
+            "CY": 10,
+            "Color": [
+                140,
+                191,
+                255,
+                224
+            ],
+            "Label": "",
+            "Scale": 15.0,
+            "Shape": "Chest"
+        },
+        "Jeweller's Strongbox": {
+            "CX": 11,
+            "CY": 60,
+            "Color": [
+                255,
+                179,
+                0,
+                255
+            ],
+            "Label": "",
+            "Scale": 35.0,
+            "Shape": "Chest"
+        },
+        "Large Strongbox": {
+            "CX": 8,
+            "CY": 62,
+            "Color": [
+                255,
+                179,
+                0,
+                255
+            ],
+            "Label": "",
+            "Scale": 35.0,
+            "Shape": "Chest"
+        },
+        "Magic Chests": {
+            "CX": 2,
+            "CY": 70,
+            "Color": [
+                115,
+                166,
+                255,
+                236
+            ],
+            "Label": "",
+            "Scale": 25.0,
+            "Shape": "Chest"
+        },
+        "Omen Chest": {
+            "CX": 3,
+            "CY": 58,
+            "Color": [
+                255,
+                115,
+                0,
+                242
+            ],
+            "Label": "",
+            "Scale": 40.0,
+            "Shape": "Crown"
+        },
+        "Rare Chests": {
+            "CX": 1,
+            "CY": 70,
+            "Color": [
+                255,
+                217,
+                38,
+                242
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Chest"
+        },
+        "Researcher's Strongbox": {
+            "CX": 6,
+            "CY": 62,
+            "Color": [
+                255,
+                179,
+                0,
+                255
+            ],
+            "Label": "",
+            "Scale": 35.0,
+            "Shape": "Chest"
+        },
+        "Strongbox": {
+            "CX": 1,
+            "CY": 58,
+            "Color": [
+                255,
+                179,
+                0,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Chest"
+        }
+    },
+    "DeliriumIcons": {
+        "Delirium Bomb": {
+            "CX": 11,
+            "CY": 37,
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 15.0,
+            "Shape": "None"
+        },
+        "Delirium Spawner": {
+            "CX": 1,
+            "CY": 40,
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 15.0,
+            "Shape": "None"
+        }
+    },
+    "ExpeditionIcons": {
+        "Cavern Entrance": {
+            "CX": 0,
+            "CY": 2,
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 50.0,
+            "Shape": "None"
+        },
+        "Chest Quantity Remnant": {
+            "CX": 11,
+            "CY": 40,
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 60.0,
+            "Shape": "None"
+        },
+        "Logbook": {
+            "CX": 4,
+            "CY": 40,
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 50.0,
+            "Shape": "None"
+        },
+        "Splinter Chest": {
+            "CX": 4,
+            "CY": 40,
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 55.0,
+            "Shape": "None"
+        }
+    },
+    "OtherImportantObjects": {
+        "-1": {
+            "CX": 1,
+            "CY": 37,
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "None"
+        }
+    },
+    "POIMonsters": {
+        "-1": {
+            "CX": 12,
+            "CY": 44,
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Label": "",
+            "Scale": 30.0,
+            "Shape": "Skull"
+        }
+    }
 }

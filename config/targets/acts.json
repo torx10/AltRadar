@@ -11,7 +11,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Transition",
@@ -24,7 +25,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Lowerledge X Karui",
@@ -37,7 +39,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Kalguur town?",
@@ -50,7 +53,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boat",
@@ -63,7 +67,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss stronghold",
@@ -76,7 +81,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "Abyss_Intro": [
@@ -91,7 +97,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Well of Souls",
@@ -104,7 +111,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_1": [
@@ -119,7 +127,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_11": [
@@ -134,7 +143,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Crowbell Start (+2 Passive)",
@@ -147,7 +157,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ogham Farmlands Or Deadend",
@@ -160,7 +171,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 2,
             "DrawPath": true,
-            "DrawPathColor": "2, 255, 0"
+            "DrawPathColor": "2, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Cemetery of the Eternals",
@@ -173,15 +185,12 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Dryadic Ritual (Support gem)",
-            "Path": "Metadata/Terrain/Woods/Features_Cairns/GrassHole_01.tdtx:1-y:1",
-            "AnchorGridX": 1334,
-            "AnchorGridY": 1196,
-            "AnchorTileX": 58,
-            "AnchorTileY": 52,
+            "Path": "Metadata/Terrain/Woods/Features_Cairns/GrassHole_*.tdtx:[]",
             "Icon": false,
             "IconName": "",
             "IconSize": 30.0,
@@ -190,7 +199,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_12": [
@@ -205,7 +215,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The King in the Mists (30 Spirit + Spirit Gem Level 4)",
@@ -218,7 +229,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ritual",
@@ -231,7 +243,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 4,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_13_1": [
@@ -246,7 +259,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Crop Circle (Skill Gem Level 4)",
@@ -259,7 +273,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ogham Village",
@@ -272,7 +287,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_13_2": [
@@ -287,11 +303,12 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Renly's Tools (Salvaging Bench)",
-            "Path": "Metadata/Terrain/Woods/Village/Blacksmith.tdtx:[]",
+            "Path": "Metadata/Terrain/Woods/Village/Blacksmith_Large.tdtx:[]",
             "Icon": false,
             "IconName": "",
             "IconSize": 30.0,
@@ -300,7 +317,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ogham Farmlands",
@@ -313,7 +331,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_14": [
@@ -328,7 +347,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Gallows (Support Gem Level 1)",
@@ -341,7 +361,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_15": [
@@ -356,7 +377,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Throne of the Wolf",
@@ -369,7 +391,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Manor Ramparts",
@@ -382,7 +405,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs Up",
@@ -395,7 +419,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs Down",
@@ -408,7 +433,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_2": [
@@ -423,7 +449,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Beira of the Rotten (10% Cold Res)",
@@ -436,7 +463,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Grelwood",
@@ -449,7 +477,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "1, 255, 3"
+            "DrawPathColor": "1, 255, 3",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_4": [
@@ -464,7 +493,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Moving Bramble (Skill Gem Level 2)",
@@ -477,7 +507,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Areagne's Hut (Support Gem Level 1 and Flasks)",
@@ -490,7 +521,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Grim Tangle",
@@ -503,7 +535,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "1, 255, 0"
+            "DrawPathColor": "1, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Red Vale",
@@ -516,7 +549,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Clearfell",
@@ -529,7 +563,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_5": [
@@ -544,7 +579,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Obelisk of Rust",
@@ -557,7 +593,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 3,
             "DrawPath": false,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_6": [
@@ -572,7 +609,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Cemetery of the Eternals",
@@ -585,7 +623,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Grelwood",
@@ -598,7 +637,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_7": [
@@ -613,7 +653,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Tomb of the Consort",
@@ -626,7 +667,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 1"
+            "DrawPathColor": "0, 255, 1",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Arena / Hunting Grounds",
@@ -639,7 +681,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Grim Tangle",
@@ -652,7 +695,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ancient Ruin",
@@ -665,7 +709,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_8": [
@@ -680,7 +725,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Forgotten Riches",
@@ -693,7 +739,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "MausoleumBoss_ArenaFloor",
@@ -706,7 +753,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G1_9": [
@@ -721,7 +769,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Embattled Trove (Support Gem Level 1)",
@@ -734,7 +783,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_1": [
@@ -749,7 +799,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_10_1": [
@@ -764,7 +815,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Ardura Caravan",
@@ -777,7 +829,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_10_2": [
@@ -792,7 +845,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Mawdun Quarry",
@@ -805,7 +859,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_12_1": [
@@ -820,7 +875,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "5, 255, 0"
+            "DrawPathColor": "5, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_12_2": [
@@ -835,7 +891,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "1, 255, 0"
+            "DrawPathColor": "1, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Dreadnought",
@@ -848,7 +905,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_13": [
@@ -863,7 +921,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_2": [
@@ -878,7 +937,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 10, 0"
+            "DrawPathColor": "255, 10, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Halani Gates",
@@ -891,7 +951,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Ardura Caravan",
@@ -904,7 +965,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Bell Chest (Skill Gem Level 6)",
@@ -917,7 +979,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_3": [
@@ -932,7 +995,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Traitor's Passage",
@@ -945,7 +1009,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_4_1": [
@@ -960,7 +1025,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Lost City",
@@ -973,7 +1039,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Looted Vault",
@@ -986,7 +1053,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Looted Vault",
@@ -999,7 +1067,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Ardura Caravan",
@@ -1012,7 +1081,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Abandoned Prayer",
@@ -1025,7 +1095,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_4_2": [
@@ -1040,7 +1111,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "1, 255, 0"
+            "DrawPathColor": "1, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Keth",
@@ -1053,7 +1125,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_4_3": [
@@ -1068,7 +1141,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Elemental Offering (Res Ring)",
@@ -1081,7 +1155,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Lost City",
@@ -1094,7 +1169,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Buried Shrines",
@@ -1107,7 +1183,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Vestibule",
@@ -1120,7 +1197,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Water Goddess",
@@ -1133,7 +1211,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "3, 255, 0"
+            "DrawPathColor": "3, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_5_1": [
@@ -1148,7 +1227,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Ardura Caravan",
@@ -1161,7 +1241,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Fossilised Memorial (Support Gem Level 1)",
@@ -1174,7 +1255,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Lightless Passage",
@@ -1187,7 +1269,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 5"
+            "DrawPathColor": "255, 0, 5",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_5_2": [
@@ -1202,7 +1285,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Blackrib Pit",
@@ -1215,7 +1299,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_6": [
@@ -1230,7 +1315,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ancient Seal",
@@ -1243,7 +1329,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 3,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Titan Grotto",
@@ -1256,7 +1343,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Ardura Caravan",
@@ -1269,7 +1357,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_7": [
@@ -1284,7 +1373,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Valley of the Titans",
@@ -1297,7 +1387,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_8": [
@@ -1312,7 +1403,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Ardura Caravan",
@@ -1325,7 +1417,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Path of Mourning",
@@ -1338,7 +1431,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_9_1": [
@@ -1353,7 +1447,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "12, 255, 10"
+            "DrawPathColor": "12, 255, 10",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Deshar",
@@ -1366,7 +1461,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Shifting Vases (Support Gem Level 2 + Chests)",
@@ -1379,7 +1475,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G2_9_2": [
@@ -1394,7 +1491,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "3, 255, 5"
+            "DrawPathColor": "3, 255, 5",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Path of Mourning",
@@ -1407,7 +1505,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Sisters of Garukhan (10% Lightning Res)",
@@ -1420,7 +1519,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 3, 0"
+            "DrawPathColor": "255, 3, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_1": [
@@ -1435,7 +1535,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ziggurat Encampment",
@@ -1448,7 +1549,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Mini Town",
@@ -1461,7 +1563,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Orok Campfire (Lesser Jeweller's Orb)",
@@ -1474,7 +1577,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_11": [
@@ -1489,7 +1593,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "2, 255, 1"
+            "DrawPathColor": "2, 255, 1",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Cauldron Keeper",
@@ -1502,7 +1607,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Drowned City",
@@ -1515,7 +1621,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_12": [
@@ -1530,7 +1637,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs Up",
@@ -1543,7 +1651,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ziggurat Encampment",
@@ -1556,7 +1665,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs Up",
@@ -1569,7 +1679,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_14": [
@@ -1584,7 +1695,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Town",
@@ -1597,7 +1709,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_16": [
@@ -1612,7 +1725,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Black Chambers",
@@ -1625,7 +1739,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 1"
+            "DrawPathColor": "0, 255, 1",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Utzaal",
@@ -1638,7 +1753,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Altar",
@@ -1651,7 +1767,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Idol",
@@ -1664,7 +1781,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_17": [
@@ -1679,7 +1797,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Aggorat",
@@ -1692,7 +1811,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_2_1": [
@@ -1707,7 +1827,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "2, 255, 0"
+            "DrawPathColor": "2, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Jungle Ruins",
@@ -1720,7 +1841,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Azak Bog",
@@ -1733,7 +1855,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Larva Hollow",
@@ -1746,7 +1869,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Troubled Camp (WEAPONS vendor)",
@@ -1759,7 +1883,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Matlan Waterways",
@@ -1772,7 +1897,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_2_2": [
@@ -1787,7 +1913,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Lever",
@@ -1800,7 +1927,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_3": [
@@ -1815,7 +1943,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Infested Barrens",
@@ -1828,7 +1957,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ziggurat Encampment",
@@ -1841,7 +1971,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Troubled Camp(ARMOUR VENDOR)",
@@ -1854,7 +1985,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Monkeee (Passive)",
@@ -1867,7 +1999,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Monkey (+2 Passive)",
@@ -1880,7 +2013,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_4": [
@@ -1895,7 +2029,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "???",
@@ -1908,7 +2043,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_5": [
@@ -1923,7 +2059,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 1"
+            "DrawPathColor": "0, 255, 1",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Temple of Chaos",
@@ -1936,7 +2073,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_6_1": [
@@ -1951,7 +2089,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 2"
+            "DrawPathColor": "255, 0, 2",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Jiquani's Sanctum",
@@ -1964,7 +2103,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_6_2": [
@@ -1979,7 +2119,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 2,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Corruption Altar",
@@ -1992,7 +2133,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -2005,7 +2147,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_7": [
@@ -2020,7 +2163,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Infested Barrens",
@@ -2033,7 +2177,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_8": [
@@ -2048,7 +2193,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "7, 255, 9"
+            "DrawPathColor": "7, 255, 9",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Molten Vault",
@@ -2061,7 +2207,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ziggurat Encampment",
@@ -2074,7 +2221,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G3_9": [
@@ -2089,7 +2237,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "The Drowned City",
@@ -2102,7 +2251,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_10": [
@@ -2117,7 +2267,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Chest",
@@ -2130,7 +2281,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_11_1b": [
@@ -2145,7 +2297,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Heart of the Tribe",
@@ -2158,7 +2311,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_11_2": [
@@ -2173,7 +2327,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Rare chests",
@@ -2186,7 +2341,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_1_1": [
@@ -2201,7 +2357,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Volcanic Warrens",
@@ -2214,7 +2371,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Flayed Sailor (Map Piece)",
@@ -2227,7 +2385,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Voltaxic spire",
@@ -2240,7 +2399,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Jewellers orb in chest",
@@ -2253,7 +2413,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Rhoa - No reward?",
@@ -2266,7 +2427,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Rare mob - Good rewards",
@@ -2279,7 +2441,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_1_2": [
@@ -2294,7 +2457,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Volcanic Nest 2 Rares",
@@ -2307,7 +2471,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss Arena",
@@ -2320,7 +2485,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Shrine - No loot",
@@ -2333,7 +2499,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_2_1": [
@@ -2348,7 +2515,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Journey's end",
@@ -2361,7 +2529,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Deadman Chest (Map Piece)",
@@ -2374,7 +2543,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Abandoned Ship",
@@ -2387,7 +2557,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_2_2": [
@@ -2402,7 +2573,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Loot - SHIP EXPLODES",
@@ -2415,7 +2587,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss - Captain Hartlin",
@@ -2428,7 +2601,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "1, 255, 0"
+            "DrawPathColor": "1, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_3_1": [
@@ -2443,7 +2617,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Singing Caverns",
@@ -2456,7 +2631,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Crab Rare (Support Gem 4)",
@@ -2469,7 +2645,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Petrified Pirate (Map Piece)",
@@ -2482,7 +2659,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Singing Caverns",
@@ -2495,7 +2673,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_3_2": [
@@ -2510,7 +2689,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Quest - Humming Pearl",
@@ -2523,7 +2703,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Egg Room",
@@ -2536,7 +2717,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Whakapanu Island",
@@ -2549,7 +2731,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_4_1": [
@@ -2564,7 +2747,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Hall of the dead",
@@ -2577,7 +2761,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 1"
+            "DrawPathColor": "0, 255, 1",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Passageway",
@@ -2590,7 +2775,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 1"
+            "DrawPathColor": "0, 255, 1",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_4_2": [
@@ -2605,7 +2791,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 3,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss - Yama",
@@ -2618,7 +2805,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_5_1": [
@@ -2633,7 +2821,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Armoury",
@@ -2646,7 +2835,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Flask buff - Need key",
@@ -2659,7 +2849,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_5_2": [
@@ -2674,7 +2865,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Warden office",
@@ -2687,7 +2879,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Flask buff - Need key",
@@ -2700,7 +2893,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_7": [
@@ -2715,7 +2909,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Corpse (Map piece)",
@@ -2728,7 +2923,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "G4_8b": [
@@ -2743,7 +2939,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 2"
+            "DrawPathColor": "0, 255, 2",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Bell - Exalted Orb",
@@ -2756,7 +2953,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 1"
+            "DrawPathColor": "255, 0, 1",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Bell - Exalted Orb",
@@ -2769,7 +2967,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Bell - Regal Orb",
@@ -2782,7 +2981,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "MapBluff": [
@@ -2797,7 +2997,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "MapLostTowers": [
@@ -2812,7 +3013,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Beacon",
@@ -2825,7 +3027,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "MapLostTowers_NoBoss": [
@@ -2840,7 +3043,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "MapMesa": [
@@ -2855,7 +3059,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "MapSwampTower": [
@@ -2870,7 +3075,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs",
@@ -2883,7 +3089,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs",
@@ -2896,7 +3103,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "P1_1": [
@@ -2911,7 +3119,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stones of serle",
@@ -2924,7 +3133,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P1_2": [
@@ -2939,7 +3149,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss Arena",
@@ -2952,7 +3163,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Runed Megalith",
@@ -2965,7 +3177,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P1_3": [
@@ -2980,7 +3193,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P1_4": [
@@ -2995,7 +3209,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Soul Ferryman - Sells runes",
@@ -3008,7 +3223,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Holton Estate",
@@ -3021,7 +3237,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Bosses",
@@ -3034,7 +3251,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Woven (+2 Skills)",
@@ -3047,7 +3265,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P1_5": [
@@ -3062,7 +3281,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 2"
+            "DrawPathColor": "255, 0, 2",
+            "AlwaysDrawPath": false
         }
     ],
     "P1_6": [
@@ -3077,7 +3297,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss stairs",
@@ -3090,7 +3311,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "3, 255, 0"
+            "DrawPathColor": "3, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P2_1": [
@@ -3105,7 +3327,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Forge",
@@ -3118,7 +3341,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Bosses (+2 Skills)",
@@ -3131,7 +3355,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Galai Gates",
@@ -3144,7 +3369,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Skullmaw Stairway (+5% Health)",
@@ -3157,7 +3383,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Molten One`s Gift (+5% Health)",
@@ -3170,7 +3397,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P2_2": [
@@ -3185,7 +3413,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P2_3": [
@@ -3200,7 +3429,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "2 Seal locations - Loot",
@@ -3213,7 +3443,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 2,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "P2_4": [
@@ -3228,7 +3459,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         }
     ],
     "P2_5": [
@@ -3243,7 +3475,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P2_6": [
@@ -3258,7 +3491,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Pillars - Buff choice",
@@ -3271,7 +3505,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P2_7": [
@@ -3286,7 +3521,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Pillars - Buff choice",
@@ -3299,7 +3535,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "WaterWell",
@@ -3312,7 +3549,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 2,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Bloodbilge",
@@ -3325,7 +3563,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ],
     "P3_1": [
@@ -3340,7 +3579,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Kriar Village",
@@ -3353,7 +3593,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Skill Gem (Level 14)",
@@ -3366,7 +3607,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ],
     "P3_2": [
@@ -3381,7 +3623,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss Arena (+30 spirit)",
@@ -3394,7 +3637,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P3_3": [
@@ -3409,7 +3653,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Coves (+2 skills)",
@@ -3422,7 +3667,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P3_4": [
@@ -3437,7 +3683,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P3_5": [
@@ -3452,7 +3699,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Guarenteed (HeadHunter!)",
@@ -3465,7 +3713,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPathColor": "255, 0, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P3_6": [
@@ -3480,7 +3729,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         }
     ],
     "P3_7": [
@@ -3495,7 +3745,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "0, 255, 0"
+            "DrawPathColor": "0, 255, 0",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "KeyPedestal_LandmarkVault2",
@@ -3508,7 +3759,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ]
 }

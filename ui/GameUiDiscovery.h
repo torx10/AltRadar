@@ -52,6 +52,15 @@ enum class UiDiscoveryDiffKind : uint8_t {
     Disappeared,
 };
 
+enum class UiDiscoveryDiffFilter : uint8_t {
+    All = 0,
+    VisibilityChanged,
+    BecameVisible,
+    BecameHidden,
+    RectChanged,
+    NewOrMissing,
+};
+
 struct UiDiscoveryDiffRow {
     UiDiscoveryDiffKind    kind = UiDiscoveryDiffKind::Changed;
     std::string            key;
@@ -66,6 +75,14 @@ struct UiDiscoveryDiffRow {
     bool                   areaChanged = false;
     bool                   elementTypeChanged = false;
     float                  areaDelta = 0.f;
+};
+
+struct UiDiscoveryDiffSummary {
+    int becameVisibleCount = 0;
+    int becameHiddenCount = 0;
+    int rectChangedCount = 0;
+    int newNodeCount = 0;
+    int missingNodeCount = 0;
 };
 
 struct UiPinnedCandidate {
@@ -112,6 +129,7 @@ struct UiDiscoveryState {
     bool includeZeroRect = true;
     bool includeEmptyStringId = true;
     bool showTopLevelSummary = true;
+    UiDiscoveryDiffFilter diffFilter = UiDiscoveryDiffFilter::All;
     int  scanIntervalMs = 500;
     int  manualRootIndex = 2;
     char manualPath[128]{};
@@ -395,6 +413,153 @@ inline std::string BuildDiscoveryDiffCopyText(const UiDiscoveryDiffRow& row) {
     return out.str();
 }
 
+inline std::string BuildDiscoveryDiffPinText(const UiDiscoveryDiffRow& row) {
+    const UiDiscoveryNode* before = row.before;
+    const UiDiscoveryNode* after = row.after;
+    const UiDiscoveryNode* focus = after ? after : before;
+    if (!focus) return {};
+
+    std::ostringstream out;
+    out << focus->rootLabel << ' ' << focus->path << "\n";
+    out << "baseline visible=" << ((before && before->visible) ? "yes" : "no")
+        << " current visible=" << ((after && after->visible) ? "yes" : "no") << "\n";
+    out << "baseline rect=";
+    if (before && before->hasRect)
+        out << '(' << before->rectX << ", " << before->rectY << ' ' << before->rectW << 'x'
+            << before->rectH << ')';
+    else
+        out << "(none)";
+    out << " current rect=";
+    if (after && after->hasRect)
+        out << '(' << after->rectX << ", " << after->rectY << ' ' << after->rectW << 'x'
+            << after->rectH << ')';
+    else
+        out << "(none)";
+    return out.str();
+}
+
+inline const char* DiscoveryDiffFilterName(UiDiscoveryDiffFilter filter) {
+    switch (filter) {
+        case UiDiscoveryDiffFilter::VisibilityChanged: return "Show visibility changed only";
+        case UiDiscoveryDiffFilter::BecameVisible: return "Show became visible only";
+        case UiDiscoveryDiffFilter::BecameHidden: return "Show became hidden only";
+        case UiDiscoveryDiffFilter::RectChanged: return "Show rect changed only";
+        case UiDiscoveryDiffFilter::NewOrMissing: return "Show new/missing nodes only";
+        case UiDiscoveryDiffFilter::All:
+        default: return "Show all diffs";
+    }
+}
+
+inline const UiDiscoveryNode* DiscoveryDiffPrimaryNode(const UiDiscoveryDiffRow& row) {
+    return row.after ? row.after : row.before;
+}
+
+inline const char* DiscoveryVisibilityDeltaLabel(const UiDiscoveryDiffRow& row) {
+    const bool beforeVisible = row.before && row.before->visible;
+    const bool afterVisible = row.after && row.after->visible;
+    if (!beforeVisible && afterVisible) return "BECAME VISIBLE";
+    if (beforeVisible && !afterVisible) return "BECAME HIDDEN";
+    if (afterVisible) return "still visible";
+    return "still hidden";
+}
+
+inline ImVec4 DiscoveryVisibilityDeltaColor(const UiDiscoveryDiffRow& row) {
+    const bool beforeVisible = row.before && row.before->visible;
+    const bool afterVisible = row.after && row.after->visible;
+    if (!beforeVisible && afterVisible) return ImVec4(0.45f, 0.92f, 0.52f, 1.f);
+    if (beforeVisible && !afterVisible) return ImVec4(0.95f, 0.45f, 0.45f, 1.f);
+    return ImVec4(0.72f, 0.72f, 0.72f, 1.f);
+}
+
+inline std::string DiscoveryRectText(const UiDiscoveryNode* node) {
+    if (!node || !node->hasRect) return "(none)";
+    char buf[96];
+    std::snprintf(buf, sizeof(buf), "(%.0f, %.0f %.0fx%.0f)", node->rectX, node->rectY,
+                  node->rectW, node->rectH);
+    return std::string(buf);
+}
+
+inline std::string DiscoveryRectDeltaText(const UiDiscoveryDiffRow& row) {
+    const UiDiscoveryNode* before = row.before;
+    const UiDiscoveryNode* after = row.after;
+    if ((!before || !before->hasRect) && (!after || !after->hasRect)) return "(none)";
+    if (!before || !before->hasRect) return "new rect";
+    if (!after || !after->hasRect) return "rect removed";
+    char buf[128];
+    std::snprintf(buf, sizeof(buf), "dx=%.0f dy=%.0f dw=%.0f dh=%.0f", after->rectX - before->rectX,
+                  after->rectY - before->rectY, after->rectW - before->rectW,
+                  after->rectH - before->rectH);
+    return std::string(buf);
+}
+
+inline bool DiscoveryDiffMatchesFilter(const UiDiscoveryDiffRow& row, UiDiscoveryDiffFilter filter) {
+    const bool beforeVisible = row.before && row.before->visible;
+    const bool afterVisible = row.after && row.after->visible;
+    switch (filter) {
+        case UiDiscoveryDiffFilter::VisibilityChanged: return row.visibleChanged || row.kind != UiDiscoveryDiffKind::Changed;
+        case UiDiscoveryDiffFilter::BecameVisible: return !beforeVisible && afterVisible;
+        case UiDiscoveryDiffFilter::BecameHidden: return beforeVisible && !afterVisible;
+        case UiDiscoveryDiffFilter::RectChanged: return row.rectChanged || row.areaChanged;
+        case UiDiscoveryDiffFilter::NewOrMissing: return row.kind != UiDiscoveryDiffKind::Changed;
+        case UiDiscoveryDiffFilter::All:
+        default: return true;
+    }
+}
+
+inline UiDiscoveryDiffSummary BuildDiscoveryDiffSummary(const std::vector<UiDiscoveryDiffRow>& rows) {
+    UiDiscoveryDiffSummary out;
+    for (const auto& row : rows) {
+        const bool beforeVisible = row.before && row.before->visible;
+        const bool afterVisible = row.after && row.after->visible;
+        if (!beforeVisible && afterVisible) ++out.becameVisibleCount;
+        if (beforeVisible && !afterVisible) ++out.becameHiddenCount;
+        if (row.rectChanged || row.areaChanged) ++out.rectChangedCount;
+        if (row.kind == UiDiscoveryDiffKind::Appeared) ++out.newNodeCount;
+        if (row.kind == UiDiscoveryDiffKind::Disappeared) ++out.missingNodeCount;
+    }
+    return out;
+}
+
+inline float DiscoveryDiffCandidateScore(const UiDiscoveryDiffRow& row) {
+    const UiDiscoveryNode* focus = DiscoveryDiffPrimaryNode(row);
+    const float area = focus ? focus->area : 0.f;
+    const bool beforeVisible = row.before && row.before->visible;
+    const bool afterVisible = row.after && row.after->visible;
+    float score = area;
+    if (!beforeVisible && afterVisible) score += 100000000.f;
+    else if (beforeVisible && !afterVisible) score += 50000000.f;
+    else if (afterVisible) score += 1000000.f;
+    if (row.kind == UiDiscoveryDiffKind::Appeared) score += 20000000.f;
+    if (row.kind == UiDiscoveryDiffKind::Disappeared) score += 10000000.f;
+    if (row.rectChanged) score += 500000.f;
+    if (focus && focus->hasRect && focus->rectW >= 600.f && focus->rectH >= 400.f) score += 5000000.f;
+    if (focus && focus->hasRect && focus->rectW >= 300.f && focus->rectH >= 500.f) score += 2500000.f;
+    return score;
+}
+
+inline std::string DiscoveryDiffCandidateReason(const UiDiscoveryDiffRow& row) {
+    const UiDiscoveryNode* focus = DiscoveryDiffPrimaryNode(row);
+    std::string reason;
+    const bool beforeVisible = row.before && row.before->visible;
+    const bool afterVisible = row.after && row.after->visible;
+    if (!beforeVisible && afterVisible)
+        reason = "became visible";
+    else if (beforeVisible && !afterVisible)
+        reason = "became hidden";
+    else if (afterVisible)
+        reason = "still visible";
+    else
+        reason = "still hidden";
+    if (focus && focus->hasRect && focus->rectW >= 600.f && focus->rectH >= 400.f)
+        reason += ", large/fullscreen rect";
+    else if (focus && focus->hasRect && focus->rectW >= 300.f && focus->rectH >= 500.f)
+        reason += ", large panel rect";
+    if (row.kind == UiDiscoveryDiffKind::Appeared) reason += ", new node";
+    if (row.kind == UiDiscoveryDiffKind::Disappeared) reason += ", missing node";
+    if (row.rectChanged || row.areaChanged) reason += ", rect changed";
+    return reason;
+}
+
 inline void DrawDiscoveryHighlight(PluginSDK::Context* ctx, const UiDiscoveryNode& node) {
     if (!ctx || node.address == 0) return;
     float x = node.rectX;
@@ -571,29 +736,20 @@ inline void RebuildUiDiscoveryDiff(UiDiscoveryState& state) {
 
     std::sort(state.diffRows.begin(), state.diffRows.end(),
               [](const UiDiscoveryDiffRow& a, const UiDiscoveryDiffRow& b) {
-                  auto priority = [](const UiDiscoveryDiffRow& row) {
-                      if (row.kind == UiDiscoveryDiffKind::Changed) return 0;
-                      if (row.kind == UiDiscoveryDiffKind::Appeared) return 1;
-                      return 2;
-                  };
-                  const int pa = priority(a);
-                  const int pb = priority(b);
-                  if (pa != pb) return pa < pb;
-                  if (a.kind == UiDiscoveryDiffKind::Changed && b.kind == UiDiscoveryDiffKind::Changed) {
-                      const int sa = (a.rawStringIdChanged ? 64 : 0) + (a.visibleChanged ? 32 : 0)
-                                     + (a.flagsChanged ? 16 : 0) + (a.childCountChanged ? 8 : 0)
-                                     + (a.rectChanged ? 4 : 0) + (a.areaChanged ? 2 : 0)
-                                     + (a.sdkStringIdChanged ? 1 : 0);
-                      const int sb = (b.rawStringIdChanged ? 64 : 0) + (b.visibleChanged ? 32 : 0)
-                                     + (b.flagsChanged ? 16 : 0) + (b.childCountChanged ? 8 : 0)
-                                     + (b.rectChanged ? 4 : 0) + (b.areaChanged ? 2 : 0)
-                                     + (b.sdkStringIdChanged ? 1 : 0);
-                      if (sa != sb) return sa > sb;
-                      if (a.areaDelta != b.areaDelta) return a.areaDelta > b.areaDelta;
-                  }
-                  const float aa = a.after ? a.after->area : (a.before ? a.before->area : 0.f);
-                  const float ab = b.after ? b.after->area : (b.before ? b.before->area : 0.f);
+                  const float sa = DiscoveryDiffCandidateScore(a);
+                  const float sb = DiscoveryDiffCandidateScore(b);
+                  if (sa != sb) return sa > sb;
+                  if (a.visibleChanged != b.visibleChanged) return a.visibleChanged && !b.visibleChanged;
+                  if (a.rectChanged != b.rectChanged) return a.rectChanged && !b.rectChanged;
+                  if (a.areaDelta != b.areaDelta) return a.areaDelta > b.areaDelta;
+                  const UiDiscoveryNode* na = DiscoveryDiffPrimaryNode(a);
+                  const UiDiscoveryNode* nb = DiscoveryDiffPrimaryNode(b);
+                  const float aa = na ? na->area : 0.f;
+                  const float ab = nb ? nb->area : 0.f;
                   if (aa != ab) return aa > ab;
+                  const std::string pathA = na ? na->path : std::string{};
+                  const std::string pathB = nb ? nb->path : std::string{};
+                  if (pathA != pathB) return pathA < pathB;
                   return a.key < b.key;
               });
 }
@@ -780,22 +936,48 @@ inline void DrawUiDiscoveryDiffRows(UiDiscoveryState& state, PluginSDK::Context*
         return;
     }
 
-    ImGui::Text("Diff rows: %zu", state.diffRows.size());
-    ImGui::BeginChild("##UiDiscoveryDiff", ImVec2(0.f, 320.f), true,
+    const UiDiscoveryDiffSummary summary = BuildDiscoveryDiffSummary(state.diffRows);
+    ImGui::TextDisabled("Hint: became visible nodes usually best blocker candidates. Became hidden nodes usually closed-state/context markers.");
+    ImGui::Text("Became visible: %d | Became hidden: %d | Rect changed: %d | New: %d | Missing: %d",
+                summary.becameVisibleCount, summary.becameHiddenCount, summary.rectChangedCount,
+                summary.newNodeCount, summary.missingNodeCount);
+    ImGui::SetNextItemWidth(280.f);
+    if (ImGui::BeginCombo("Diff filter", DiscoveryDiffFilterName(state.diffFilter))) {
+        for (int i = 0; i <= static_cast<int>(UiDiscoveryDiffFilter::NewOrMissing); ++i) {
+            const auto filter = static_cast<UiDiscoveryDiffFilter>(i);
+            const bool selected = state.diffFilter == filter;
+            if (ImGui::Selectable(DiscoveryDiffFilterName(filter), selected)) state.diffFilter = filter;
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    std::vector<const UiDiscoveryDiffRow*> filteredRows;
+    filteredRows.reserve(state.diffRows.size());
+    for (const auto& row : state.diffRows) {
+        if (DiscoveryDiffMatchesFilter(row, state.diffFilter)) filteredRows.push_back(&row);
+    }
+
+    ImGui::Text("Shown diff rows: %zu / %zu", filteredRows.size(), state.diffRows.size());
+    ImGui::BeginChild("##UiDiscoveryDiff", ImVec2(0.f, 340.f), true,
                       ImGuiWindowFlags_HorizontalScrollbar);
-    const size_t limit = std::min<size_t>(state.diffRows.size(), 60);
+    const size_t limit = std::min<size_t>(filteredRows.size(), 80);
     for (size_t i = 0; i < limit; ++i) {
-        const auto& row = state.diffRows[i];
+        const auto& row = *filteredRows[i];
         const UiDiscoveryNode* focus = row.after ? row.after : row.before;
-        std::string prefix = row.kind == UiDiscoveryDiffKind::Changed
-                                 ? "[changed] "
-                                 : row.kind == UiDiscoveryDiffKind::Appeared ? "[appeared] " : "[missing] ";
+        const std::string visibilityLabel = DiscoveryVisibilityDeltaLabel(row);
+        const ImVec4 visibilityColor = DiscoveryVisibilityDeltaColor(row);
         ImGui::PushID(static_cast<int>(i));
         if (focus && ImGui::SmallButton("Pin"))
             DiscoveryAddPin(state, focus->rootLabel, focus->path, {}, focus->sdkStringId,
                             focus->rawStringId);
         ImGui::SameLine();
-        const std::string header = prefix + row.key + " | "
+        if (focus && ImGui::SmallButton("Copy Pin")) {
+            const std::string copyText = BuildDiscoveryDiffPinText(row);
+            ImGui::SetClipboardText(copyText.c_str());
+        }
+        ImGui::SameLine();
+        const std::string header = std::string("[") + visibilityLabel + "] " + row.key + " | "
                                    + (focus ? DiscoveryPrimaryStringId(*focus) : "(none)");
         if (ImGui::Selectable(header.c_str(), false)) {
             const std::string copyText = BuildDiscoveryDiffCopyText(row);
@@ -804,44 +986,35 @@ inline void DrawUiDiscoveryDiffRows(UiDiscoveryState& state, PluginSDK::Context*
         ImGui::PopID();
         if (ImGui::IsItemHovered() && focus) DrawDiscoveryHighlight(ctx, *focus);
 
+        ImGui::PushStyleColor(ImGuiCol_Text, visibilityColor);
+        ImGui::TextWrapped("root=%s | path=%s | baseline vis=%s | current vis=%s | delta=%s",
+                           focus ? focus->rootLabel.c_str() : "(none)",
+                           focus ? focus->path.c_str() : row.key.c_str(),
+                           row.before && row.before->visible ? "yes" : "no",
+                           row.after && row.after->visible ? "yes" : "no",
+                           visibilityLabel);
+        ImGui::PopStyleColor();
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.72f, 0.72f, 0.72f, 1.f));
-        if (row.kind == UiDiscoveryDiffKind::Changed) {
-            ImGui::TextWrapped(
-                "sdk %s->%s | raw %s->%s | vis %s->%s | flags 0x%08X->0x%08X | children %d->%d | rect %s->%s | area %.0f->%.0f | type 0x%04X->0x%04X",
-                row.before && !row.before->sdkStringId.empty() ? row.before->sdkStringId.c_str() : "(empty)",
-                row.after && !row.after->sdkStringId.empty() ? row.after->sdkStringId.c_str() : "(empty)",
-                row.before && !row.before->rawStringId.empty() ? row.before->rawStringId.c_str() : "(empty)",
-                row.after && !row.after->rawStringId.empty() ? row.after->rawStringId.c_str() : "(empty)",
-                row.before && row.before->visible ? "yes" : "no",
-                row.after && row.after->visible ? "yes" : "no", row.before ? row.before->flags : 0,
-                row.after ? row.after->flags : 0, row.before ? row.before->childCount : 0,
-                row.after ? row.after->childCount : 0,
-                row.before && row.before->hasRect ? "yes" : "no",
-                row.after && row.after->hasRect ? "yes" : "no", row.before ? row.before->area : 0.f,
-                row.after ? row.after->area : 0.f, row.before ? row.before->elementType : 0,
-                row.after ? row.after->elementType : 0);
-        } else if (row.kind == UiDiscoveryDiffKind::Appeared) {
-            ImGui::TextWrapped(
-                "new node: sdk=%s raw=%s vis=%s rect=%s area=%.0f children=%d flags=0x%08X type=0x%04X",
-                row.after && !row.after->sdkStringId.empty() ? row.after->sdkStringId.c_str() : "(empty)",
-                row.after && !row.after->rawStringId.empty() ? row.after->rawStringId.c_str() : "(empty)",
-                row.after && row.after->visible ? "yes" : "no",
-                row.after && row.after->hasRect ? "yes" : "no", row.after ? row.after->area : 0.f,
-                row.after ? row.after->childCount : 0, row.after ? row.after->flags : 0,
-                row.after ? row.after->elementType : 0);
-        } else {
-            ImGui::TextWrapped(
-                "missing node: sdk=%s raw=%s vis=%s rect=%s area=%.0f children=%d flags=0x%08X type=0x%04X",
-                row.before && !row.before->sdkStringId.empty() ? row.before->sdkStringId.c_str() : "(empty)",
-                row.before && !row.before->rawStringId.empty() ? row.before->rawStringId.c_str() : "(empty)",
-                row.before && row.before->visible ? "yes" : "no",
-                row.before && row.before->hasRect ? "yes" : "no", row.before ? row.before->area : 0.f,
-                row.before ? row.before->childCount : 0, row.before ? row.before->flags : 0,
-                row.before ? row.before->elementType : 0);
-        }
+        const std::string beforeRect = DiscoveryRectText(row.before);
+        const std::string afterRect = DiscoveryRectText(row.after);
+        const std::string rectDelta = DiscoveryRectDeltaText(row);
+        const std::string candidateReason = DiscoveryDiffCandidateReason(row);
+        ImGui::TextWrapped(
+            "baseline rect=%s | current rect=%s | rect delta=%s | sdk=%s | raw=%s | type=0x%04X->0x%04X | children=%d->%d | area=%.0f->%.0f",
+            beforeRect.c_str(), afterRect.c_str(), rectDelta.c_str(),
+            row.after && !row.after->sdkStringId.empty() ? row.after->sdkStringId.c_str()
+                                                          : row.before && !row.before->sdkStringId.empty() ? row.before->sdkStringId.c_str() : "(empty)",
+            row.after && !row.after->rawStringId.empty() ? row.after->rawStringId.c_str()
+                                                          : row.before && !row.before->rawStringId.empty() ? row.before->rawStringId.c_str() : "(empty)",
+            row.before ? row.before->elementType : 0, row.after ? row.after->elementType : 0,
+            row.before ? row.before->childCount : 0, row.after ? row.after->childCount : 0,
+            row.before ? row.before->area : 0.f, row.after ? row.after->area : 0.f);
+        ImGui::TextWrapped("candidate score=%.0f | candidate reason=%s", DiscoveryDiffCandidateScore(row),
+                           candidateReason.c_str());
         ImGui::PopStyleColor();
         ImGui::Separator();
     }
+    if (limit == 0) ImGui::TextDisabled("No diff rows match current filter.");
     ImGui::EndChild();
     ImGui::TreePop();
 }

@@ -9,6 +9,7 @@
 
 #include <imgui.h>
 #include <algorithm>
+#include <cstdio>
 #include <cstring>
 #include <optional>
 #include <unordered_set>
@@ -127,6 +128,124 @@ inline void DrawShapePicker(UiState& ui) {
     }
 
     ImGui::End();
+}
+
+inline const char* BoolText(bool value) {
+    return value ? "yes" : "no";
+}
+
+inline void DrawUiBlockerRectCell(bool hasRect, float x, float y, float w, float h) {
+    if (!hasRect) {
+        ImGui::TextUnformatted("(none)");
+        return;
+    }
+    ImGui::Text("[%.0f, %.0f] %.0fx%.0f", x, y, w, h);
+}
+
+inline void DrawUiBlockerRuleTable(const char* id,
+                                   const std::vector<RadarUi::UiBlockerDetector::RuleDebugState>& rows,
+                                   float height = 240.f) {
+    if (!ImGui::BeginTable(id, 18,
+                           ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
+                               | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY
+                               | ImGuiTableFlags_SizingFixedFit,
+                           ImVec2(0.f, height)))
+        return;
+
+    ImGui::TableSetupColumn("Rule");
+    ImGui::TableSetupColumn("Enabled");
+    ImGui::TableSetupColumn("Root");
+    ImGui::TableSetupColumn("Path");
+    ImGui::TableSetupColumn("Type");
+    ImGui::TableSetupColumn("Shape Gate");
+    ImGui::TableSetupColumn("Matched");
+    ImGui::TableSetupColumn("Rejected Reason", ImGuiTableColumnFlags_WidthStretch, 1.2f);
+    ImGui::TableSetupColumn("Node Exists");
+    ImGui::TableSetupColumn("Valid");
+    ImGui::TableSetupColumn("LocalVisible");
+    ImGui::TableSetupColumn("UiIsVisible");
+    ImGui::TableSetupColumn("HasRect");
+    ImGui::TableSetupColumn("Rect");
+    ImGui::TableSetupColumn("Overlap");
+    ImGui::TableSetupColumn("Area");
+    ImGui::TableSetupColumn("ChildCount");
+    ImGui::TableSetupColumn("ElementType");
+    ImGui::TableHeadersRow();
+
+    for (size_t i = 0; i < rows.size(); ++i) {
+        const auto& row = rows[i];
+        ImGui::TableNextRow();
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(row.ruleName.c_str());
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.enabled));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(row.rootName.c_str());
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(row.path.c_str());
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(row.blockerType.c_str());
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(row.expectedShapeGate.c_str());
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.matched));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(row.rejectedReason.c_str());
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.exists));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.valid));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.localVisible));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.uiVisible));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.hasRect));
+        ImGui::TableNextColumn(); DrawUiBlockerRectCell(row.node.hasRect, row.node.rectX, row.node.rectY,
+                                                        row.node.rectW, row.node.rectH);
+        ImGui::TableNextColumn(); DrawUiBlockerRectCell(row.hasOverlap, row.overlapX, row.overlapY,
+                                                        row.overlapW, row.overlapH);
+        ImGui::TableNextColumn(); ImGui::Text("%.0f", row.overlapArea);
+        ImGui::TableNextColumn(); ImGui::Text("%d", row.node.childCount);
+        ImGui::TableNextColumn(); ImGui::Text("0x%04X", row.node.elementType);
+        ImGui::PopID();
+    }
+
+    ImGui::EndTable();
+}
+
+inline void DrawUiBlockerContextTable(const char* id,
+                                      const std::vector<RadarUi::UiBlockerDetector::RuleDebugState>& rows,
+                                      float height = 140.f) {
+    if (!ImGui::BeginTable(id, 11,
+                           ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg
+                               | ImGuiTableFlags_ScrollX | ImGuiTableFlags_ScrollY
+                               | ImGuiTableFlags_SizingFixedFit,
+                           ImVec2(0.f, height)))
+        return;
+
+    ImGui::TableSetupColumn("Root");
+    ImGui::TableSetupColumn("Path");
+    ImGui::TableSetupColumn("Reason", ImGuiTableColumnFlags_WidthStretch, 1.0f);
+    ImGui::TableSetupColumn("Exists");
+    ImGui::TableSetupColumn("Valid");
+    ImGui::TableSetupColumn("LocalVisible");
+    ImGui::TableSetupColumn("UiIsVisible");
+    ImGui::TableSetupColumn("HasRect");
+    ImGui::TableSetupColumn("Rect");
+    ImGui::TableSetupColumn("Overlap");
+    ImGui::TableSetupColumn("Area");
+    ImGui::TableHeadersRow();
+
+    for (size_t i = 0; i < rows.size(); ++i) {
+        const auto& row = rows[i];
+        ImGui::TableNextRow();
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(row.rootName.c_str());
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(row.path.c_str());
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(row.rejectedReason.c_str());
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.exists));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.valid));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.localVisible));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.uiVisible));
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(BoolText(row.node.hasRect));
+        ImGui::TableNextColumn(); DrawUiBlockerRectCell(row.node.hasRect, row.node.rectX, row.node.rectY,
+                                                        row.node.rectW, row.node.rectH);
+        ImGui::TableNextColumn(); DrawUiBlockerRectCell(row.hasOverlap, row.overlapX, row.overlapY,
+                                                        row.overlapW, row.overlapH);
+        ImGui::TableNextColumn(); ImGui::Text("%.0f", row.overlapArea);
+        ImGui::PopID();
+    }
+
+    ImGui::EndTable();
 }
 
 inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
@@ -426,6 +545,14 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
                                         overlay.uiBlocker.match.reason.empty()
                                             ? "(none)"
                                             : overlay.uiBlocker.match.reason.c_str());
+                            ImGui::Text("Evaluated built-in rules: %d",
+                                        overlay.perf.flags.uiBlockerEvaluatedRuleCount);
+                            ImGui::Text("Matched built-in rules: %d",
+                                        overlay.perf.flags.uiBlockerMatchedRuleCount);
+                            ImGui::TextWrapped("Rejected built-in summary: %s",
+                                               overlay.perf.flags.uiBlockerRejectedRulesSummary.empty()
+                                                   ? "(none)"
+                                                   : overlay.perf.flags.uiBlockerRejectedRulesSummary.c_str());
                             ImGui::Text("Atlas compatibility path: %s", overlay.uiBlocker.primary.path.c_str());
                             if (overlay.uiBlocker.match.hasRect) {
                                 ImGui::Text("Blocker rect: (%.0f, %.0f %.0fx%.0f)",
@@ -470,6 +597,19 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
                                 ImGui::Text("UI blocker last scan age: %lld ms", blockerAgeMs);
                             else
                                 ImGui::TextDisabled("UI blocker has not scanned yet.");
+                            ImGui::SeparatorText("Built-in blocker rules");
+                            DrawUiBlockerRuleTable("UiBlockerBuiltInRules", overlay.uiBlocker.builtInRuleStates);
+                            ImGui::SeparatorText("Active matched blockers");
+                            if (overlay.uiBlocker.matchedRuleStates.empty()) {
+                                ImGui::TextUnformatted("(none)");
+                            } else {
+                                DrawUiBlockerRuleTable("UiBlockerMatchedRules",
+                                                       overlay.uiBlocker.matchedRuleStates,
+                                                       140.f);
+                            }
+                            ImGui::SeparatorText("Rejected/context-only paths");
+                            DrawUiBlockerContextTable("UiBlockerContextOnlyPaths",
+                                                      overlay.uiBlocker.contextOnlyStates);
                             ImGui::Unindent(12.f);
                         }
                         ImGui::Unindent(12.f);
@@ -813,6 +953,49 @@ inline void DrawMarkerShapeCombo(const char* label, RadarData::MarkerShape& shap
         const ImVec2 max = ImGui::GetItemRectMax();
         const float cy = (min.y + max.y) * 0.5f;
         RadarRender::DrawEntityMarker(dl, shape, min.x + 10.f, cy, 5.f, IM_COL32(232, 220, 184, 255));
+    }
+}
+
+inline void DrawRuneShapeGlyphCombo(const char* label, RadarData::MarkerShape& shape) {
+    constexpr RadarData::MarkerShape kRuneShapeGlyphs[] = {
+        RadarData::MarkerShape::Square,
+        RadarData::MarkerShape::Circle,
+        RadarData::MarkerShape::Diamond,
+        RadarData::MarkerShape::Star,
+        RadarData::MarkerShape::Cross,
+        RadarData::MarkerShape::Sword,
+    };
+    if (shape == RadarData::MarkerShape::None) shape = RadarData::MarkerShape::Square;
+    const std::string preview = std::string("   ") + RadarData::MarkerShapeName(shape);
+    if (ImGui::BeginCombo(label, preview.c_str())) {
+        for (const auto candidate : kRuneShapeGlyphs) {
+            const bool selected = candidate == shape;
+            const std::string rowId = std::string("##runeshapeglyph") + RadarData::MarkerShapeName(candidate);
+            if (ImGui::Selectable(rowId.c_str(), selected, 0, ImVec2(0.f, 22.f)))
+                shape = candidate;
+            const ImVec2 min = ImGui::GetItemRectMin();
+            const ImVec2 max = ImGui::GetItemRectMax();
+            const float cy = (min.y + max.y) * 0.5f;
+            ImDrawList* dl = ImGui::GetWindowDrawList();
+            if (dl) {
+                RadarRender::DrawEntityMarker(dl, candidate, min.x + 11.f, cy, 6.f,
+                                              IM_COL32(232, 220, 184, 255));
+                dl->AddText(ImVec2(min.x + 24.f, min.y + 2.f),
+                            ImGui::GetColorU32(ImGuiCol_Text),
+                            RadarData::MarkerShapeName(candidate));
+            }
+            if (selected) ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+
+    ImDrawList* dl = ImGui::GetWindowDrawList();
+    if (dl) {
+        const ImVec2 min = ImGui::GetItemRectMin();
+        const ImVec2 max = ImGui::GetItemRectMax();
+        const float cy = (min.y + max.y) * 0.5f;
+        RadarRender::DrawEntityMarker(dl, shape, min.x + 11.f, cy, 6.f,
+                                      IM_COL32(232, 220, 184, 255));
     }
 }
 
@@ -1549,6 +1732,10 @@ inline void DrawDisplayRuleSection(const char* label, RuleSection section,
     if (!ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen)) return;
     bool any = false;
     for (size_t i = 0; i < icons.displayRules.size();) {
+        if (RadarData::IconTables::IsRuneShapeOwnedRule(icons.displayRules[i])) {
+            ++i;
+            continue;
+        }
         if (GetRuleSection(icons.displayRules[i]) != section) {
             ++i;
             continue;
@@ -1605,16 +1792,29 @@ inline constexpr const char* kRuneShapeCommonNames[] = {
     "Electrocuting", "Fire", "Gasp", "Lightning", "Momentum", "Moon", "Prismatic",
     "Protective", "Rage", "Rebirth", "Stone", "Tempest", "Tidal", "Toxic", "Vision", "Wisdom"};
 
+inline constexpr std::array<int, RadarData::RadarConfig::kRuneShapeRareCount> kRuneShapeRareDefaultWeights{
+    100, 100, 75, 0, 25, 25, 50, 0, 25, 75, 0};
+
+inline constexpr std::array<int, RadarData::RadarConfig::kRuneShapeCommonCount> kRuneShapeCommonDefaultWeights{};
+
+inline bool RuneShapeCustomWeightEditingSupported() {
+    return false;
+}
+
+inline bool RuneShapeReadableDefaultWeightsSupported() {
+    return false;
+}
+
 inline void ResetRuneShapeWeightsToDefaults(RadarData::RadarConfig& cfg) {
-    cfg.RuneShapeRareWeights.fill(1);
-    cfg.RuneShapeCommonWeights.fill(0);
+    cfg.RuneShapeRareWeights = kRuneShapeRareDefaultWeights;
+    cfg.RuneShapeCommonWeights = kRuneShapeCommonDefaultWeights;
 }
 
 inline RadarData::DisplayRule BuildExpeditionRuleDefault() {
     RadarData::DisplayRule rule;
     rule.enabled = true;
     rule.id = "stock.expedition";
-    rule.source = "Seeded";
+    rule.source = RadarData::IconTables::kRuneShapeOwnedSource;
     rule.name = "Expedition";
     rule.categories = {"Other"};
     rule.matchTerms = {"Expedition2/Expedition2Encounter"};
@@ -1628,11 +1828,23 @@ inline RadarData::DisplayRule BuildExpeditionRuleDefault() {
 }
 
 inline RadarData::DisplayRule& EnsureExpeditionRule(RadarData::IconTables& icons) {
-    for (auto& rule : icons.displayRules) {
-        if (rule.id == "stock.expedition") return rule;
+    size_t keepIndex = SIZE_MAX;
+    for (size_t i = 0; i < icons.displayRules.size(); ++i) {
+        auto& rule = icons.displayRules[i];
+        if (!RadarData::IconTables::IsRuneShapeOwnedRule(rule)) continue;
+        RadarData::IconTables::NormalizeDisplayRule(rule);
+        if (keepIndex == SIZE_MAX) {
+            keepIndex = i;
+            continue;
+        }
     }
-    for (auto& rule : icons.displayRules) {
-        if (RadarData::IsRuneshapeColourEligible(rule)) return rule;
+    if (keepIndex != SIZE_MAX) {
+        for (size_t i = icons.displayRules.size(); i-- > 0;) {
+            if (i == keepIndex || !RadarData::IconTables::IsRuneShapeOwnedRule(icons.displayRules[i])) continue;
+            icons.displayRules.erase(icons.displayRules.begin() + static_cast<std::ptrdiff_t>(i));
+            if (i < keepIndex) --keepIndex;
+        }
+        return icons.displayRules[keepIndex];
     }
     icons.displayRules.push_back(BuildExpeditionRuleDefault());
     return icons.displayRules.back();
@@ -1640,40 +1852,56 @@ inline RadarData::DisplayRule& EnsureExpeditionRule(RadarData::IconTables& icons
 
 template <size_t N>
 inline void DrawRuneShapeWeightList(const char* label, const char* const (&names)[N],
-                                    std::array<int, N>& weights) {
+                                    std::array<int, N>& weights, const std::array<int, N>& displayWeights,
+                                    RadarRender::RadarOverlay& overlay, PluginSDK::Context* ctx,
+                                    bool editable) {
     if (!ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen)) return;
-    ImGui::BeginDisabled(true);
     if (!ImGui::BeginTable(label, 2, ImGuiTableFlags_SizingStretchSame)) {
-        ImGui::EndDisabled();
         return;
     }
     for (size_t i = 0; i < N; ++i) {
         ImGui::TableNextColumn();
         ImGui::PushID(static_cast<int>(i));
-        ImGui::TextColored(ImVec4(0.66f, 0.45f, 1.0f, 1.0f), "*");
+        const float rowStartY = ImGui::GetCursorPosY();
+        const ImVec2 iconMin = ImGui::GetCursorScreenPos();
+        const ImVec2 iconMax(iconMin.x + 22.f, iconMin.y + 22.f);
+        RadarRender::DrawRuneshapeBadgeIcon(ImGui::GetWindowDrawList(), iconMin, iconMax,
+                                            &overlay.runeIcons, ctx ? ctx->D3DDevice : nullptr,
+                                            names[i], IM_COL32(138, 124, 255, 255));
+        ImGui::Dummy(ImVec2(22.f, 22.f));
         ImGui::SameLine();
-        ImGui::AlignTextToFramePadding();
+        ImGui::SetCursorPosY(rowStartY + 3.f);
         ImGui::TextUnformatted(names[i]);
         ImGui::SameLine(120.f);
+        ImGui::SetCursorPosY(rowStartY + 1.f);
+        int sliderValue = editable ? weights[i] : displayWeights[i];
+        ImGui::BeginDisabled(!editable);
         ImGui::SetNextItemWidth(96.f);
-        ImGui::SliderInt("##weight", &weights[i], -100, 100, "%d");
+        if (ImGui::SliderInt("##weight", &sliderValue, -100, 100, "%d") && editable)
+            weights[i] = sliderValue;
+        ImGui::EndDisabled();
         ImGui::SameLine();
-        ImGui::Text("%d", weights[i]);
+        ImGui::SetCursorPosY(rowStartY + 3.f);
+        const std::string valueText = RadarRender::FormatRuneshapeWeight(displayWeights[i]);
+        ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(
+                               RadarRender::RuneshapeWeightTextColor(displayWeights[i])),
+                           "%s", valueText.c_str());
         ImGui::PopID();
     }
     ImGui::EndTable();
-    ImGui::EndDisabled();
 }
 
 inline void DrawRuneShapeTab(RadarData::RadarConfig& cfg, RadarData::IconTables& icons,
-                             PluginSDK::Context* ctx) {
+                             PluginSDK::Context* ctx, RadarRender::RadarOverlay& overlay) {
+    const bool editable = RuneShapeCustomWeightEditingSupported();
+    const bool canResetDefaults = RuneShapeReadableDefaultWeightsSupported();
+    const bool canZeroAll = editable;
     ImGui::Checkbox("Show weights on map", &cfg.RuneShapeShowWeights);
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Minimum weight");
     ImGui::SameLine();
     ImGui::SetNextItemWidth(220.f);
     ImGui::SliderInt("##RuneShapeMinimumWeight", &cfg.RuneShapeMinimumWeight, -100, 100, "%d");
-    ImGui::TextWrapped("SDK weights shown. Editing disabled until SDK exposes custom weight setter.");
     if (ctx) {
         size_t count = 0;
         int best = 0;
@@ -1696,12 +1924,16 @@ inline void DrawRuneShapeTab(RadarData::RadarConfig& cfg, RadarData::IconTables&
     auto& rule = EnsureExpeditionRule(icons);
     rule.categories = {"Other"};
     rule.matchTerms = {"Expedition2/Expedition2Encounter"};
-    rule.markerShape = RadarData::MarkerShape::Square;
     rule.label = "Expedition";
     ImGui::PushID("RuneShapeExpeditionRule");
     ImGui::Checkbox("Enabled", &rule.enabled);
     ImGui::SameLine();
     ImGui::Checkbox("Use Runeshape Colour", &rule.useRuneshapeColor);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Glyph / Marker");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(180.f);
+    DrawRuneShapeGlyphCombo("##ExpeditionGlyph", rule.markerShape);
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Fallback colour");
     ImGui::SameLine();
@@ -1718,16 +1950,21 @@ inline void DrawRuneShapeTab(RadarData::RadarConfig& cfg, RadarData::IconTables&
     ImGui::PopID();
 
     ImGui::SeparatorText("Rune weights");
-    const float buttonsWidth = 250.f;
-    ImGui::SetCursorPosX(std::max(0.f, ImGui::GetContentRegionAvail().x - buttonsWidth));
-    if (ImGui::Button("Reset to tier defaults")) ResetRuneShapeWeightsToDefaults(cfg);
-    ImGui::SameLine();
-    if (ImGui::Button("Zero all")) {
+    if (canResetDefaults || canZeroAll) {
+        const float buttonsWidth = 250.f;
+        ImGui::SetCursorPosX(std::max(0.f, ImGui::GetContentRegionAvail().x - buttonsWidth));
+    }
+    if (canResetDefaults && ImGui::Button("Reset to tier defaults")) ResetRuneShapeWeightsToDefaults(cfg);
+    if (canResetDefaults && canZeroAll) ImGui::SameLine();
+    if (canZeroAll && ImGui::Button("Zero all")) {
         cfg.RuneShapeRareWeights.fill(0);
         cfg.RuneShapeCommonWeights.fill(0);
     }
-    DrawRuneShapeWeightList("Rare rune weights", kRuneShapeRareNames, cfg.RuneShapeRareWeights);
-    DrawRuneShapeWeightList("Common rune weights", kRuneShapeCommonNames, cfg.RuneShapeCommonWeights);
+    DrawRuneShapeWeightList("Rare rune weights", kRuneShapeRareNames, cfg.RuneShapeRareWeights,
+                            kRuneShapeRareDefaultWeights, overlay, ctx, editable);
+    DrawRuneShapeWeightList("Common rune weights", kRuneShapeCommonNames,
+                            cfg.RuneShapeCommonWeights, kRuneShapeCommonDefaultWeights,
+                            overlay, ctx, editable);
 }
 
 inline void PushPoiActionButtonStyle() {
@@ -1764,6 +2001,17 @@ inline bool TargetMatchesLandmarkSearch(const RadarData::TargetEntry& target,
            || ContainsCaseInsensitiveUi(areaLabel, search);
 }
 
+inline bool ShouldIncludeLandmarkTarget(const RadarData::TargetDatabase& db,
+                                        const RadarData::TargetEntry& target,
+                                        const std::string& areaKey,
+                                        bool userOnly) {
+    if (userOnly) return target.category == "User";
+    if (target.category != "User"
+        && db.HasUserOverrideFor(RadarData::NormalizeAreaKey(areaKey), target))
+        return false;
+    return true;
+}
+
 inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
                                    const std::vector<size_t>& indices,
                                    const std::string& areaKey, UiState& ui,
@@ -1778,10 +2026,7 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
     size_t visibleCount = 0;
     for (size_t idx : indices) {
         if (idx >= db.storage.size()) continue;
-        if (userOnly && db.storage[idx].category != "User") continue;
-        if (!userOnly && db.storage[idx].category != "User"
-            && db.HasUserOverrideFor(RadarData::NormalizeAreaKey(areaKey), db.storage[idx]))
-            continue;
+        if (!ShouldIncludeLandmarkTarget(db, db.storage[idx], areaKey, userOnly)) continue;
         if (!TargetMatchesLandmarkSearch(db.storage[idx], areaLabel, search)) continue;
         ++visibleCount;
     }
@@ -1810,10 +2055,7 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
     for (size_t idx : indices) {
         if (idx >= db.storage.size()) continue;
         auto& t = db.storage[idx];
-        if (userOnly && t.category != "User") continue;
-        if (!userOnly && t.category != "User"
-            && db.HasUserOverrideFor(RadarData::NormalizeAreaKey(areaKey), t))
-            continue;
+        if (!ShouldIncludeLandmarkTarget(db, t, areaKey, userOnly)) continue;
         if (!TargetMatchesLandmarkSearch(t, areaLabel, search)) continue;
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -1918,7 +2160,7 @@ inline bool AreaHasMatchingTargets(const RadarData::TargetDatabase& db, const st
     for (size_t idx : *indices) {
         if (idx >= db.storage.size()) continue;
         const auto& target = db.storage[idx];
-        if (userOnly && target.category != "User") continue;
+        if (!ShouldIncludeLandmarkTarget(db, target, key, userOnly)) continue;
         if (TargetMatchesLandmarkSearch(target, areaLabel, search)) return true;
     }
     return false;
@@ -2171,7 +2413,7 @@ inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("RuneShape")) {
-            DrawRuneShapeTab(overlay.cfg, overlay.icons, ctx);
+            DrawRuneShapeTab(overlay.cfg, overlay.icons, ctx, overlay);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();

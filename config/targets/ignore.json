@@ -11,7 +11,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "General High",
@@ -24,7 +25,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "General Mid",
@@ -37,7 +39,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Training Dummy",
@@ -50,7 +53,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Doodad",
@@ -63,7 +67,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Items",
@@ -76,7 +81,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Beetle",
@@ -89,7 +95,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ]
 }

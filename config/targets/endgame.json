@@ -6,12 +6,13 @@
             "Icon": true,
             "IconName": "RewardChestBreach",
             "IconSize": 30.0,
-            "Enabled": false,
+            "Enabled": true,
             "NameColor": "255, 255, 255",
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Breach Chest Large",
@@ -19,12 +20,27 @@
             "Icon": true,
             "IconName": "RewardChestBreach",
             "IconSize": 40.0,
-            "Enabled": false,
+            "Enabled": true,
             "NameColor": "255, 255, 255",
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Breach Box Chest",
+            "Path": "Metadata/Chests/Breach/BreachBoxChest*",
+            "Icon": true,
+            "IconName": "Breach",
+            "IconSize": 30.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": false,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Waygate",
@@ -36,8 +52,9 @@
             "NameColor": "255, 255, 255",
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
-            "DrawPath": true,
-            "DrawPathColor": "255, 0, 0"
+            "DrawPath": false,
+            "DrawPathColor": "245, 97, 97",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -50,7 +67,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -63,7 +81,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -76,7 +95,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -89,7 +109,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -102,7 +123,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -115,7 +137,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -128,7 +151,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -141,7 +165,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -154,7 +179,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -167,7 +193,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -180,7 +207,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -193,7 +221,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -206,7 +235,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -219,7 +249,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -232,7 +263,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -245,7 +277,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -258,20 +291,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
-        },
-        {
-            "Name": "Boss",
-            "Path": "Metadata/Terrain/Woods/WideRiver/CcSM_01.tdtx:[]",
-            "Icon": true,
-            "IconName": "UniqueMonsterAlive",
-            "IconSize": 50.0,
-            "Enabled": true,
-            "NameColor": "255, 255, 255",
-            "BGColor": "0, 0, 0",
-            "ExpectedCount": 1,
-            "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs",
@@ -284,7 +305,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs",
@@ -297,7 +319,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs",
@@ -310,7 +333,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs",
@@ -323,7 +347,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs",
@@ -336,7 +361,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs",
@@ -349,7 +375,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Stairs",
@@ -362,7 +389,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "DeliriumInitiator",
@@ -375,7 +403,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Ritual",
@@ -388,7 +417,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "253, 224, 71"
+            "DrawPathColor": "253, 224, 71",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "RuneRock",
@@ -401,7 +431,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Expedition",
@@ -414,7 +445,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 1,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Abyss Hole",
@@ -427,7 +459,8 @@
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Breach Hand",
@@ -435,12 +468,13 @@
             "Icon": true,
             "IconName": "Breach",
             "IconSize": 30.0,
-            "Enabled": false,
+            "Enabled": true,
             "NameColor": "255, 255, 255",
             "BGColor": "200, 200, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -453,20 +487,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
-        },
-        {
-            "Name": "Spirit",
-            "Path": "*Spirits*",
-            "Icon": true,
-            "IconName": "SpiritActivated",
-            "IconSize": 25.0,
-            "Enabled": false,
-            "NameColor": "255, 255, 255",
-            "BGColor": "0, 0, 0",
-            "ExpectedCount": 0,
-            "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Lever",
@@ -479,7 +501,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": false,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -492,7 +515,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -505,7 +529,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -518,7 +543,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -531,7 +557,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -544,7 +571,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -557,7 +585,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -570,7 +599,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -583,7 +613,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -596,7 +627,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -609,7 +641,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -622,7 +655,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -635,7 +669,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -648,7 +683,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -661,7 +697,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -674,7 +711,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -687,7 +725,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -700,7 +739,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -713,7 +753,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -726,7 +767,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -739,7 +781,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -752,7 +795,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         },
         {
             "Name": "Boss",
@@ -765,13 +809,54 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
-        }
-    ],
-    "MapBloodwood": [
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
         {
             "Name": "Boss",
-            "Path": "Metadata/Terrain/forced_blank.tdtx:[]",
+            "Path": "Metadata/Terrain/Maps/Reservoir/Tiles/Reservoir_boss.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 30.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 1,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/AridPlains/Tiles/Arid_Plains_Bossroom.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 1,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Breach",
+            "Path": "Metadata/MiscellaneousObjects/Brequel/BrequelInitiator",
+            "Icon": true,
+            "IconName": "Breach",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Interlude/Part2/P2_3/BossRoomTile.tdtx:[]",
             "Icon": true,
             "IconName": "UniqueMonsterAlive",
             "IconSize": 50.0,
@@ -780,7 +865,792 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Interlude/Part1/P1_5/Holten_Prison_Bossroom.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Platform",
+            "Path": "Metadata/Terrain/Gallows/Leagues/Delirium/HungerBoss/Tiles/Arena_Platform.tdtx:8-y:9",
+            "Icon": true,
+            "IconName": "DeliriumDecanterOfMadness",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Woods/GraveyardDungeons/Stairs/Stairs_St_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Portal",
+            "Path": "Metadata/MiscellaneousObjects/PortalToggleableReverseVoodooKing",
+            "Icon": true,
+            "IconName": "Entrance",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Interlude/Part3/P3_2/KriarVillage_Bossroom.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Islands/Tiles/BloodFever/Features/ArenaCombined/ArenaCombined_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Mothersoul/Tiles/Male/Features/Forge/Precursor_Forge.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Interlude/Part2/Gates/AreaTransitions/GatesEnd_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Islands/Tiles/LoftySummit/Boss_Temple_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Slick/Tiles/SlickArena01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 30.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Interlude/Part3/P3_4/Cave_Bossroom.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 30.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Pit/Tiles/Pit_Boss.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": false,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Interlude/Part3/P3_3/GlacialTarn_Bossroom.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Slash/Tiles/Slash_boss_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "OmenChest",
+            "Path": "Metadata/Chests/LeagueAzmeri/OmenChest",
+            "Icon": true,
+            "IconName": "ExpeditionQuestRunestoneAct1_3",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Mothersoul/Tiles/Female/Features/Forge/Precursor_Forge.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Arena",
+            "Path": "Metadata/Terrain/Leagues/Breach/BreachTower/Tiles/Fill/BombArenaFill_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "BreachBoss",
+            "IconSize": 30.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Stairs",
+            "Path": "Metadata/Terrain/Leagues/Breach/BreachTower/Tiles/Abyss/BreachTowerEntrance_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "Entrance",
+            "IconSize": 30.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Islands/Tiles/CoralDungeon/Thickwall/CoralSinkhole/Arena/YamaArena_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Gallows/Leagues/Abyss/AbyssalCity/Tiles/Feature/AbyssalDepths_BallArena.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Leagues/Expedition/Tiles/KalguurDungeon/Feature/UhtredArena.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/WaywardIsle/Tiles/BossArena_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Islands/Tiles/CoralDungeon/Features/SirenDonut_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Islands/Tiles/TwilightIsland/PrecursorRuins/Arena/BossArena_Forge_PCR_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Woods/Woods_WideRiver/CvM_CcM_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Islands/Tiles/Island/Volcano/Goblins/Features/GoblinTownArena_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Port/Tiles/Port_Boss_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Trenches/Tiles/mudburrow_devourertrap_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Flotsam/Tiles/Features/BossArena_02.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Woods/Village/RoadFields/Fills/Fill_Wildcard_01_blank.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/RockPools/Tiles/BossArena_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Woods/Manor/Features/ArenaTop_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Islands/Tiles/TwilightIsland/Feature/TwilightArena.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Stronghold/Tiles/OceanEdge/StrongholdArena_02.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Greenhouse/Tiles/Greenhouse_Arena_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Willow/Tiles/arena_flat2.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/SinterRift/Tiles/boss_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "AreaTransition_Animate",
+            "Path": "Metadata/MiscellaneousObjects/AreaTransition_Animate",
+            "Icon": true,
+            "IconName": "Entrance",
+            "IconSize": 30.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Deforestation/Tiles/Deforestation_Boss_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Ravine/Tiles/RavineArena.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Plantation/Tiles/Plantaton_Boss_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/Epitaph/Tiles/Feature/TombBoss_ArenaFloor.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Interlude/Part3/P3_7/BloodVault_Bossroom.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Spirit of the Serpent",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheSerpentPrimal*",
+            "Icon": true,
+            "IconName": "LootFilterLargeBluePentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Spirit of the Primate",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritofthePrimatePrimal*",
+            "Icon": true,
+            "IconName": "LootFilterLargeBluePentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Spirit of the Cat",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheCatVivid*",
+            "Icon": true,
+            "IconName": "LootFilterLargeYellowPentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Interlude/Part1/P1_4/Chaple_01.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
+        },
+        {
+            "Name": "Spirit of the Bear",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheBearWild*",
+            "Icon": true,
+            "IconName": "LootFilterLargePurplePentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Spirit of the Wolf",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheWolfVivid*",
+            "Icon": true,
+            "IconName": "LootFilterLargeYellowPentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Spirit of the Fox",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheFoxSacred*",
+            "Icon": true,
+            "IconName": "LootFilterLargeBrownPentagon",
+            "IconSize": 25.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Spirit of the Owl",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheOwlPrimal*",
+            "Icon": true,
+            "IconName": "LootFilterLargeBluePentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Spirit of the Ox",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheOxWild*",
+            "Icon": true,
+            "IconName": "LootFilterLargePurplePentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Spirit of the Stag",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheStagVivid*",
+            "Icon": true,
+            "IconName": "LootFilterLargeYellowPentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Spirit of the Rabbit",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheRabbitSacred*",
+            "Icon": true,
+            "IconName": "LootFilterLargeOrangePentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Spirit of the Boar",
+            "Path": "Metadata/Monsters/TormentedSpirits/TormentedSpiritoftheBoarWild*",
+            "Icon": true,
+            "IconName": "LootFilterLargePurplePentagon",
+            "IconSize": 15.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": true
+        },
+        {
+            "Name": "Boss",
+            "Path": "Metadata/Terrain/Maps/AridPlains/Tiles/Arid_Plains_Bossroom.tdtx:[]",
+            "Icon": true,
+            "IconName": "UniqueMonsterAlive",
+            "IconSize": 50.0,
+            "Enabled": true,
+            "NameColor": "255, 255, 255",
+            "BGColor": "0, 0, 0",
+            "ExpectedCount": 0,
+            "DrawPath": true,
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ],
     "MapChannel": [
@@ -795,7 +1665,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ],
     "MapCreek": [
@@ -810,22 +1681,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
-        }
-    ],
-    "MapCrypt": [
-        {
-            "Name": "Boss",
-            "Path": "Metadata/Terrain/forced_blank.tdtx:[]",
-            "Icon": true,
-            "IconName": "UniqueMonsterAlive",
-            "IconSize": 50.0,
-            "Enabled": true,
-            "NameColor": "255, 255, 255",
-            "BGColor": "0, 0, 0",
-            "ExpectedCount": 0,
-            "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ],
     "MapHeadland": [
@@ -840,7 +1697,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ],
     "MapVaalCity": [
@@ -855,7 +1713,8 @@
             "BGColor": "0, 0, 0",
             "ExpectedCount": 0,
             "DrawPath": true,
-            "DrawPathColor": "255, 255, 255"
+            "DrawPathColor": "255, 255, 255",
+            "AlwaysDrawPath": false
         }
     ]
 }

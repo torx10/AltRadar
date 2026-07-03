@@ -223,10 +223,12 @@ inline bool MatchesDisplayRule(const RadarData::DisplayRule& rule, const PluginS
 
 inline EntityClassification ClassifyByRules(const PluginSDK::Entity& e, PluginSDK::Context* ctx,
                                             std::string_view path,
-                                            const RadarData::IconTables& icons) {
+                                            const RadarData::IconTables& icons,
+                                            const RadarData::RadarConfig& cfg) {
     for (size_t ruleIndex = 0; ruleIndex < icons.displayRules.size(); ++ruleIndex) {
         const auto& rule = icons.displayRules[ruleIndex];
         if (!MatchesDisplayRule(rule, e, path)) continue;
+        if (cfg.RuneShapeShowWeights && RadarData::IconTables::IsRuneShapeOwnedRule(rule)) continue;
         bool isFriendly = false;
         if (ctx && e.Components.Positioned)
             isFriendly = ctx->Components.ReadPositioned(e.Components.Positioned).IsFriendly;
@@ -431,7 +433,7 @@ inline EntityClassification ClassifyEntity(PluginSDK::Context* ctx, const Plugin
                                            const RadarData::IconTables& icons,
                                            const RadarData::RadarConfig& cfg) {
     return cfg.UseLegacyClassifier ? ClassifyByLegacy(e, path, icons)
-                                   : ClassifyByRules(e, ctx, path, icons);
+                                   : ClassifyByRules(e, ctx, path, icons, cfg);
 }
 
 inline std::optional<EntityMarkerStyle> ClassifySelf(const RadarData::IconTables& icons,
