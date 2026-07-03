@@ -97,7 +97,7 @@ public:
 
         const auto snap = ctx()->Game.GetSnapshot();
         const bool perfCaptureEnabled =
-            m_overlay.cfg.EnableDebugTools && m_overlay.cfg.EnablePerfTimingCapture;
+            m_overlay.cfg.EnablePerformanceDebug && m_overlay.cfg.EnablePerfTimingCapture;
         const auto settingsStart = perfCaptureEnabled ? std::optional(std::chrono::steady_clock::now())
                                                       : std::nullopt;
         RadarUi::DrawSettings(m_overlay, m_ui, const_cast<PluginSDK::Context*>(ctx()), snap, pluginDir);

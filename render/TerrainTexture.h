@@ -115,7 +115,7 @@ private:
             out.dotStep = static_cast<uint8_t>(std::clamp(cfg.DotCellStep, 1, 16));
             out.dotSizeTimesTwo = static_cast<uint8_t>(std::clamp(static_cast<int>(cfg.DotSize * 2.0f + 0.5f), 1, 12));
             out.terrainStyle = static_cast<uint8_t>(cfg.TerrainStyle);
-            const auto effectiveDotMode = RadarData::EffectiveDotMatrixRenderMode(cfg.EnableDebugTools,
+            const auto effectiveDotMode = RadarData::EffectiveDotMatrixRenderMode(cfg.EnableDrawDebug,
                                                                                   cfg.DotRenderMode);
             out.includeBoundaryEdges = cfg.ShowBoundaryEdges
                                        && cfg.BoundaryRenderMode == RadarData::TerrainBoundaryRenderMode::CachedTexture

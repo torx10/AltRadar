@@ -91,7 +91,7 @@ inline TerrainGridExtents ResolveTerrainGridExtents(const RadarData::RadarConfig
 }
 
 inline bool UsesTextureTerrain(const RadarData::RadarConfig& cfg) {
-    const auto effectiveDotMode = RadarData::EffectiveDotMatrixRenderMode(cfg.EnableDebugTools,
+    const auto effectiveDotMode = RadarData::EffectiveDotMatrixRenderMode(cfg.EnableDrawDebug,
                                                                           cfg.DotRenderMode);
     return cfg.TerrainStyle == RadarData::TerrainRenderStyle::Texture
            || cfg.TerrainStyle == RadarData::TerrainRenderStyle::TextureAndDotMatrix
@@ -589,7 +589,7 @@ public:
     void Draw(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap) {
         if (!ShouldDraw(snap)) return;
 
-        const bool perfCaptureEnabled = cfg.EnableDebugTools && cfg.EnablePerfTimingCapture;
+        const bool perfCaptureEnabled = cfg.EnablePerformanceDebug && cfg.EnablePerfTimingCapture;
         const auto drawStart = std::chrono::steady_clock::now();
         cache.BeginOverlayFrame(perfCaptureEnabled);
         uiBlocker.enabled = cfg.EnableUiBlockerDetection;
@@ -598,13 +598,13 @@ public:
         RadarPerf::OverlayPerfTiming::FrameFlags frameFlags{};
         frameFlags.mapVisible = mapVisible;
         frameFlags.debugToolsEnabled = cfg.EnableDebugTools;
-        frameFlags.perfTimingCaptureEnabled = cfg.EnableDebugTools && cfg.EnablePerfTimingCapture;
-        frameFlags.uiDiscoveryEnabled = cfg.EnableDebugTools && cfg.EnableUiDiscoveryTools;
-        frameFlags.uiDiscoveryAutoRefreshEnabled = cfg.EnableDebugTools && cfg.EnableUiDiscoveryTools
-                                                  && cfg.EnableUiDiscoveryAutoRefresh;
-        frameFlags.pinnedWatchEnabled = cfg.EnableDebugTools && cfg.EnableUiDiscoveryTools
+        frameFlags.perfTimingCaptureEnabled = cfg.EnablePerformanceDebug && cfg.EnablePerfTimingCapture;
+        frameFlags.uiDiscoveryEnabled = cfg.EnableUiDiscoveryDebug && cfg.EnableUiDiscoveryTools;
+        frameFlags.uiDiscoveryAutoRefreshEnabled = cfg.EnableUiDiscoveryDebug && cfg.EnableUiDiscoveryTools
+                                                   && cfg.EnableUiDiscoveryAutoRefresh;
+        frameFlags.pinnedWatchEnabled = cfg.EnableUiDiscoveryDebug && cfg.EnableUiDiscoveryTools
                                         && cfg.EnablePinnedUiWatch;
-        const auto effectiveDotMode = RadarData::EffectiveDotMatrixRenderMode(cfg.EnableDebugTools,
+        const auto effectiveDotMode = RadarData::EffectiveDotMatrixRenderMode(cfg.EnableDrawDebug,
                                                                               cfg.DotRenderMode);
         frameFlags.dotRenderMode = UsesDotMatrixTerrain(cfg)
                                        ? RadarData::DotMatrixRenderModeName(effectiveDotMode)

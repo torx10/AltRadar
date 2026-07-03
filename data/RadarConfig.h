@@ -174,12 +174,16 @@ inline Rgba8 ParseRgbString(const std::string& s, Rgba8 fallback = {}) {
 struct RadarConfig {
     bool  OverlayEnabled = true;
     bool  EnableDebugTools = false;
+    bool  EnablePerformanceDebug = false;
     bool  EnablePerfTimingCapture = false;
     bool  ShowPerfTimingPanel = false;
+    bool  EnableUiDiscoveryDebug = false;
     bool  EnableUiDiscoveryTools = false;
     bool  EnableUiDiscoveryAutoRefresh = false;
     bool  EnablePinnedUiWatch = false;
+    bool  EnableUiBlockerDebug = false;
     bool  ShowUiBlockerDebugDetails = false;
+    bool  EnableDrawDebug = false;
     bool  ShowTerrainTextureDebug = false;
     bool  ShowDotMatrixDebug = false;
     bool  ShowBoundaryDebug = false;
@@ -256,6 +260,15 @@ struct RadarConfig {
         ShowTerrainTextureDebug = j.value("ShowTerrainTextureDebug", ShowTerrainTextureDebug);
         ShowDotMatrixDebug = j.value("ShowDotMatrixDebug", ShowDotMatrixDebug);
         ShowBoundaryDebug = j.value("ShowBoundaryDebug", ShowBoundaryDebug);
+        const bool legacyPerformanceDebug = ShowPerfTimingPanel || EnablePerfTimingCapture;
+        const bool legacyUiDiscoveryDebug = EnableUiDiscoveryTools || EnableUiDiscoveryAutoRefresh
+                                            || EnablePinnedUiWatch;
+        const bool legacyUiBlockerDebug = ShowUiBlockerDebugDetails;
+        const bool legacyDrawDebug = ShowTerrainTextureDebug || ShowDotMatrixDebug || ShowBoundaryDebug;
+        EnablePerformanceDebug = j.value("EnablePerformanceDebug", legacyPerformanceDebug);
+        EnableUiDiscoveryDebug = j.value("EnableUiDiscoveryDebug", legacyUiDiscoveryDebug);
+        EnableUiBlockerDebug = j.value("EnableUiBlockerDebug", legacyUiBlockerDebug);
+        EnableDrawDebug = j.value("EnableDrawDebug", legacyDrawDebug);
         DrawWhenNotInHideoutOrTown = j.value("DrawWhenNotInHideoutOrTown", DrawWhenNotInHideoutOrTown);
         DrawWhenNotPaused = j.value("DrawWhenNotPaused", DrawWhenNotPaused);
         HideWhenNotForeground = j.value("HideWhenNotForeground", HideWhenNotForeground);
@@ -336,13 +349,17 @@ struct RadarConfig {
         nlohmann::json j;
         j["OverlayEnabled"] = OverlayEnabled;
         j["EnableDebugTools"] = EnableDebugTools;
+        j["EnablePerformanceDebug"] = EnablePerformanceDebug;
         j["EnablePerfTimingCapture"] = EnablePerfTimingCapture;
         j["ShowPerfTimingPanel"] = ShowPerfTimingPanel;
+        j["EnableUiDiscoveryDebug"] = EnableUiDiscoveryDebug;
         j["EnableUiDiscoveryTools"] = EnableUiDiscoveryTools;
         j["EnableUiDiscoveryAutoRefresh"] = EnableUiDiscoveryAutoRefresh;
         j["EnablePinnedUiWatch"] = EnablePinnedUiWatch;
+        j["EnableUiBlockerDebug"] = EnableUiBlockerDebug;
         j["ShowUiBlockerDebugDetails"] = ShowUiBlockerDebugDetails;
         j["ShowAtlasBlockerDebug"] = ShowUiBlockerDebugDetails;
+        j["EnableDrawDebug"] = EnableDrawDebug;
         j["ShowTerrainTextureDebug"] = ShowTerrainTextureDebug;
         j["ShowDotMatrixDebug"] = ShowDotMatrixDebug;
         j["ShowBoundaryDebug"] = ShowBoundaryDebug;
