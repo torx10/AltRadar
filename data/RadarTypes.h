@@ -250,6 +250,10 @@ inline bool IsRuneshapeColourEligible(const DisplayRule& rule) {
            || MarkerShapeNameEquals(rule.id, "stock.expedition");
 }
 
+inline MarkerShape DefaultTargetMarkerShape() { return MarkerShape::Sword; }
+
+inline Rgba8 DefaultTargetMarkerColor() { return {255, 140, 0, 255}; }
+
 struct TargetEntry {
     std::string name;
     std::string path;
@@ -257,6 +261,8 @@ struct TargetEntry {
     bool        showIcon = false;
     std::string iconName;
     float       iconSize = 30.f;
+    MarkerShape markerShape = DefaultTargetMarkerShape();
+    Rgba8       markerColor = DefaultTargetMarkerColor();
     Rgba8       nameColor{253, 224, 71, 255};
     Rgba8       bgColor{0, 0, 0, 255};
     int         expectedCount = 1;

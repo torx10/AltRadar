@@ -37,6 +37,16 @@ public:
         t.iconName = o.value("IconName", "");
         t.iconSize = o.value("IconSize", 30.f);
         t.expectedCount = o.value("ExpectedCount", 1);
+        t.markerShape = ParseMarkerShape(o.value("MarkerShape",
+                                                 std::string(MarkerShapeName(DefaultTargetMarkerShape()))));
+        if (t.markerShape == MarkerShape::None) t.markerShape = DefaultTargetMarkerShape();
+        if (o.contains("MarkerColor") && o["MarkerColor"].is_array() && o["MarkerColor"].size() >= 4) {
+            auto& a = o["MarkerColor"];
+            t.markerColor = {static_cast<uint8_t>(a[0].get<int>()),
+                             static_cast<uint8_t>(a[1].get<int>()),
+                             static_cast<uint8_t>(a[2].get<int>()),
+                             static_cast<uint8_t>(a[3].get<int>())};
+        }
         if (o.contains("NameColor") && o["NameColor"].is_string())
             t.nameColor = ParseRgbString(o["NameColor"].get<std::string>(), t.nameColor);
         if (o.contains("BGColor") && o["BGColor"].is_string())
@@ -128,7 +138,7 @@ public:
                                  + " targets, " + std::to_string(byArea.size()) + " areas");
     }
 
-    void SaveUser(const std::filesystem::path& pluginDir) const {
+    bool SaveUser(const std::filesystem::path& pluginDir) const {
         nlohmann::json j = nlohmann::json::object();
         for (const auto& [area, indices] : byArea) {
             nlohmann::json arr = nlohmann::json::array();
@@ -143,6 +153,9 @@ public:
                     {"IconName", t.iconName},
                     {"IconSize", t.iconSize},
                     {"ExpectedCount", t.expectedCount},
+                    {"MarkerShape", MarkerShapeName(t.markerShape)},
+                    {"MarkerColor", {t.markerColor.r, t.markerColor.g, t.markerColor.b,
+                                      t.markerColor.a}},
                     {"NameColor", std::to_string(t.nameColor.r) + ", " + std::to_string(t.nameColor.g)
                                   + ", " + std::to_string(t.nameColor.b)},
                     {"BGColor", std::to_string(t.bgColor.r) + ", " + std::to_string(t.bgColor.g)
@@ -163,8 +176,49 @@ public:
         const auto path = pluginDir / "config" / "targets" / "user.json";
         std::error_code ec;
         std::filesystem::create_directories(path.parent_path(), ec);
+        if (ec) {
+            RadarLog::Instance().Warn("Failed to create target config directory: " + ec.message());
+            return false;
+        }
         std::ofstream out(path);
-        if (out.is_open()) out << j.dump(4);
+        if (!out.is_open()) {
+            RadarLog::Instance().Warn("Failed to open user target file for save: " + path.string());
+            return false;
+        }
+        out << j.dump(4);
+        if (!out.good()) {
+            RadarLog::Instance().Warn("Failed to write user target file: " + path.string());
+            return false;
+        }
+        return true;
+    }
+
+    static bool SameTargetIdentity(const TargetEntry& a, const TargetEntry& b) {
+        if (a.path != b.path) return false;
+        if (a.hasAnchor != b.hasAnchor) return !a.hasAnchor && !b.hasAnchor;
+        if (!a.hasAnchor) return true;
+        return a.anchorTileX == b.anchorTileX && a.anchorTileY == b.anchorTileY
+               && a.anchorGridX == b.anchorGridX && a.anchorGridY == b.anchorGridY;
+    }
+
+    bool HasUserOverrideFor(const std::string& areaKey, const TargetEntry& candidate) const {
+        auto hasMatchIn = [&](const std::vector<size_t>* indices) {
+            if (!indices) return false;
+            for (size_t idx : *indices) {
+                if (idx >= storage.size()) continue;
+                const auto& entry = storage[idx];
+                if (entry.category != "User") continue;
+                if (SameTargetIdentity(entry, candidate)) return true;
+            }
+            return false;
+        };
+        if (hasMatchIn(areaKey == "*" || areaKey == "GLOBAL" ? &actsGlobalTargets : nullptr))
+            return true;
+        if (hasMatchIn(areaKey == "*" || areaKey == "GLOBAL" ? &endgameGlobalTargets : nullptr))
+            return true;
+        if (const auto it = byArea.find(areaKey); it != byArea.end() && hasMatchIn(&it->second))
+            return true;
+        return false;
     }
 
     std::string DisplayNameForArea(std::string_view areaKey) const {
@@ -207,22 +261,23 @@ public:
                                                     std::string_view areaName = {}) const {
         std::vector<const TargetEntry*> result;
         result.reserve(32);
-        auto addIndices = [&](const std::vector<size_t>& indices) {
+        auto addIndices = [&](const std::vector<size_t>& indices, const std::string& areaKey) {
             for (size_t i : indices)
-                if (i < storage.size() && storage[i].enabled)
+                if (i < storage.size() && storage[i].enabled
+                    && (storage[i].category == "User" || !HasUserOverrideFor(areaKey, storage[i])))
                     result.push_back(&storage[i]);
         };
-        addIndices(actsGlobalTargets);
+        addIndices(actsGlobalTargets, "*");
         const std::string key = ResolveAreaKey(areaHash, areaName);
         const auto srcIt = areaSource.find(key);
         const bool isEndgameArea =
             (srcIt != areaSource.end() && srcIt->second == "Endgame")
             || (key.size() >= 3 && (key.rfind("MAP", 0) == 0 || key.rfind("SANCTUM", 0) == 0));
-        if (isEndgameArea) addIndices(endgameGlobalTargets);
-        if (auto it = byArea.find(key); it != byArea.end()) addIndices(it->second);
+        if (isEndgameArea) addIndices(endgameGlobalTargets, "*");
+        if (auto it = byArea.find(key); it != byArea.end()) addIndices(it->second, key);
         else {
             for (const auto& [k, v] : byArea) {
-                if (AreaKeysEqual(k, key)) addIndices(v);
+                if (AreaKeysEqual(k, key)) addIndices(v, k);
             }
         }
         return result;
@@ -239,6 +294,25 @@ public:
             areaSource[key] = "User";
             areaDisplayNames[key] = key;
         }
+    }
+
+    void UpsertUserTarget(const std::string& area, TargetEntry t, size_t existingStorageIndex = SIZE_MAX) {
+        t.category = "User";
+        const std::string key = NormalizeAreaKey(area);
+        if (existingStorageIndex < storage.size() && storage[existingStorageIndex].category == "User") {
+            storage[existingStorageIndex] = std::move(t);
+            return;
+        }
+        if (auto it = byArea.find(key); it != byArea.end()) {
+            for (size_t idx : it->second) {
+                if (idx >= storage.size() || storage[idx].category != "User") continue;
+                if (SameTargetIdentity(storage[idx], t)) {
+                    storage[idx] = std::move(t);
+                    return;
+                }
+            }
+        }
+        AddUserTarget(key, std::move(t));
     }
 
     std::vector<std::string> ListUserAreas() const { return ListAreas("User"); }

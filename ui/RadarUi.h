@@ -1611,6 +1611,9 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
     for (size_t idx : indices) {
         if (idx >= db.storage.size()) continue;
         if (userOnly && db.storage[idx].category != "User") continue;
+        if (!userOnly && db.storage[idx].category != "User"
+            && db.HasUserOverrideFor(RadarData::NormalizeAreaKey(areaKey), db.storage[idx]))
+            continue;
         if (!TargetMatchesLandmarkSearch(db.storage[idx], areaLabel, search)) continue;
         ++visibleCount;
     }
@@ -1640,6 +1643,9 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
         if (idx >= db.storage.size()) continue;
         auto& t = db.storage[idx];
         if (userOnly && t.category != "User") continue;
+        if (!userOnly && t.category != "User"
+            && db.HasUserOverrideFor(RadarData::NormalizeAreaKey(areaKey), t))
+            continue;
         if (!TargetMatchesLandmarkSearch(t, areaLabel, search)) continue;
         ImGui::TableNextRow();
         ImGui::TableSetColumnIndex(0);
@@ -1913,15 +1919,17 @@ inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
     ImGui::Checkbox("Enabled", &ui.editTarget.enabled);
     ImGui::DragInt("Count", &ui.editTarget.expectedCount, 1, 1, 99);
     ImGui::Checkbox("Show as Icon", &ui.editTarget.showIcon);
-    if (ui.editTarget.showIcon) ImGui::DragFloat("Icon Size", &ui.editTarget.iconSize, 1, 5, 80);
+    if (ui.editTarget.showIcon) {
+        ImGui::DragFloat("Icon Size", &ui.editTarget.iconSize, 1, 5, 80);
+        DrawMarkerShapeCombo("Marker Shape", ui.editTarget.markerShape);
+        ImVec4 markerColor = ui.editTarget.markerColor.ToImVec4();
+        if (ImGui::ColorEdit4("Marker Colour", &markerColor.x,
+                              ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar))
+            ui.editTarget.markerColor = RadarData::Rgba8::FromImVec4(markerColor);
+    }
     if (ImGui::Button("Save", ImVec2(90, 0))) {
-        const bool wasNew = ui.editIsNew;
-        if (ui.editIsNew) {
-            db.AddUserTarget(ui.editAreaKey, ui.editTarget);
-        } else if (ui.editStorageIndex < db.storage.size()) {
-            db.storage[ui.editStorageIndex] = ui.editTarget;
-        }
-        if (wasNew || ui.editTarget.category == "User") db.SaveUser(pluginDir);
+        db.UpsertUserTarget(ui.editAreaKey, ui.editTarget, ui.editStorageIndex);
+        db.SaveUser(pluginDir);
         overlay.cache.InvalidatePoi();
         ui.editModalOpen = false;
         ui.editStorageIndex = SIZE_MAX;

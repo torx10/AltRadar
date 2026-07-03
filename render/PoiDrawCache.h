@@ -24,6 +24,10 @@ struct PoiDrawCache {
 
     static RadarData::IconDef ResolvePoiIcon(const RadarData::TargetEntry& t,
                                              const RadarData::IconTables& icons) {
+        if (t.markerShape != RadarData::MarkerShape::None) {
+            return RadarData::IconDef{0, 0, t.iconSize > 0.f ? t.iconSize : 30.f,
+                                      t.markerShape, t.markerColor, {}};
+        }
         if (!t.iconName.empty()) {
             const auto findIn = [&](const auto& m) -> std::optional<RadarData::IconDef> {
                 if (auto it = m.find(t.iconName); it != m.end()) return it->second;
@@ -414,9 +418,10 @@ struct PoiDrawCache {
                 p.iconCx = iconDef.cx;
                 p.iconCy = iconDef.cy;
                 p.markerShape = iconDef.markerShape == RadarData::MarkerShape::None
-                                    ? RadarData::MarkerShape::Circle
+                                    ? RadarData::DefaultTargetMarkerShape()
                                     : iconDef.markerShape;
-                p.markerColor = iconDef.markerColor;
+                p.markerColor = iconDef.markerColor.a ? iconDef.markerColor
+                                                      : RadarData::DefaultTargetMarkerColor();
                 p.nameColor = t->nameColor;
                 p.bgColor = t->bgColor;
                 FillMetatileCells(ctx, p, *t, compiled[i]);
@@ -444,9 +449,10 @@ struct PoiDrawCache {
                 p.iconCx = iconDef.cx;
                 p.iconCy = iconDef.cy;
                 p.markerShape = iconDef.markerShape == RadarData::MarkerShape::None
-                                    ? RadarData::MarkerShape::Circle
+                                    ? RadarData::DefaultTargetMarkerShape()
                                     : iconDef.markerShape;
-                p.markerColor = iconDef.markerColor;
+                p.markerColor = iconDef.markerColor.a ? iconDef.markerColor
+                                                      : RadarData::DefaultTargetMarkerColor();
                 p.nameColor = t->nameColor;
                 p.bgColor = t->bgColor;
                 pois.push_back(std::move(p));
