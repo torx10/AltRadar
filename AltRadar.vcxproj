@@ -55,6 +55,9 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)sdk;$(ProjectDir)imgui;$(ProjectDir)third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>powershell -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\scripts\embed-target-defaults.ps1" -ProjectDir "$(MSBuildProjectDirectory)"</Command>
+    </PreBuildEvent>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -75,6 +78,9 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)sdk;$(ProjectDir)imgui;$(ProjectDir)third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <PreBuildEvent>
+      <Command>powershell -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\scripts\embed-target-defaults.ps1" -ProjectDir "$(MSBuildProjectDirectory)"</Command>
+    </PreBuildEvent>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -90,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="data\IconTables.h" />
+    <ClInclude Include="data\EmbeddedTargets.h" />
     <ClInclude Include="data\RadarDefaults.h" />
     <ClInclude Include="data\RadarLog.h" />
     <ClInclude Include="data\PathMatcher.h" />

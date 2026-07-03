@@ -22,8 +22,26 @@ POE2Fixer/Plugins/AltRadar/
 3. Enable **Alt Radar** in the Plugins tab.
 
 On first run, Alt Radar creates `logs/`, `config/`, `config/settings.json`,
-`config/display_rules.json`, and `config/targets/`. Optional target JSON files in
-`config/targets/` add curated landmarks; missing files are skipped.
+`config/display_rules.json`, and `config/targets/`.
+
+`config/targets/acts.json`, `config/targets/endgame.json`, and
+`config/targets/ignore.json` are embedded in `AltRadar.dll` and generated on
+first run if missing.
+
+- Existing target JSON files are never overwritten.
+- You may edit generated target JSON files directly.
+- Delete a generated file to regenerate the default copy on next start.
+- If a generated file is corrupt, Alt Radar logs a warning and uses embedded
+  defaults in memory without overwriting the corrupt file.
+- `config/targets/user.json` stays separate and is only created when user edits
+  exist.
+
+Minimum package remains:
+
+```text
+POE2Fixer/Plugins/AltRadar/
+  AltRadar.dll
+```
 
 ## Settings UI
 

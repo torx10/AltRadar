@@ -1,5 +1,6 @@
 #pragma once
 
+#include "EmbeddedTargets.h"
 #include "PathMatcher.h"
 #include "RadarConfig.h"
 #include "RadarLog.h"
@@ -10,6 +11,7 @@
 #include <cctype>
 #include <filesystem>
 #include <fstream>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -19,6 +21,13 @@ namespace RadarData {
 
 class TargetDatabase {
 public:
+    struct DefaultFileGenerationResult {
+        std::filesystem::path targetDir;
+        bool actsGenerated = false;
+        bool endgameGenerated = false;
+        bool ignoreGenerated = false;
+    };
+
     std::vector<TargetEntry> storage;
     std::unordered_map<std::string, std::vector<size_t>> byArea;
     std::unordered_map<std::string, std::string>         areaSource;
@@ -61,6 +70,188 @@ public:
         return t;
     }
 
+    static std::filesystem::path TargetConfigDir(const std::filesystem::path& pluginDir) {
+        return pluginDir / "config" / "targets";
+    }
+
+    static bool DecodeBase64(std::string_view input, std::string& out) {
+        static constexpr unsigned char invalid = 255;
+        unsigned char table[256];
+        std::fill(table, table + 256, invalid);
+        for (unsigned char c = 'A'; c <= 'Z'; ++c) table[c] = c - 'A';
+        for (unsigned char c = 'a'; c <= 'z'; ++c) table[c] = c - 'a' + 26;
+        for (unsigned char c = '0'; c <= '9'; ++c) table[c] = c - '0' + 52;
+        table[static_cast<unsigned char>('+')] = 62;
+        table[static_cast<unsigned char>('/')] = 63;
+
+        out.clear();
+        out.reserve(input.size() * 3 / 4);
+        int val = 0;
+        int bits = -8;
+        for (unsigned char c : input) {
+            if (c == '=') break;
+            const unsigned char decoded = table[c];
+            if (decoded == invalid) return false;
+            val = (val << 6) | decoded;
+            bits += 6;
+            if (bits >= 0) {
+                out.push_back(static_cast<char>((val >> bits) & 0xff));
+                bits -= 8;
+            }
+        }
+        return true;
+    }
+
+    static bool WriteEmbeddedFileIfMissing(const std::filesystem::path& path,
+                                           std::string_view content,
+                                           const char* label,
+                                           bool* generated = nullptr) {
+        std::error_code ec;
+        if (generated) *generated = false;
+        if (std::filesystem::exists(path, ec)) return true;
+        std::filesystem::create_directories(path.parent_path(), ec);
+        if (ec) {
+            RadarLog::Instance().Warn(std::string("Failed to create directory for ") + label
+                                      + ": " + ec.message());
+            return false;
+        }
+        std::ofstream out(path, std::ios::binary);
+        if (!out.is_open()) {
+            RadarLog::Instance().Warn(std::string("Failed to create ") + label + ": " + path.string());
+            return false;
+        }
+        out.write(content.data(), static_cast<std::streamsize>(content.size()));
+        if (!out.good()) {
+            RadarLog::Instance().Warn(std::string("Failed to write ") + label + ": " + path.string());
+            return false;
+        }
+        if (generated) *generated = true;
+        RadarLog::Instance().Info(std::string("Generated default ") + label + ": " + path.string());
+        return true;
+    }
+
+    static DefaultFileGenerationResult EnsureEmbeddedDefaultsWritten(const std::filesystem::path& pluginDir) {
+        DefaultFileGenerationResult result;
+        result.targetDir = TargetConfigDir(pluginDir);
+        std::string actsJson;
+        std::string endgameJson;
+        std::string ignoreJson;
+        if (DecodeBase64(EmbeddedTargets::kActsJsonBase64, actsJson))
+            WriteEmbeddedFileIfMissing(result.targetDir / "acts.json", actsJson,
+                                       "acts.json", &result.actsGenerated);
+        else
+            RadarLog::Instance().Warn("Failed to decode embedded acts.json defaults");
+        if (DecodeBase64(EmbeddedTargets::kEndgameJsonBase64, endgameJson))
+            WriteEmbeddedFileIfMissing(result.targetDir / "endgame.json", endgameJson,
+                                       "endgame.json", &result.endgameGenerated);
+        else
+            RadarLog::Instance().Warn("Failed to decode embedded endgame.json defaults");
+        if (DecodeBase64(EmbeddedTargets::kIgnoreJsonBase64, ignoreJson))
+            WriteEmbeddedFileIfMissing(result.targetDir / "ignore.json", ignoreJson,
+                                       "ignore.json", &result.ignoreGenerated);
+        else
+            RadarLog::Instance().Warn("Failed to decode embedded ignore.json defaults");
+        return result;
+    }
+
+    static bool ReadJsonFileText(const std::filesystem::path& path, std::string& out) {
+        std::ifstream in(path, std::ios::binary);
+        if (!in.is_open()) return false;
+        std::ostringstream buffer;
+        buffer << in.rdbuf();
+        out = buffer.str();
+        return in.good() || in.eof();
+    }
+
+    void LoadAreaJson(const nlohmann::json& j, const std::string& category) {
+        if (!j.is_object()) return;
+        for (auto it = j.begin(); it != j.end(); ++it) {
+            if (!it.value().is_array()) continue;
+            const std::string areaKey = NormalizeAreaKey(it.key());
+            std::string display = it.key();
+            if (display == "*") display = "Global";
+            areaDisplayNames[areaKey] = display;
+            if (category != "User" || !areaSource.count(areaKey))
+                areaSource[areaKey] = category;
+            for (const auto& entry : it.value()) {
+                size_t idx = storage.size();
+                storage.push_back(ParseTarget(entry, category));
+                if (areaKey == "*" || areaKey == "GLOBAL") {
+                    if (category == "Endgame") endgameGlobalTargets.push_back(idx);
+                    else actsGlobalTargets.push_back(idx);
+                } else {
+                    byArea[areaKey].push_back(idx);
+                }
+            }
+        }
+    }
+
+    bool LoadAreaText(std::string_view jsonText, const std::string& category,
+                      const std::string& sourceLabel, bool fallbackOnly = false) {
+        try {
+            const auto parsed = nlohmann::json::parse(jsonText.begin(), jsonText.end());
+            LoadAreaJson(parsed, category);
+            if (fallbackOnly)
+                RadarLog::Instance().Warn("Using embedded default targets in memory for " + sourceLabel);
+            return true;
+        } catch (const std::exception& ex) {
+            RadarLog::Instance().Warn("Failed to parse " + sourceLabel + ": " + ex.what());
+        } catch (...) {
+            RadarLog::Instance().Warn("Failed to parse " + sourceLabel);
+        }
+        return false;
+    }
+
+    void LoadIgnoreJson(const nlohmann::json& j) {
+        auto loadArr = [&](const nlohmann::json& arr) {
+            if (!arr.is_array()) return;
+            for (const auto& e : arr) {
+                if (e.is_string()) ignorePatterns.Add(e.get<std::string>());
+                else if (e.is_object() && e.contains("Path"))
+                    ignorePatterns.Add(e["Path"].get<std::string>());
+            }
+        };
+        if (j.is_array()) loadArr(j);
+        else if (j.is_object())
+            for (auto it = j.begin(); it != j.end(); ++it) loadArr(it.value());
+    }
+
+    bool LoadIgnoreText(std::string_view jsonText, const std::string& sourceLabel,
+                        bool fallbackOnly = false) {
+        try {
+            const auto parsed = nlohmann::json::parse(jsonText.begin(), jsonText.end());
+            LoadIgnoreJson(parsed);
+            if (fallbackOnly)
+                RadarLog::Instance().Warn("Using embedded ignore defaults in memory for " + sourceLabel);
+            return true;
+        } catch (const std::exception& ex) {
+            RadarLog::Instance().Warn("Failed to parse " + sourceLabel + ": " + ex.what());
+        } catch (...) {
+            RadarLog::Instance().Warn("Failed to parse " + sourceLabel);
+        }
+        return false;
+    }
+
+    void LoadAreaFileOrEmbedded(const std::filesystem::path& path, const std::string& category,
+                                std::string_view embeddedJson, const char* label) {
+        std::string fileText;
+        if (ReadJsonFileText(path, fileText) && LoadAreaText(fileText, category, path.string())) return;
+        if (std::filesystem::exists(path))
+            RadarLog::Instance().Warn(std::string("Falling back to embedded default for corrupt target file: ")
+                                      + path.string());
+        LoadAreaText(embeddedJson, category, std::string(label), true);
+    }
+
+    void LoadIgnoreFileOrEmbedded(const std::filesystem::path& path, std::string_view embeddedJson,
+                                  const char* label) {
+        std::string fileText;
+        if (ReadJsonFileText(path, fileText) && LoadIgnoreText(fileText, path.string())) return;
+        if (std::filesystem::exists(path))
+            RadarLog::Instance().Warn(std::string("Falling back to embedded default for corrupt ignore file: ")
+                                      + path.string());
+        LoadIgnoreText(embeddedJson, std::string(label), true);
+    }
+
     void LoadAreaFile(const std::filesystem::path& path, const std::string& category) {
         if (!std::filesystem::exists(path)) return;
         std::ifstream in(path);
@@ -68,26 +259,7 @@ public:
         nlohmann::json j;
         try {
             in >> j;
-            if (!j.is_object()) return;
-            for (auto it = j.begin(); it != j.end(); ++it) {
-                if (!it.value().is_array()) continue;
-                const std::string areaKey = NormalizeAreaKey(it.key());
-                std::string display = it.key();
-                if (display == "*") display = "Global";
-                areaDisplayNames[areaKey] = display;
-                if (category != "User" || !areaSource.count(areaKey))
-                    areaSource[areaKey] = category;
-                for (const auto& entry : it.value()) {
-                    size_t idx = storage.size();
-                    storage.push_back(ParseTarget(entry, category));
-                    if (areaKey == "*" || areaKey == "GLOBAL") {
-                        if (category == "Endgame") endgameGlobalTargets.push_back(idx);
-                        else actsGlobalTargets.push_back(idx);
-                    }
-                    else
-                        byArea[areaKey].push_back(idx);
-                }
-            }
+            LoadAreaJson(j, category);
         } catch (const std::exception& ex) {
             RadarLog::Instance().Warn("Skipping target file " + path.string() + ": " + ex.what());
         } catch (...) {
@@ -102,17 +274,7 @@ public:
         nlohmann::json j;
         try {
             in >> j;
-            auto loadArr = [&](const nlohmann::json& arr) {
-                if (!arr.is_array()) return;
-                for (const auto& e : arr) {
-                    if (e.is_string()) ignorePatterns.Add(e.get<std::string>());
-                    else if (e.is_object() && e.contains("Path"))
-                        ignorePatterns.Add(e["Path"].get<std::string>());
-                }
-            };
-            if (j.is_array()) loadArr(j);
-            else if (j.is_object())
-                for (auto it = j.begin(); it != j.end(); ++it) loadArr(it.value());
+            LoadIgnoreJson(j);
         } catch (const std::exception& ex) {
             RadarLog::Instance().Warn("Skipping ignore file " + path.string() + ": " + ex.what());
         } catch (...) {
@@ -128,14 +290,47 @@ public:
         actsGlobalTargets.clear();
         endgameGlobalTargets.clear();
         ignorePatterns.patterns.clear();
-        LoadAreaFile(pluginDir / "config" / "targets" / "acts.json", "Acts");
-        LoadAreaFile(pluginDir / "config" / "targets" / "endgame.json", "Endgame");
-        LoadIgnore(pluginDir / "config" / "targets" / "ignore.json");
+        const auto targetDir = TargetConfigDir(pluginDir);
+        std::string actsJson;
+        std::string endgameJson;
+        std::string ignoreJson;
+        if (!DecodeBase64(EmbeddedTargets::kActsJsonBase64, actsJson))
+            RadarLog::Instance().Warn("Failed to decode embedded acts.json defaults");
+        if (!DecodeBase64(EmbeddedTargets::kEndgameJsonBase64, endgameJson))
+            RadarLog::Instance().Warn("Failed to decode embedded endgame.json defaults");
+        if (!DecodeBase64(EmbeddedTargets::kIgnoreJsonBase64, ignoreJson))
+            RadarLog::Instance().Warn("Failed to decode embedded ignore.json defaults");
+        auto countGroupsFor = [&](const std::string& source) {
+            size_t count = 0;
+            for (const auto& [_, areaSourceName] : areaSource)
+                if (areaSourceName == source) ++count;
+            return count;
+        };
+        size_t beforeTargets = storage.size();
+        LoadAreaFileOrEmbedded(targetDir / "acts.json", "Acts", actsJson,
+                               "embedded acts defaults");
+        RadarLog::Instance().Info("Target load Acts: groups=" + std::to_string(countGroupsFor("Acts"))
+                                  + " targets=" + std::to_string(storage.size() - beforeTargets));
+        beforeTargets = storage.size();
+        LoadAreaFileOrEmbedded(targetDir / "endgame.json", "Endgame", endgameJson,
+                               "embedded endgame defaults");
+        RadarLog::Instance().Info("Target load Endgame: groups=" + std::to_string(countGroupsFor("Endgame"))
+                                  + " targets=" + std::to_string(storage.size() - beforeTargets));
+        const size_t ignoreBefore = ignorePatterns.patterns.size();
+        LoadIgnoreFileOrEmbedded(targetDir / "ignore.json", ignoreJson,
+                                 "embedded ignore defaults");
+        RadarLog::Instance().Info("Target load Ignore: patterns="
+                                  + std::to_string(ignorePatterns.patterns.size() - ignoreBefore));
         const auto userPath = pluginDir / "config" / "targets" / "user.json";
-        if (std::filesystem::exists(userPath)) LoadAreaFile(userPath, "User");
+        if (std::filesystem::exists(userPath)) {
+            beforeTargets = storage.size();
+            LoadAreaFile(userPath, "User");
+            RadarLog::Instance().Info("Target load User: groups=" + std::to_string(countGroupsFor("User"))
+                                      + " targets=" + std::to_string(storage.size() - beforeTargets));
+        }
 
         RadarLog::Instance().Info("TargetDatabase loaded: " + std::to_string(storage.size())
-                                 + " targets, " + std::to_string(byArea.size()) + " areas");
+                                  + " targets, " + std::to_string(byArea.size()) + " areas");
     }
 
     bool SaveUser(const std::filesystem::path& pluginDir) const {

@@ -278,6 +278,7 @@ private:
         Any,
         Fullscreen,
         LeftPanel,
+        CenteredPanel,
     };
 
     struct RuleDef {
@@ -302,13 +303,14 @@ private:
         float area = 0.f;
     };
 
-    static const std::array<RuleDef, 6>& BuiltInRules() {
-        static const std::array<RuleDef, 6> rules{{
+    static const std::array<RuleDef, 7>& BuiltInRules() {
+        static const std::array<RuleDef, 7> rules{{
             {"TopUiRootAtlasBlocker", "TopUiRoot", "root/1/22", "Atlas UI visible", "AtlasCompatibility", true, 0, -1, Shape::Any, true},
             {"TopUiRootPassiveTreeFullscreen", "TopUiRoot", "root/1/24", "Passive tree fullscreen UI visible", "FullscreenPanel", true, 0x5921, 8, Shape::Fullscreen, false},
             {"TopUiRootAtlasSkillsTreeFullscreen", "TopUiRoot", "root/1/25", "Atlas skills tree fullscreen UI visible", "FullscreenPanel", true, 0x5921, 9, Shape::Fullscreen, false},
             {"TopUiRootMtxStoreFullscreen", "TopUiRoot", "root/1/29", "MTX store fullscreen UI visible", "FullscreenPanel", true, 0x0, 10, Shape::Fullscreen, false},
             {"TopUiRootMarketPanel", "TopUiRoot", "root/1/98/1", "Market fullscreen child visible", "FullscreenPanel", true, 0x0, 1, Shape::Fullscreen, false},
+            {"TopUiRootCenteredPanel", "TopUiRoot", "root/1/76", "Large centered UI panel visible", "CenteredPanel", true, 0x0, -1, Shape::CenteredPanel, false},
             {"TopUiRootLeftSidePanel", "TopUiRoot", "root/1/38", "Large left-side UI panel visible", "LeftPanel", false, 0x0, -1, Shape::LeftPanel, false},
         }};
         return rules;
@@ -323,6 +325,7 @@ private:
         switch (shape) {
             case Shape::Fullscreen: return "Fullscreen";
             case Shape::LeftPanel: return "LeftPanel";
+            case Shape::CenteredPanel: return "CenteredPanel";
             case Shape::Any:
             default: return "Any";
         }
@@ -394,6 +397,17 @@ private:
         if (screenW <= 0.f || screenH <= 0.f) return false;
         return node.rectX <= screenW * 0.02f && node.rectY <= screenH * 0.02f
                && node.rectH >= screenH * 0.90f && node.rectW >= screenW * 0.18f;
+    }
+
+    static bool CoversCenteredPanel(const NodeStatus& node, const PluginSDK::Snapshot& snap) {
+        const float screenW = snap.ScreenWidth > 0 ? static_cast<float>(snap.ScreenWidth) : 0.f;
+        const float screenH = snap.ScreenHeight > 0 ? static_cast<float>(snap.ScreenHeight) : 0.f;
+        if (screenW <= 0.f || screenH <= 0.f) return false;
+        const float centerX = node.rectX + node.rectW * 0.5f;
+        const float centerY = node.rectY + node.rectH * 0.5f;
+        return node.rectW >= screenW * 0.25f && node.rectH >= screenH * 0.50f
+               && std::fabs(centerX - screenW * 0.5f) <= screenW * 0.15f
+               && std::fabs(centerY - screenH * 0.5f) <= screenH * 0.20f;
     }
 
     static RuleDebugState EvaluateRule(const RuleDef& rule, const NodeStatus& node,
@@ -471,6 +485,12 @@ private:
             case Shape::LeftPanel:
                 if (!CoversLeftPanel(node, snap)) {
                     out.rejectedReason = "left-panel gate failed";
+                    return out;
+                }
+                break;
+            case Shape::CenteredPanel:
+                if (!CoversCenteredPanel(node, snap)) {
+                    out.rejectedReason = "centered-panel gate failed";
                     return out;
                 }
                 break;

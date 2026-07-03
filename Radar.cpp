@@ -53,6 +53,15 @@ public:
         m_overlay.pluginDir = pluginDir;
         m_overlay.runeIcons.SetPluginDir(pluginDir);
         RadarData::RadarLog::Instance().Init(pluginDir);
+        const auto generatedTargets = RadarData::TargetDatabase::EnsureEmbeddedDefaultsWritten(pluginDir);
+        RadarData::RadarLog::Instance().Info("Alt Radar pluginDir: " + pluginDir.string());
+        RadarData::RadarLog::Instance().Info("Alt Radar targetDir: " + generatedTargets.targetDir.string());
+        RadarData::RadarLog::Instance().Info(std::string("Target defaults generated: acts=")
+                                             + (generatedTargets.actsGenerated ? "yes" : "no")
+                                             + " endgame="
+                                             + (generatedTargets.endgameGenerated ? "yes" : "no")
+                                             + " ignore="
+                                             + (generatedTargets.ignoreGenerated ? "yes" : "no"));
 
         std::error_code ec;
         const bool hadSettings = std::filesystem::exists(pluginDir / "config" / "settings.json", ec);
@@ -61,6 +70,7 @@ public:
         m_overlay.icons.Load(pluginDir);
         RadarData::DisplayRulesStore::Load(pluginDir, m_overlay.icons.displayRules);
         m_overlay.targets.Load(pluginDir);
+        m_overlay.cache.InvalidatePoi();
         m_overlay.walkable = ctx()->Terrain.GetWalkableGrid();
 
         RadarData::RadarLog::Instance().Info("Alt Radar plugin enabled");
