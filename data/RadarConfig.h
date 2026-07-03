@@ -4,6 +4,7 @@
 #include "RadarTypes.h"
 
 #include <algorithm>
+#include <array>
 #include <filesystem>
 #include <fstream>
 
@@ -172,6 +173,9 @@ inline Rgba8 ParseRgbString(const std::string& s, Rgba8 fallback = {}) {
 }
 
 struct RadarConfig {
+    static constexpr int kRuneShapeRareCount = 11;
+    static constexpr int kRuneShapeCommonCount = 23;
+
     bool  OverlayEnabled = true;
     bool  EnableDebugTools = false;
     bool  EnablePerformanceDebug = false;
@@ -212,6 +216,10 @@ struct RadarConfig {
     bool  ShowImportantPOI = true;
     bool  DrawPoiIcons = false;
     bool  EnablePOIBackground = true;
+    bool  RuneShapeShowWeights = false;
+    int   RuneShapeMinimumWeight = 0;
+    std::array<int, kRuneShapeRareCount> RuneShapeRareWeights{};
+    std::array<int, kRuneShapeCommonCount> RuneShapeCommonWeights{};
     bool  EdgeIndicatorMinimap = true;
     bool  EdgeIndicatorLargemap = true;
     bool  UseLegacyClassifier = false;
@@ -314,6 +322,17 @@ struct RadarConfig {
         ShowImportantPOI = j.value("ShowImportantPOI", ShowImportantPOI);
         DrawPoiIcons = j.value("DrawPoiIcons", DrawPoiIcons);
         EnablePOIBackground = j.value("EnablePOIBackground", EnablePOIBackground);
+        RuneShapeShowWeights = j.value("RuneShapeShowWeights", RuneShapeShowWeights);
+        (void)j.value("RuneShapeShowPath", false);
+        RuneShapeMinimumWeight = std::clamp(j.value("RuneShapeMinimumWeight", RuneShapeMinimumWeight), -100, 100);
+        auto readIntArray = [&](const char* key, auto& out) {
+            if (!j.contains(key) || !j[key].is_array()) return;
+            const auto& a = j[key];
+            for (size_t i = 0; i < out.size() && i < a.size(); ++i)
+                if (a[i].is_number_integer()) out[i] = std::clamp(a[i].get<int>(), -100, 100);
+        };
+        readIntArray("RuneShapeRareWeights", RuneShapeRareWeights);
+        readIntArray("RuneShapeCommonWeights", RuneShapeCommonWeights);
         EdgeIndicatorMinimap = j.value("EdgeIndicatorMinimap", EdgeIndicatorMinimap);
         EdgeIndicatorLargemap = j.value("EdgeIndicatorLargemap", EdgeIndicatorLargemap);
         UseLegacyClassifier = j.value("UseLegacyClassifier", UseLegacyClassifier);
@@ -385,6 +404,10 @@ struct RadarConfig {
         j["ShowImportantPOI"] = ShowImportantPOI;
         j["DrawPoiIcons"] = DrawPoiIcons;
         j["EnablePOIBackground"] = EnablePOIBackground;
+        j["RuneShapeShowWeights"] = RuneShapeShowWeights;
+        j["RuneShapeMinimumWeight"] = RuneShapeMinimumWeight;
+        j["RuneShapeRareWeights"] = RuneShapeRareWeights;
+        j["RuneShapeCommonWeights"] = RuneShapeCommonWeights;
         j["EdgeIndicatorMinimap"] = EdgeIndicatorMinimap;
         j["EdgeIndicatorLargemap"] = EdgeIndicatorLargemap;
         j["UseLegacyClassifier"] = UseLegacyClassifier;

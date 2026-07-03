@@ -12,9 +12,11 @@
 #include "sdk/PluginSDK.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <filesystem>
 #include <imgui.h>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace RadarRender {
@@ -107,6 +109,63 @@ inline bool UsesDotMatrixTerrain(const RadarData::RadarConfig& cfg) {
 inline bool UsesTerrainBoundaryLines(const RadarData::RadarConfig& cfg) {
     return UsesTextureTerrain(cfg) && cfg.ShowBoundaryEdges && cfg.WalkableMapBorderThickness > 0
            && cfg.BoundaryRenderMode == RadarData::TerrainBoundaryRenderMode::VectorLinesDebug;
+}
+
+inline ImU32 RuneshapeSdkColorToImU32(uint32_t color) {
+    if (color == 0) return IM_COL32(38, 230, 217, 255);
+    const uint8_t r = static_cast<uint8_t>(color & 0xFFu);
+    const uint8_t g = static_cast<uint8_t>((color >> 8) & 0xFFu);
+    const uint8_t b = static_cast<uint8_t>((color >> 16) & 0xFFu);
+    uint8_t a = static_cast<uint8_t>((color >> 24) & 0xFFu);
+    if (a == 0) a = 255;
+    return IM_COL32(r, g, b, a);
+}
+
+inline void DrawRuneShapeSdkOverlay(ImDrawList* dl, PluginSDK::Context* ctx,
+                                    const PluginSDK::Snapshot& snap,
+                                    const RadarData::RadarConfig& cfg,
+                                    const MapLayerProjection* largeMapProj = nullptr) {
+    if (!dl || !ctx || !cfg.RuneShapeShowWeights) return;
+    std::vector<PluginSDK::Runeshape> runeshapes;
+    try {
+        runeshapes = ctx->Runeshape.Runeshapes();
+    } catch (...) {
+        return;
+    }
+    if (runeshapes.empty()) return;
+
+    std::unordered_map<uint32_t, const PluginSDK::Entity*> entitiesById;
+    entitiesById.reserve(snap.Entities.size());
+    for (const auto& e : snap.Entities) {
+        if (e.IsValid) entitiesById.emplace(e.Id, &e);
+    }
+
+    for (const auto& runeshape : runeshapes) {
+        if (runeshape.entityId == 0 || runeshape.entityId > 0xFFFFFFFFull) continue;
+        if (runeshape.completed) continue;
+        if (runeshape.comboWeight < cfg.RuneShapeMinimumWeight) continue;
+        const auto it = entitiesById.find(static_cast<uint32_t>(runeshape.entityId));
+        if (it == entitiesById.end() || !it->second || !it->second->IsValid) continue;
+        const auto& e = *it->second;
+
+        ProjectedScreen scr;
+        if (snap.LargeMap.IsVisible && largeMapProj
+            && largeMapProj->mode == RadarData::MapLayerProjectionMode::Unified2D) {
+            scr = ProjectGridLargeMapLayer(*largeMapProj, ctx, snap, e.GridPositionX,
+                                           e.GridPositionY, e.TerrainHeight,
+                                           MapLayerSubject::Entity);
+        } else {
+            scr = ProjectEntityGridToScreen(ctx, snap, e.GridPositionX, e.GridPositionY,
+                                            e.TerrainHeight);
+        }
+        if (!scr.valid) continue;
+
+        const ImU32 color = RuneshapeSdkColorToImU32(runeshape.color);
+        const float drawX = scr.sx + (snap.LargeMap.IsVisible ? kLargeMapMarkerOffsetX : 0.0f);
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%d", runeshape.comboWeight);
+        dl->AddText(ImVec2(drawX + 8.f, scr.sy - 16.f), color, buf);
+    }
 }
 
 inline float ClampTerrainGrid(float value, int extent) {
@@ -880,6 +939,7 @@ public:
             }
             const auto entityDrawStart = std::chrono::steady_clock::now();
             cache.entities.Draw(ctx, snap, dl, &largeMapProj);
+            DrawRuneShapeSdkOverlay(dl, ctx, snap, cfg, &largeMapProj);
             perf.Record(RadarPerf::OverlayPerfTiming::Section::EntityDraw,
                         std::chrono::duration<double, std::milli>(
                             std::chrono::steady_clock::now() - entityDrawStart)
@@ -912,6 +972,7 @@ public:
             if (cfg.DrawMiniMapEntities) {
                 const auto entityDrawStart = std::chrono::steady_clock::now();
                 cache.entities.Draw(ctx, snap, dl);
+                DrawRuneShapeSdkOverlay(dl, ctx, snap, cfg);
                 perf.Record(RadarPerf::OverlayPerfTiming::Section::EntityDraw,
                             std::chrono::duration<double, std::milli>(
                                 std::chrono::steady_clock::now() - entityDrawStart)

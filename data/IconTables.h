@@ -257,10 +257,12 @@ struct IconTables {
         rules.push_back(MakeDisplayRule("stock.abyss_crack", seeded, "Abyss Crack",
                                         {"AbyssJumpInteractable"}, {}, {}, {},
                                         MarkerShape::Exclamation, {51, 204, 204, 255}, 7.f, "Abyss Crack"));
-        rules.push_back(MakeDisplayRule("stock.expedition", seeded, "Expedition",
-                                        {"Expedition2/Expedition2Encounter"}, {"Other"}, {}, {},
-                                        MarkerShape::Flag, {38, 230, 217, 255}, 7.f,
-                                        "Expedition", false, true, true));
+        DisplayRule expedition = MakeDisplayRule("stock.expedition", seeded, "Expedition",
+                                                 {"Expedition2/Expedition2Encounter"}, {"Other"}, {}, {},
+                                                 MarkerShape::Square, {38, 230, 217, 255}, 7.f,
+                                                 "Expedition", false, true, true);
+        expedition.useRuneshapeColor = true;
+        rules.push_back(std::move(expedition));
         rules.push_back(MakeDisplayRule("stock.ritual", seeded, "Ritual",
                                         {"Ritual"}, {"Object", "Other"}, {}, {},
                                         MarkerShape::Star, {255, 51, 85, 255}, 7.f, "Ritual"));

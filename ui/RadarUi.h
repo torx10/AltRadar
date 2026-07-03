@@ -1597,6 +1597,139 @@ inline void DrawDisplayRulesTab(RadarData::RadarConfig& cfg, RadarData::IconTabl
     ImGui::EndChild();
 }
 
+inline constexpr const char* kRuneShapeRareNames[] = {
+    "Opulent", "Bond", "Death", "Earth", "Life", "Oath", "Power", "Sky", "Soul", "Time", "Ward"};
+
+inline constexpr const char* kRuneShapeCommonNames[] = {
+    "Adaptive", "Arcane", "Bait", "Bloodletting", "Celestial", "Cold", "Cyclonic",
+    "Electrocuting", "Fire", "Gasp", "Lightning", "Momentum", "Moon", "Prismatic",
+    "Protective", "Rage", "Rebirth", "Stone", "Tempest", "Tidal", "Toxic", "Vision", "Wisdom"};
+
+inline void ResetRuneShapeWeightsToDefaults(RadarData::RadarConfig& cfg) {
+    cfg.RuneShapeRareWeights.fill(1);
+    cfg.RuneShapeCommonWeights.fill(0);
+}
+
+inline RadarData::DisplayRule BuildExpeditionRuleDefault() {
+    RadarData::DisplayRule rule;
+    rule.enabled = true;
+    rule.id = "stock.expedition";
+    rule.source = "Seeded";
+    rule.name = "Expedition";
+    rule.categories = {"Other"};
+    rule.matchTerms = {"Expedition2/Expedition2Encounter"};
+    rule.markerShape = RadarData::MarkerShape::Square;
+    rule.markerColor = {38, 230, 217, 255};
+    rule.size = 7.f;
+    rule.label = "Expedition";
+    rule.navigable = true;
+    rule.useRuneshapeColor = true;
+    return rule;
+}
+
+inline RadarData::DisplayRule& EnsureExpeditionRule(RadarData::IconTables& icons) {
+    for (auto& rule : icons.displayRules) {
+        if (rule.id == "stock.expedition") return rule;
+    }
+    for (auto& rule : icons.displayRules) {
+        if (RadarData::IsRuneshapeColourEligible(rule)) return rule;
+    }
+    icons.displayRules.push_back(BuildExpeditionRuleDefault());
+    return icons.displayRules.back();
+}
+
+template <size_t N>
+inline void DrawRuneShapeWeightList(const char* label, const char* const (&names)[N],
+                                    std::array<int, N>& weights) {
+    if (!ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen)) return;
+    ImGui::BeginDisabled(true);
+    if (!ImGui::BeginTable(label, 2, ImGuiTableFlags_SizingStretchSame)) {
+        ImGui::EndDisabled();
+        return;
+    }
+    for (size_t i = 0; i < N; ++i) {
+        ImGui::TableNextColumn();
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::TextColored(ImVec4(0.66f, 0.45f, 1.0f, 1.0f), "*");
+        ImGui::SameLine();
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted(names[i]);
+        ImGui::SameLine(120.f);
+        ImGui::SetNextItemWidth(96.f);
+        ImGui::SliderInt("##weight", &weights[i], -100, 100, "%d");
+        ImGui::SameLine();
+        ImGui::Text("%d", weights[i]);
+        ImGui::PopID();
+    }
+    ImGui::EndTable();
+    ImGui::EndDisabled();
+}
+
+inline void DrawRuneShapeTab(RadarData::RadarConfig& cfg, RadarData::IconTables& icons,
+                             PluginSDK::Context* ctx) {
+    ImGui::Checkbox("Show weights on map", &cfg.RuneShapeShowWeights);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Minimum weight");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(220.f);
+    ImGui::SliderInt("##RuneShapeMinimumWeight", &cfg.RuneShapeMinimumWeight, -100, 100, "%d");
+    ImGui::TextWrapped("SDK weights shown. Editing disabled until SDK exposes custom weight setter.");
+    if (ctx) {
+        size_t count = 0;
+        int best = 0;
+        int bestReward = 0;
+        try {
+            const auto runeshapes = ctx->Runeshape.Runeshapes();
+            count = runeshapes.size();
+            for (const auto& r : runeshapes) {
+                best = std::max(best, r.comboWeight);
+                for (const auto& reward : ctx->Runeshape.Rewards(r.entityId))
+                    bestReward = std::max(bestReward, reward.comboWeight);
+            }
+        } catch (...) {
+            count = 0;
+        }
+        ImGui::Text("SDK runeshapes: %zu | best weight: %d | best reward weight: %d",
+                    count, best, bestReward);
+    }
+    ImGui::SeparatorText("Expedition display rule");
+    auto& rule = EnsureExpeditionRule(icons);
+    rule.categories = {"Other"};
+    rule.matchTerms = {"Expedition2/Expedition2Encounter"};
+    rule.markerShape = RadarData::MarkerShape::Square;
+    rule.label = "Expedition";
+    ImGui::PushID("RuneShapeExpeditionRule");
+    ImGui::Checkbox("Enabled", &rule.enabled);
+    ImGui::SameLine();
+    ImGui::Checkbox("Use Runeshape Colour", &rule.useRuneshapeColor);
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Fallback colour");
+    ImGui::SameLine();
+    ImVec4 colorEdit = rule.markerColor.ToImVec4();
+    if (ImGui::ColorEdit4("##ExpeditionFallbackColor", &colorEdit.x,
+                          ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar))
+        rule.markerColor = RadarData::Rgba8::FromImVec4(colorEdit);
+    ImGui::SameLine();
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted("Marker size");
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(120.f);
+    ImGui::SliderFloat("##ExpeditionMarkerSize", &rule.size, 1.5f, 22.f, "%.1f");
+    ImGui::PopID();
+
+    ImGui::SeparatorText("Rune weights");
+    const float buttonsWidth = 250.f;
+    ImGui::SetCursorPosX(std::max(0.f, ImGui::GetContentRegionAvail().x - buttonsWidth));
+    if (ImGui::Button("Reset to tier defaults")) ResetRuneShapeWeightsToDefaults(cfg);
+    ImGui::SameLine();
+    if (ImGui::Button("Zero all")) {
+        cfg.RuneShapeRareWeights.fill(0);
+        cfg.RuneShapeCommonWeights.fill(0);
+    }
+    DrawRuneShapeWeightList("Rare rune weights", kRuneShapeRareNames, cfg.RuneShapeRareWeights);
+    DrawRuneShapeWeightList("Common rune weights", kRuneShapeCommonNames, cfg.RuneShapeCommonWeights);
+}
+
 inline void PushPoiActionButtonStyle() {
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.12f, 0.32f, 0.58f, 1.f));
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.18f, 0.40f, 0.68f, 1.f));
@@ -2035,6 +2168,10 @@ inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
         }
         if (ImGui::BeginTabItem("Landmarks")) {
             DrawLandmarksTab(overlay.cfg, overlay.targets, ui, snap, pluginDir, overlay);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("RuneShape")) {
+            DrawRuneShapeTab(overlay.cfg, overlay.icons, ctx);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();

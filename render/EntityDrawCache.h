@@ -117,15 +117,6 @@ struct EntityDrawCache {
         if (!ctx) return;
         cmds.reserve(static_cast<size_t>(std::min(cfg.MaxEntitiesDrawn, 2048)));
 
-        std::unordered_map<uint32_t, ImU32> runeshapeColors;
-        if (!cfg.UseLegacyClassifier && AnyRuleUsesRuneshapeColor(icons)) {
-            for (const auto& runeshape : ctx->Runeshape.Runeshapes()) {
-                if (runeshape.entityId == 0 || runeshape.entityId > 0xFFFFFFFFull) continue;
-                runeshapeColors.emplace(static_cast<uint32_t>(runeshape.entityId),
-                                        RuneshapeColorToImU32(runeshape.color));
-            }
-        }
-
         int count = 0;
         for (const auto& e : snap.Entities) {
             if (count >= cfg.MaxEntitiesDrawn) break;
@@ -148,10 +139,6 @@ struct EntityDrawCache {
             cmd.markerShape = marker.style.shape;
             cmd.markerSize = marker.style.size;
             cmd.markerColor = marker.style.color;
-            if (marker.useRuneshapeColor) {
-                if (const auto it = runeshapeColors.find(e.Id); it != runeshapeColors.end())
-                    cmd.markerColor = it->second;
-            }
             cmd.label = marker.style.label;
 
             if (!cfg.UseLegacyClassifier && marker.matchedRule
