@@ -39,6 +39,8 @@ struct UiState {
     bool        pickerEntityMode = false;
     bool        requestResetSettings = false;
     bool        requestResetCustomLandmarks = false;
+    bool        requestResetLandmarkOverrides = false;
+    bool        displayRulesDirty = false;
     char        landmarkSearch[128]{};
     DebugTab    selectedDebugTab = DebugTab::Performance;
     UiDiscoveryState uiDiscovery;
@@ -437,6 +439,13 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
         }
         if (ImGui::IsItemHovered()) {
             ImGui::SetTooltip("Delete custom map-picked landmarks saved in user.json.\nBundled curated landmarks and display rules stay unchanged.");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Reset Landmark Overrides", ImVec2(210.f, 0.f))) {
+            ui.requestResetLandmarkOverrides = true;
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Delete bundled landmark changes saved in overrides.json.\nCustom user landmarks stay unchanged.");
         }
         ImGui::Unindent(12.f);
     }
@@ -1074,6 +1083,31 @@ inline size_t UserRuleInsertIndex(const std::vector<RadarData::DisplayRule>& rul
     size_t index = 0;
     while (index < rules.size() && GetRuleSection(rules[index]) == RuleSection::StateHides) ++index;
     return index;
+}
+
+inline std::string DisplayRulesFingerprint(const std::vector<RadarData::DisplayRule>& rules) {
+    nlohmann::json j = nlohmann::json::array();
+    for (const auto& rule : rules) j.push_back(RadarData::IconTables::WriteDisplayRule(rule));
+    return j.dump();
+}
+
+inline void MarkDisplayRulesDirty(UiState& ui, const char* reason) {
+    if (!ui.displayRulesDirty)
+        RadarData::RadarLog::Instance().Info(std::string("display rules marked dirty: ") + reason);
+    ui.displayRulesDirty = true;
+}
+
+inline void SaveDisplayRulesIfDirty(UiState& ui, RadarData::IconTables& icons,
+                                    const std::filesystem::path& pluginDir) {
+    if (!ui.displayRulesDirty) return;
+    RadarData::DisplayRulesStore::EnsureStableIds(icons.displayRules);
+    std::string note;
+    if (RadarData::DisplayRulesStore::Save(pluginDir, icons.displayRules, note)) {
+        RadarData::RadarLog::Instance().Info(note);
+        ui.displayRulesDirty = false;
+    } else {
+        RadarData::RadarLog::Instance().Warn(note);
+    }
 }
 
 inline std::optional<size_t> FindPrevRuleInSection(const std::vector<RadarData::DisplayRule>& rules,
@@ -1727,6 +1761,8 @@ inline void DrawRulePicker(UiState& ui, PluginSDK::Context* ctx, const PluginSDK
                         + static_cast<std::ptrdiff_t>(UserRuleInsertIndex(icons.displayRules)),
                     SeedRuleFromMonsterMod(row.seedValue));
             }
+            RadarData::DisplayRulesStore::EnsureStableIds(icons.displayRules);
+            MarkDisplayRulesDirty(ui, "add from game data");
             ui.rulePickerOpen = false;
             ImGui::PopID();
             break;
@@ -1767,6 +1803,8 @@ inline void DrawDisplayRulesTab(RadarData::RadarConfig& cfg, RadarData::IconTabl
                                 UiState& ui, PluginSDK::Context* ctx,
                                 const PluginSDK::Snapshot& snap,
                                 const std::filesystem::path& pluginDir) {
+    RadarData::DisplayRulesStore::EnsureStableIds(icons.displayRules);
+    const std::string beforeRules = DisplayRulesFingerprint(icons.displayRules);
     ImGui::Checkbox("Edge Indicators (Minimap)", &cfg.EdgeIndicatorMinimap);
     ImGui::SameLine();
     ImGui::Checkbox("Edge Indicators (Large Map)", &cfg.EdgeIndicatorLargemap);
@@ -1783,7 +1821,9 @@ inline void DrawDisplayRulesTab(RadarData::RadarConfig& cfg, RadarData::IconTabl
         RadarData::DisplayRule rule;
         rule.source = "User";
         icons.displayRules.insert(icons.displayRules.begin() + static_cast<std::ptrdiff_t>(UserRuleInsertIndex(icons.displayRules)),
-                                  rule);
+                                   rule);
+        RadarData::DisplayRulesStore::EnsureStableIds(icons.displayRules);
+        MarkDisplayRulesDirty(ui, "add blank rule");
     }
     ImGui::SameLine();
     if (ImGui::Button("Restore defaults", ImVec2(0, 0))) {
@@ -1792,6 +1832,7 @@ inline void DrawDisplayRulesTab(RadarData::RadarConfig& cfg, RadarData::IconTabl
             RadarData::RadarLog::Instance().Info(note);
         else
             RadarData::RadarLog::Instance().Warn(note);
+        MarkDisplayRulesDirty(ui, "restore defaults");
     }
     ImGui::Separator();
 
@@ -1801,6 +1842,9 @@ inline void DrawDisplayRulesTab(RadarData::RadarConfig& cfg, RadarData::IconTabl
     DrawDisplayRuleSection("User Rules", RuleSection::User, icons);
     DrawDisplayRuleSection("Defaults", RuleSection::Seeded, icons);
     ImGui::EndChild();
+    RadarData::DisplayRulesStore::EnsureStableIds(icons.displayRules);
+    if (DisplayRulesFingerprint(icons.displayRules) != beforeRules)
+        MarkDisplayRulesDirty(ui, "edit/delete/reorder");
 }
 
 inline constexpr const char* kRuneShapeRareNames[] = {
@@ -2084,6 +2128,7 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
             t.enabled = enabled;
             overlay.cache.InvalidatePoi();
             if (t.category == "User") db.SaveUser(pluginDir);
+            else db.SaveBundledOverride(idx, pluginDir);
         }
         ImGui::TableSetColumnIndex(1);
         if (t.category == "User") {
@@ -2131,6 +2176,7 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
                 db.SaveUser(pluginDir);
             } else {
                 t.enabled = false;
+                db.SaveBundledOverride(idx, pluginDir);
             }
             overlay.cache.InvalidatePoi();
         }
@@ -2358,8 +2404,14 @@ inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
             ui.editTarget.markerColor = RadarData::Rgba8::FromImVec4(markerColor);
     }
     if (ImGui::Button("Save", ImVec2(90, 0))) {
-        db.UpsertUserTarget(ui.editAreaKey, ui.editTarget, ui.editStorageIndex);
-        db.SaveUser(pluginDir);
+        if (ui.editStorageIndex < db.storage.size()
+            && db.storage[ui.editStorageIndex].category != "User") {
+            db.storage[ui.editStorageIndex] = ui.editTarget;
+            db.SaveBundledOverride(ui.editStorageIndex, pluginDir);
+        } else {
+            db.UpsertUserTarget(ui.editAreaKey, ui.editTarget, ui.editStorageIndex);
+            db.SaveUser(pluginDir);
+        }
         overlay.cache.InvalidatePoi();
         ui.editModalOpen = false;
         ui.editStorageIndex = SIZE_MAX;
@@ -2440,6 +2492,7 @@ inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
     }
     DrawShapePicker(ui);
     DrawRulePicker(ui, ctx, snap, overlay.icons);
+    SaveDisplayRulesIfDirty(ui, overlay.icons, pluginDir);
 }
 
 } // namespace RadarUi

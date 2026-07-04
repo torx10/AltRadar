@@ -5,6 +5,7 @@
 #include "RadarConfig.h"
 #include "RadarLog.h"
 #include "RadarTypes.h"
+#include "TargetOverridesStore.h"
 
 #include <algorithm>
 #include <string_view>
@@ -34,6 +35,10 @@ public:
     std::unordered_map<std::string, std::string>         areaDisplayNames;
     std::vector<size_t> actsGlobalTargets;
     std::vector<size_t> endgameGlobalTargets;
+    std::vector<std::string> targetAreaKeys;
+    std::vector<std::string> targetOverrideKeys;
+    std::unordered_map<std::string, TargetEntry> bundledDefaults;
+    TargetOverridesStore overrides;
     PatternMatcherSet ignorePatterns;
 
     static TargetEntry ParseTarget(const nlohmann::json& o, const std::string& category) {
@@ -176,6 +181,8 @@ public:
             for (const auto& entry : it.value()) {
                 size_t idx = storage.size();
                 storage.push_back(ParseTarget(entry, category));
+                targetAreaKeys.push_back(areaKey);
+                targetOverrideKeys.emplace_back();
                 if (areaKey == "*" || areaKey == "GLOBAL") {
                     if (category == "Endgame") endgameGlobalTargets.push_back(idx);
                     else actsGlobalTargets.push_back(idx);
@@ -289,6 +296,10 @@ public:
         areaDisplayNames.clear();
         actsGlobalTargets.clear();
         endgameGlobalTargets.clear();
+        targetAreaKeys.clear();
+        targetOverrideKeys.clear();
+        bundledDefaults.clear();
+        overrides.Clear();
         ignorePatterns.patterns.clear();
         const auto targetDir = TargetConfigDir(pluginDir);
         std::string actsJson;
@@ -328,6 +339,10 @@ public:
             RadarLog::Instance().Info("Target load User: groups=" + std::to_string(countGroupsFor("User"))
                                       + " targets=" + std::to_string(storage.size() - beforeTargets));
         }
+
+        CaptureBundledDefaults();
+        overrides.Load(pluginDir);
+        ApplyOverrides();
 
         RadarLog::Instance().Info("TargetDatabase loaded: " + std::to_string(storage.size())
                                   + " targets, " + std::to_string(byArea.size()) + " areas");
@@ -386,6 +401,83 @@ public:
             return false;
         }
         return true;
+    }
+
+    static bool SameColor(const Rgba8& a, const Rgba8& b) {
+        return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+    }
+
+    std::string StableTargetKey(size_t idx) const {
+        if (idx >= storage.size()) return {};
+        if (idx < targetOverrideKeys.size() && !targetOverrideKeys[idx].empty())
+            return targetOverrideKeys[idx];
+        const auto& t = storage[idx];
+        const std::string area = idx < targetAreaKeys.size() ? targetAreaKeys[idx] : "";
+        return t.category + "|" + DisplayNameForArea(area) + "|" + t.name + "|" + t.path;
+    }
+
+    void CaptureBundledDefaults() {
+        targetOverrideKeys.resize(storage.size());
+        for (size_t idx = 0; idx < storage.size(); ++idx) {
+            if (storage[idx].category == "User") continue;
+            const auto& t = storage[idx];
+            const std::string area = idx < targetAreaKeys.size() ? targetAreaKeys[idx] : "";
+            const std::string key = t.category + "|" + DisplayNameForArea(area) + "|" + t.name + "|" + t.path;
+            if (!key.empty()) bundledDefaults[key] = storage[idx];
+            targetOverrideKeys[idx] = key;
+        }
+    }
+
+    void ApplyOverride(TargetEntry& t, const TargetOverrideEntry& o) {
+        if (o.enabled) t.enabled = *o.enabled;
+        if (o.name) t.name = *o.name;
+        if (o.path) t.path = *o.path;
+        if (o.showIcon) t.showIcon = *o.showIcon;
+        if (o.iconName) t.iconName = *o.iconName;
+        if (o.iconSize) t.iconSize = *o.iconSize;
+        if (o.expectedCount) t.expectedCount = *o.expectedCount;
+        if (o.markerShape) t.markerShape = *o.markerShape;
+        if (o.markerColor) t.markerColor = *o.markerColor;
+        if (o.nameColor) t.nameColor = *o.nameColor;
+        if (o.bgColor) t.bgColor = *o.bgColor;
+    }
+
+    void ApplyOverrides() {
+        for (size_t idx = 0; idx < storage.size(); ++idx) {
+            if (storage[idx].category == "User") continue;
+            const std::string key = StableTargetKey(idx);
+            auto it = overrides.entries.find(key);
+            if (it != overrides.entries.end()) ApplyOverride(storage[idx], it->second);
+        }
+    }
+
+    bool SaveBundledOverride(size_t idx, const std::filesystem::path& pluginDir) {
+        if (idx >= storage.size() || storage[idx].category == "User") return false;
+        const std::string key = StableTargetKey(idx);
+        auto defIt = bundledDefaults.find(key);
+        if (key.empty() || defIt == bundledDefaults.end()) return false;
+        const auto& t = storage[idx];
+        const auto& d = defIt->second;
+        TargetOverrideEntry o;
+        o.key = key;
+        if (t.enabled != d.enabled) o.enabled = t.enabled;
+        if (t.name != d.name) o.name = t.name;
+        if (t.path != d.path) o.path = t.path;
+        if (t.showIcon != d.showIcon) o.showIcon = t.showIcon;
+        if (t.iconName != d.iconName) o.iconName = t.iconName;
+        if (t.iconSize != d.iconSize) o.iconSize = t.iconSize;
+        if (t.expectedCount != d.expectedCount) o.expectedCount = t.expectedCount;
+        if (t.markerShape != d.markerShape) o.markerShape = t.markerShape;
+        if (!SameColor(t.markerColor, d.markerColor)) o.markerColor = t.markerColor;
+        if (!SameColor(t.nameColor, d.nameColor)) o.nameColor = t.nameColor;
+        if (!SameColor(t.bgColor, d.bgColor)) o.bgColor = t.bgColor;
+        if (!o.enabled && !o.name && !o.path && !o.showIcon && !o.iconName && !o.iconSize && !o.expectedCount
+            && !o.markerShape && !o.markerColor && !o.nameColor && !o.bgColor) {
+            overrides.entries.erase(key);
+        } else {
+            overrides.entries[key] = std::move(o);
+        }
+        return overrides.Save(pluginDir);
     }
 
     static bool SameTargetIdentity(const TargetEntry& a, const TargetEntry& b) {
@@ -483,6 +575,8 @@ public:
         const std::string key = NormalizeAreaKey(area);
         size_t idx = storage.size();
         storage.push_back(std::move(t));
+        targetAreaKeys.push_back(key);
+        targetOverrideKeys.emplace_back();
         byArea[key].push_back(idx);
         // Keep Acts/Endgame source for bundled areas — only tag new areas as User.
         if (!areaSource.count(key)) {

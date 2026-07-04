@@ -28,4 +28,11 @@ inline bool ResetCustomTargets(const std::filesystem::path& pluginDir, TargetDat
     return true;
 }
 
+inline bool ResetTargetOverrides(const std::filesystem::path& pluginDir, TargetDatabase& targets) {
+    const bool ok = TargetOverridesStore::Reset(pluginDir);
+    targets.Load(pluginDir);
+    RadarLog::Instance().Info("Reset to defaults: landmark overrides removed");
+    return ok;
+}
+
 } // namespace RadarData

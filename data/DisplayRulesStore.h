@@ -51,6 +51,32 @@ public:
         return duplicates;
     }
 
+    static void CountSections(const std::vector<DisplayRule>& rules, size_t& user,
+                              size_t& defaults, size_t& stateHides) {
+        user = defaults = stateHides = 0;
+        for (const auto& rule : rules) {
+            if (IconTables::IsStateHideRule(rule)) ++stateHides;
+            else if (MarkerShapeNameEquals(rule.source, "Seeded") || IconTables::IsRuneShapeOwnedRule(rule)) ++defaults;
+            else ++user;
+        }
+    }
+
+    static void EnsureStableIds(std::vector<DisplayRule>& rules) {
+        std::unordered_set<std::string> used;
+        size_t nextUser = 1;
+        size_t nextSeeded = 1;
+        for (auto& rule : rules) {
+            std::string prefix = MarkerShapeNameEquals(rule.source, "Seeded") ? "seeded" : "user";
+            size_t& next = prefix == "seeded" ? nextSeeded : nextUser;
+            if (rule.id.empty() || used.find(rule.id) != used.end()) {
+                do {
+                    rule.id = prefix + "." + std::to_string(next++);
+                } while (used.find(rule.id) != used.end());
+            }
+            used.insert(rule.id);
+        }
+    }
+
     static bool DecodeDefaultJson(std::string& outJson, std::string& note) {
         if (!DefaultDisplayRules::DecodeJson(outJson)) {
             note = "built-in display rules Base64 decode failed";
@@ -168,9 +194,15 @@ public:
             for (const auto& entry : j["DisplayRules"])
                 parsed.push_back(IconTables::ParseDisplayRule(entry));
             parsed = SanitizeRules(std::move(parsed));
+            EnsureStableIds(parsed);
             if (!ValidateRules(parsed, note)) return false;
             outRules = std::move(parsed);
-            note = "Loaded display rules from config/display_rules.json";
+            size_t user = 0, defaults = 0, stateHides = 0;
+            CountSections(outRules, user, defaults, stateHides);
+            note = "loaded display rules from config/display_rules.json, count="
+                   + std::to_string(outRules.size()) + ", user=" + std::to_string(user)
+                   + ", defaults=" + std::to_string(defaults)
+                   + ", stateHides=" + std::to_string(stateHides);
             return true;
         } catch (const std::exception& ex) {
             note = std::string("display_rules.json parse failed: ") + ex.what();
@@ -183,10 +215,12 @@ public:
 
     static bool Save(const std::filesystem::path& pluginDir,
                      const std::vector<DisplayRule>& rules, std::string& note) {
+        std::vector<DisplayRule> savedRules = SanitizeRules(rules);
+        EnsureStableIds(savedRules);
         nlohmann::json j;
         j["SchemaVersion"] = kSchemaVersion;
         j["DisplayRules"] = nlohmann::json::array();
-        for (const auto& rule : rules) j["DisplayRules"].push_back(IconTables::WriteDisplayRule(rule));
+        for (const auto& rule : savedRules) j["DisplayRules"].push_back(IconTables::WriteDisplayRule(rule));
 
         const auto path = PathFor(pluginDir);
         std::error_code ec;
@@ -205,7 +239,12 @@ public:
             note = "write display_rules.json failed: " + path.string();
             return false;
         }
-        note = "wrote display_rules.json: " + path.string();
+        size_t user = 0, defaults = 0, stateHides = 0;
+        CountSections(savedRules, user, defaults, stateHides);
+        note = "saved display rules to config/display_rules.json, count="
+               + std::to_string(savedRules.size()) + ", user=" + std::to_string(user)
+               + ", defaults=" + std::to_string(defaults)
+               + ", stateHides=" + std::to_string(stateHides);
         return true;
     }
 
@@ -253,6 +292,15 @@ public:
                 RadarLog::Instance().Info("display_rules parse result: ok");
                 RadarLog::Instance().Info("loaded display rule count: " + std::to_string(loaded.size()));
                 RadarLog::Instance().Info("duplicate display rule id count: " + std::to_string(DuplicateIdCount(loaded)));
+                size_t user = 0, defaults = 0, stateHides = 0;
+                CountSections(loaded, user, defaults, stateHides);
+                if (defaults == 0 || stateHides == 0) {
+                    IconTables::ReplaceSeededDefaults(loaded);
+                    std::string repairNote;
+                    Save(pluginDir, loaded, repairNote);
+                    RadarLog::Instance().Warn("display_rules defaults missing; repaired without deleting User Rules");
+                    RadarLog::Instance().Info(repairNote);
+                }
                 rules = std::move(loaded);
                 RadarLog::Instance().Info(note);
                 return;
@@ -276,18 +324,8 @@ public:
     static bool RestoreDefaults(const std::filesystem::path& pluginDir,
                                 std::vector<DisplayRule>& rules, std::string& note) {
         try {
-            bool wroteFile = false;
-            if (!WriteBuiltInDefaults(pluginDir, true, wroteFile, note)) return false;
-
-            std::vector<DisplayRule> loaded;
-            std::string loadNote;
-            if (!TryLoadFromFile(PathFor(pluginDir), loaded, loadNote)) {
-                note = "restore display rules reload failed for " + PathFor(pluginDir).string() + ": " + loadNote;
-                return false;
-            }
-            rules = std::move(loaded);
-            note = std::string("restored display rules defaults: ") + PathFor(pluginDir).string();
-            return true;
+            IconTables::ReplaceSeededDefaults(rules);
+            return Save(pluginDir, rules, note);
         } catch (const std::exception& ex) {
             note = std::string("restore display rules failed for ") + PathFor(pluginDir).string() + ": " + ex.what();
             return false;

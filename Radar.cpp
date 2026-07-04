@@ -86,6 +86,17 @@ public:
     }
 
     void OnDisable() override {
+        const auto pluginDir = DirectoryPath();
+        if (m_ui.displayRulesDirty) {
+            RadarData::DisplayRulesStore::EnsureStableIds(m_overlay.icons.displayRules);
+            std::string note;
+            if (RadarData::DisplayRulesStore::Save(pluginDir, m_overlay.icons.displayRules, note)) {
+                RadarData::RadarLog::Instance().Info(note);
+                m_ui.displayRulesDirty = false;
+            } else {
+                RadarData::RadarLog::Instance().Warn(note);
+            }
+        }
         EndPickerMode();
         m_overlay.walkable.Reset();
         m_overlay.terrain.Release();
@@ -118,6 +129,14 @@ public:
             m_overlay.cache.InvalidatePoi();
             RadarData::RadarLog::Instance().Info("Custom landmarks reset");
             ctx()->Log.Info("Alt Radar custom landmarks reset");
+        }
+        if (m_ui.requestResetLandmarkOverrides) {
+            m_ui.requestResetLandmarkOverrides = false;
+            RadarData::ResetTargetOverrides(pluginDir, m_overlay.targets);
+            m_overlay.cache.Clear();
+            m_overlay.cache.InvalidatePoi();
+            RadarData::RadarLog::Instance().Info("Landmark overrides reset");
+            ctx()->Log.Info("Alt Radar landmark overrides reset");
         }
 
         const auto snap = ctx()->Game.GetSnapshot();
@@ -155,7 +174,14 @@ public:
         const auto dir = DirectoryPath();
         m_overlay.cfg.Save(dir);
         m_overlay.icons.Save(dir);
-        RadarData::DisplayRulesStore::Save(dir, m_overlay.icons.displayRules);
+        RadarData::DisplayRulesStore::EnsureStableIds(m_overlay.icons.displayRules);
+        std::string displayRulesNote;
+        if (RadarData::DisplayRulesStore::Save(dir, m_overlay.icons.displayRules, displayRulesNote)) {
+            RadarData::RadarLog::Instance().Info(displayRulesNote);
+            m_ui.displayRulesDirty = false;
+        } else {
+            RadarData::RadarLog::Instance().Warn(displayRulesNote);
+        }
         m_overlay.targets.SaveUser(dir);
     }
 
