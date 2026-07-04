@@ -1,6 +1,7 @@
 #pragma once
 
 #include "data/RadarConfig.h"
+#include "data/AltRadarVersion.h"
 #include "data/DisplayRulesStore.h"
 #include "data/IconTables.h"
 #include "data/TargetDatabase.h"
@@ -325,6 +326,7 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
         ImGui::EndCombo();
     };
     bool en = cfg.OverlayEnabled;
+    ImGui::TextDisabled("%s", AltRadar::kVersionLabel);
     if (ImGui::Checkbox("Enable Alt Radar Overlay", &en)) cfg.OverlayEnabled = en;
     ImGui::Separator();
 
@@ -1879,17 +1881,18 @@ inline void DrawRuneShapeWeightList(const char* label, const char* const (&names
     for (size_t i = 0; i < N; ++i) {
         ImGui::TableNextColumn();
         ImGui::PushID(static_cast<int>(i));
+        const float rowStartX = ImGui::GetCursorPosX();
         const float rowStartY = ImGui::GetCursorPosY();
         const ImVec2 iconMin = ImGui::GetCursorScreenPos();
         const ImVec2 iconMax(iconMin.x + 22.f, iconMin.y + 22.f);
         RadarRender::DrawRuneshapeBadgeIcon(ImGui::GetWindowDrawList(), iconMin, iconMax,
                                             &overlay.runeIcons, ctx ? ctx->D3DDevice : nullptr,
-                                            names[i], IM_COL32(138, 124, 255, 255));
+                                             names[i], IM_COL32(138, 124, 255, 255));
         ImGui::Dummy(ImVec2(22.f, 22.f));
-        ImGui::SameLine();
+        ImGui::SetCursorPosX(rowStartX + 26.f);
         ImGui::SetCursorPosY(rowStartY + 3.f);
         ImGui::TextUnformatted(names[i]);
-        ImGui::SameLine(120.f);
+        ImGui::SetCursorPosX(rowStartX + 120.f);
         ImGui::SetCursorPosY(rowStartY + 1.f);
         int sliderValue = editable ? weights[i] : displayWeights[i];
         ImGui::BeginDisabled(!editable);
@@ -1897,12 +1900,12 @@ inline void DrawRuneShapeWeightList(const char* label, const char* const (&names
         if (ImGui::SliderInt("##weight", &sliderValue, -100, 100, "%d") && editable)
             weights[i] = sliderValue;
         ImGui::EndDisabled();
-        ImGui::SameLine();
+        ImGui::SetCursorPosX(rowStartX + 224.f);
         ImGui::SetCursorPosY(rowStartY + 3.f);
         const std::string valueText = RadarRender::FormatRuneshapeWeight(displayWeights[i]);
         ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(
-                               RadarRender::RuneshapeWeightTextColor(displayWeights[i])),
-                           "%s", valueText.c_str());
+                                RadarRender::RuneshapeWeightTextColor(displayWeights[i])),
+                            "%s", valueText.c_str());
         ImGui::PopID();
     }
     ImGui::EndTable();

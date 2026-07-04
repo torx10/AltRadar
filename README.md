@@ -2,6 +2,8 @@
 
 Self-contained radar overlay for Path of Exile 2: walkable terrain map, entity icons, and POI labels. This fork stays distinct from the official POE2Fixer Radar release. **No pathfinder / path lines.**
 
+Current version: **AltRadar v0.1.0**
+
 ## Performance
 
 - Overlay draws from **baked caches** rebuilt on area change only (not per frame).
