@@ -300,13 +300,13 @@ private:
                                         isNearest ? IM_COL32(255, 128, 0, 255)
                                                   : IM_COL32(200, 200, 200, 120));
                 }
-                const std::string path(nearestEnt->Path.begin(), nearestEnt->Path.end());
+                const std::string path = RadarUi::WideToUtf8(nearestEnt->Path);
                 dl->AddText(ImVec2(12.f, 32.f), IM_COL32(255, 200, 150, 255), path.c_str());
             }
 
             if (clicked && nearestEnt) {
                 m_ui.editTarget = {};
-                std::string path(nearestEnt->Path.begin(), nearestEnt->Path.end());
+                std::string path = RadarUi::WideToUtf8(nearestEnt->Path);
                 if (path.find('*') == std::string::npos) path += '*';
                 m_ui.editTarget.path = path;
                 m_ui.editTarget.name = PathBaseName(path);

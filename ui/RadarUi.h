@@ -12,7 +12,9 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <limits>
 #include <optional>
+#include <string>
 #include <unordered_set>
 
 namespace RadarUi {
@@ -742,6 +744,15 @@ inline std::string BaseNameForPath(const std::string& path) {
     return slash == std::string::npos ? path : path.substr(slash + 1);
 }
 
+inline std::string WideToUtf8(const std::wstring& text) {
+    if (text.empty() || text.size() > static_cast<size_t>(std::numeric_limits<int>::max())) return {};
+    const int size = WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0, nullptr, nullptr);
+    if (size <= 0) return {};
+    std::string result(static_cast<size_t>(size), '\0');
+    WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), size, nullptr, nullptr);
+    return result;
+}
+
 inline const char* DisplayRuleCategoryForEntity(const PluginSDK::Entity& e) {
     if (e.EntitySubtype == PluginSDK::EntitySubtype::PlayerOther
         || e.EntitySubtype == PluginSDK::EntitySubtype::PlayerSelf)
@@ -768,7 +779,7 @@ inline const char* DisplayRuleCategoryForEntity(const PluginSDK::Entity& e) {
 }
 
 inline RadarData::DisplayRule SeedRuleFromEntity(const PluginSDK::Entity& e) {
-    const std::string path(e.Path.begin(), e.Path.end());
+    const std::string path = WideToUtf8(e.Path);
     const std::string base = BaseNameForPath(path);
     RadarData::DisplayRule rule;
     rule.source = "User";
@@ -1637,7 +1648,7 @@ inline void DrawRulePicker(UiState& ui, PluginSDK::Context* ctx, const PluginSDK
 
     for (const auto& e : snap.Entities) {
         if (!e.IsValid) continue;
-        const std::string path(e.Path.begin(), e.Path.end());
+        const std::string path = WideToUtf8(e.Path);
         if (path.empty()) continue;
         const std::string key = std::string(DisplayRuleCategoryForEntity(e)) + "|" + path;
         if (!seenEntities.insert(key).second) continue;
@@ -1695,7 +1706,7 @@ inline void DrawRulePicker(UiState& ui, PluginSDK::Context* ctx, const PluginSDK
         if (ImGui::Selectable((row.name + "##pick").c_str(), false)) {
             if (row.kind == RulePickerRow::Kind::Entity) {
                 for (const auto& e : snap.Entities) {
-                    const std::string path(e.Path.begin(), e.Path.end());
+                    const std::string path = WideToUtf8(e.Path);
                     if (!e.IsValid || path != row.seedValue) continue;
                     icons.displayRules.insert(
                         icons.displayRules.begin()
