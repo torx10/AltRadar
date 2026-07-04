@@ -1,11 +1,13 @@
 #pragma once
 
 #include "RadarTypes.h"
+#include "DefaultDisplayRules.h"
 
 #include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <optional>
+#include <stdexcept>
 #include <unordered_map>
 
 #include "../third_party/json.hpp"
@@ -204,174 +206,13 @@ struct IconTables {
 
     static std::vector<DisplayRule> DefaultDisplayRules() {
         std::vector<DisplayRule> rules;
-        const char* seeded = "Seeded";
-
-        DisplayRule hideDead = MakeDisplayRule("stock.hide_dead_monsters", seeded,
-                                               "Hide dead monsters", {}, {"Monster"}, {}, {},
-                                               MarkerShape::Circle, {255, 217, 38, 255}, 6.f,
-                                               nullptr, true);
-        hideDead.life = "Dead";
-        rules.push_back(std::move(hideDead));
-
-        DisplayRule hideOpened = MakeDisplayRule("stock.hide_opened_chests", seeded,
-                                                 "Hide opened chests", {}, {"Chest"}, {}, {},
-                                                 MarkerShape::Chest, {255, 217, 38, 255}, 6.f,
-                                                 nullptr, true);
-        hideOpened.chest = "Opened";
-        rules.push_back(std::move(hideOpened));
-
-        rules.push_back(MakeDisplayRule("stock.waypoint", seeded, "Waypoint",
-                                        {"MiscellaneousObjects/Waypoint"}, {}, {}, {},
-                                        MarkerShape::MapPin, {0, 255, 255, 255}, 7.f, "Waypoint"));
-        rules.push_back(MakeDisplayRule("stock.checkpoint", seeded, "Checkpoint",
-                                        {"MiscellaneousObjects/Checkpoint"}, {}, {}, {},
-                                        MarkerShape::Flag, {0, 204, 255, 255}, 7.f, "Checkpoint"));
-        rules.push_back(MakeDisplayRule("stock.entrance", seeded, "Entrance",
-                                        {"MiscellaneousObjects/AreaTransition"}, {"Transition"}, {}, {},
-                                        MarkerShape::Stairs, {102, 255, 153, 255}, 7.f, "Entrance"));
-        rules.push_back(MakeDisplayRule("stock.stash", seeded, "Stash",
-                                        {"MiscellaneousObjects/Stash"}, {}, {}, {},
-                                        MarkerShape::Chest, {255, 204, 0, 255}, 7.f, "Stash"));
-        rules.push_back(MakeDisplayRule("stock.portal", seeded, "Portal",
-                                        {"MiscellaneousObjects/TownPortal"}, {}, {}, {},
-                                        MarkerShape::Portal, {204, 153, 255, 255}, 7.f, "Portal"));
-        rules.push_back(MakeDisplayRule("stock.town_portal", seeded, "Town Portal",
-                                        {"MiscellaneousObjects/ReturnToLastTownPortal"}, {}, {}, {},
-                                        MarkerShape::Portal, {204, 153, 255, 255}, 7.f, "Town Portal"));
-        rules.push_back(MakeDisplayRule("stock.quest_chest", seeded, "Quest Chest",
-                                        {"QuestChests"}, {"Chest"}, {}, {},
-                                        MarkerShape::Chest, {255, 153, 0, 255}, 7.f, "Quest Chest"));
-        rules.push_back(MakeDisplayRule("stock.quest_object", seeded, "Quest Object",
-                                        {"QuestObjects"}, {}, {}, {},
-                                        MarkerShape::Exclamation, {255, 255, 0, 255}, 7.f, "Quest Object"));
-        rules.push_back(MakeDisplayRule("stock.npc_metadata", seeded, "NPC",
-                                        {"Monsters/NPC/"}, {"Npc"}, {}, {},
-                                        MarkerShape::Chat, {255, 221, 51, 255}, 7.f, "NPC"));
-        rules.push_back(MakeDisplayRule("stock.reforging_bench", seeded, "Reforging Bench",
-                                        {"ReforgingBench"}, {}, {}, {},
-                                        MarkerShape::Coin, {255, 102, 204, 255}, 7.f, "Reforging Bench"));
-        rules.push_back(MakeDisplayRule("stock.crafting_bench", seeded, "Crafting Bench",
-                                        {"TransmutationBench"}, {}, {}, {},
-                                        MarkerShape::Coin, {255, 102, 204, 255}, 7.f, "Crafting Bench"));
-        rules.push_back(MakeDisplayRule("stock.quest_marker", seeded, "Quest Marker",
-                                        {"EinharQuestMarker"}, {}, {}, {},
-                                        MarkerShape::Exclamation, {255, 255, 51, 255}, 7.f, "Quest Marker"));
-        rules.push_back(MakeDisplayRule("stock.abyss_crack", seeded, "Abyss Crack",
-                                        {"AbyssJumpInteractable"}, {}, {}, {},
-                                        MarkerShape::Exclamation, {51, 204, 204, 255}, 7.f, "Abyss Crack"));
-        DisplayRule expedition = MakeDisplayRule("stock.expedition", seeded, "Expedition",
-                                                 {"Expedition2/Expedition2Encounter"}, {"Other"}, {}, {},
-                                                 MarkerShape::Square, {38, 230, 217, 255}, 7.f,
-                                                 "Expedition", false, true, true);
-        expedition.useRuneshapeColor = true;
-        expedition.source = kRuneShapeOwnedSource;
-        rules.push_back(std::move(expedition));
-        rules.push_back(MakeDisplayRule("stock.ritual", seeded, "Ritual",
-                                        {"Ritual"}, {"Object", "Other"}, {}, {},
-                                        MarkerShape::Star, {255, 51, 85, 255}, 7.f, "Ritual"));
-        rules.push_back(MakeDisplayRule("stock.breach", seeded, "Breach",
-                                        {"Breach"}, {"Object", "Other"}, {}, {},
-                                        MarkerShape::Portal, {166, 77, 255, 255}, 7.f, "Breach"));
-        rules.push_back(MakeDisplayRule("stock.strongbox_metadata", seeded, "Strongbox",
-                                        {"StrongBoxes"}, {"Chest"}, {}, {},
-                                        MarkerShape::Chest, {255, 179, 0, 255}, 6.f, "Strongbox"));
-        rules.push_back(MakeDisplayRule("stock.essence", seeded, "Essence",
-                                        {"Essence"}, {"Object", "Other"}, {}, {},
-                                        MarkerShape::Flask, {51, 224, 255, 255}, 7.f, "Essence"));
-        rules.push_back(MakeDisplayRule("stock.shrine", seeded, "Shrine",
-                                        {"Metadata/Shrines/"}, {}, {}, {},
-                                        MarkerShape::Star, {125, 255, 125, 255}, 6.f, "Shrine"));
-
-        rules.push_back(MakeDisplayRule("stock.player_self", seeded, "Self",
-                                        {}, {"Player"}, {"PlayerSelf"}, {},
-                                        MarkerShape::Ring, {77, 242, 255, 255}, 4.6f));
-        rules.push_back(MakeDisplayRule("stock.player_other", seeded, "Player",
-                                        {}, {"Player"}, {"PlayerOther"}, {},
-                                        MarkerShape::Person, {77, 242, 255, 255}, 3.4f));
-        rules.push_back(MakeDisplayRule("stock.player_leader", seeded, "Leader",
-                                        {}, {"Player"}, {}, {"PlayerLeader"},
-                                        MarkerShape::Crown, {77, 242, 255, 255}, 5.2f));
-        rules.push_back(MakeDisplayRule("stock.special_npc", seeded, "Special NPC",
-                                        {}, {"Npc"}, {"SpecialNPC"}, {},
-                                        MarkerShape::Chat, {255, 217, 51, 242}, 4.8f));
-        rules.push_back(MakeDisplayRule("stock.poi_monster", seeded, "POI Monster",
-                                        {}, {"Monster"}, {"POIMonster"}, {},
-                                        MarkerShape::Skull, {255, 115, 0, 255}, 8.0f));
-        rules.push_back(MakeDisplayRule("stock.pinnacle_boss", seeded, "Pinnacle Boss",
-                                        {}, {"Monster"}, {"PinnacleBoss"}, {},
-                                        MarkerShape::Skull, {255, 115, 0, 255}, 9.0f));
-        rules.push_back(MakeDisplayRule("stock.monster_friendly", seeded, "Monster - Friendly",
-                                        {}, {"Monster"}, {}, {"MonsterFriendly"},
-                                        MarkerShape::Person, {102, 255, 153, 235}, 3.6f));
-
-        DisplayRule monsterNormal = MakeDisplayRule("stock.monster_normal", seeded, "Monster - Normal",
-                                                    {}, {"Monster"}, {}, {},
-                                                    MarkerShape::Circle, {255, 51, 51, 242}, 2.6f);
-        monsterNormal.rarity = "Normal";
-        monsterNormal.reaction = "Hostile";
-        rules.push_back(std::move(monsterNormal));
-
-        DisplayRule monsterMagic = MakeDisplayRule("stock.monster_magic", seeded, "Monster - Magic",
-                                                   {}, {"Monster"}, {}, {},
-                                                   MarkerShape::Fang, {115, 166, 255, 247}, 5.5f);
-        monsterMagic.rarity = "Magic";
-        monsterMagic.reaction = "Hostile";
-        rules.push_back(std::move(monsterMagic));
-
-        DisplayRule monsterRare = MakeDisplayRule("stock.monster_rare", seeded, "Monster - Rare",
-                                                  {}, {"Monster"}, {}, {},
-                                                  MarkerShape::Claw, {255, 217, 38, 255}, 7.5f);
-        monsterRare.rarity = "Rare";
-        monsterRare.reaction = "Hostile";
-        rules.push_back(std::move(monsterRare));
-
-        DisplayRule monsterUnique = MakeDisplayRule("stock.monster_unique", seeded, "Monster - Unique",
-                                                    {}, {"Monster"}, {}, {},
-                                                    MarkerShape::Skull, {255, 115, 0, 255}, 8.0f);
-        monsterUnique.rarity = "Unique";
-        monsterUnique.reaction = "Hostile";
-        rules.push_back(std::move(monsterUnique));
-
-        DisplayRule chestGeneric = MakeDisplayRule("stock.chest_generic", seeded, "Chest - Generic",
-                                                   {}, {"Chest"}, {}, {},
-                                                   MarkerShape::Chest, {140, 191, 255, 224}, 4.4f,
-                                                   "Chest");
-        chestGeneric.chest = "Unopened";
-        rules.push_back(std::move(chestGeneric));
-
-        rules.push_back(MakeDisplayRule("stock.strongbox", seeded, "Chest - Strongbox",
-                                        {}, {"Chest"}, {"Strongbox"}, {},
-                                        MarkerShape::Chest, {255, 179, 0, 255}, 6.0f, "Strongbox"));
-        rules.push_back(MakeDisplayRule("stock.strongbox_jeweller", seeded, "Chest - Jeweller",
-                                        {}, {"Chest"}, {"JewellerStrongbox"}, {},
-                                        MarkerShape::Chest, {255, 179, 0, 255}, 6.0f, "Jeweller Strongbox"));
-        rules.push_back(MakeDisplayRule("stock.strongbox_researcher", seeded, "Chest - Researcher",
-                                        {}, {"Chest"}, {"ResearcherStrongbox"}, {},
-                                        MarkerShape::Chest, {255, 179, 0, 255}, 6.0f, "Researcher Strongbox"));
-        rules.push_back(MakeDisplayRule("stock.strongbox_large", seeded, "Chest - Large",
-                                        {}, {"Chest"}, {"LargeStrongbox"}, {},
-                                        MarkerShape::Chest, {255, 179, 0, 255}, 6.2f, "Large Strongbox"));
-        rules.push_back(MakeDisplayRule("stock.omen_chest", seeded, "Chest - Omen",
-                                        {}, {"Chest"}, {"OmenChest"}, {},
-                                        MarkerShape::Crown, {255, 115, 0, 242}, 5.5f, "Unique Chest"));
-        rules.push_back(MakeDisplayRule("stock.chest_rare", seeded, "Chest - Rare",
-                                        {}, {"Chest"}, {"ChestRare"}, {},
-                                        MarkerShape::Chest, {255, 217, 38, 242}, 5.0f, "Rare Chest"));
-        rules.push_back(MakeDisplayRule("stock.chest_magic", seeded, "Chest - Magic",
-                                        {}, {"Chest"}, {"ChestMagic"}, {},
-                                        MarkerShape::Chest, {115, 166, 255, 236}, 4.4f));
-        rules.push_back(MakeDisplayRule("stock.breach_chest", seeded, "Breach Chest",
-                                        {}, {"Chest"}, {"BreachChest"}, {},
-                                        MarkerShape::Chest, {242, 89, 242, 255}, 5.2f, "Breach Chest"));
-        rules.push_back(MakeDisplayRule("stock.expedition_chest", seeded, "Expedition Chest",
-                                        {}, {"Chest"}, {"ExpeditionChest"}, {},
-                                        MarkerShape::Chest, {38, 230, 217, 255}, 5.2f, "Expedition Chest"));
-        rules.push_back(MakeDisplayRule("stock.delirium_bomb", seeded, "Delirium Bomb",
-                                        {}, {"Object"}, {}, {},
-                                        MarkerShape::None, {255, 255, 255, 255}, 0.f));
-        rules.push_back(MakeDisplayRule("stock.delirium_spawner", seeded, "Delirium Spawner",
-                                        {}, {"Object"}, {}, {},
-                                        MarkerShape::None, {255, 255, 255, 255}, 0.f));
+        std::string jsonText;
+        if (!DefaultDisplayRules::DecodeJson(jsonText))
+            throw std::runtime_error("Failed to decode embedded display_rules defaults");
+        const nlohmann::json j = nlohmann::json::parse(jsonText);
+        for (const auto& entry : j.value("DisplayRules", nlohmann::json::array()))
+            rules.push_back(ParseDisplayRule(entry));
+        NormalizeDisplayRules(rules);
         return rules;
     }
 

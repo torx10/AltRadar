@@ -24,13 +24,15 @@ POE2Fixer/Plugins/AltRadar/
 On first run, Alt Radar creates `logs/`, `config/`, `config/settings.json`,
 `config/display_rules.json`, and `config/targets/`.
 
-`config/targets/acts.json`, `config/targets/endgame.json`, and
-`config/targets/ignore.json` are embedded in `AltRadar.dll` and generated on
-first run if missing.
+`config/display_rules.json`, `config/targets/acts.json`,
+`config/targets/endgame.json`, and `config/targets/ignore.json` are embedded in
+`AltRadar.dll` and generated on first run if missing.
 
 - Existing target JSON files are never overwritten.
+- Existing `config/display_rules.json` is never overwritten.
 - You may edit generated target JSON files directly.
-- Delete a generated file to regenerate the default copy on next start.
+- Delete generated `display_rules.json` or target JSON to regenerate the default
+  copy on next start.
 - If a generated file is corrupt, Alt Radar logs a warning and uses embedded
   defaults in memory without overwriting the corrupt file.
 - `config/targets/user.json` stays separate and is only created when user edits

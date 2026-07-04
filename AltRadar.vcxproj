@@ -56,7 +56,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)sdk;$(ProjectDir)imgui;$(ProjectDir)third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PreBuildEvent>
-      <Command>powershell -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\scripts\embed-target-defaults.ps1" -ProjectDir "$(MSBuildProjectDirectory)"</Command>
+      <Command>powershell -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\scripts\embed-target-defaults.ps1" -ProjectDir "$(MSBuildProjectDirectory)" &amp;&amp; powershell -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\scripts\embed-display-rules-defaults.ps1" -ProjectDir "$(MSBuildProjectDirectory)"</Command>
     </PreBuildEvent>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -79,7 +79,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)sdk;$(ProjectDir)imgui;$(ProjectDir)third_party;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PreBuildEvent>
-      <Command>powershell -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\scripts\embed-target-defaults.ps1" -ProjectDir "$(MSBuildProjectDirectory)"</Command>
+      <Command>powershell -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\scripts\embed-target-defaults.ps1" -ProjectDir "$(MSBuildProjectDirectory)" &amp;&amp; powershell -ExecutionPolicy Bypass -File "$(MSBuildProjectDirectory)\scripts\embed-display-rules-defaults.ps1" -ProjectDir "$(MSBuildProjectDirectory)"</Command>
     </PreBuildEvent>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -96,6 +96,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="data\IconTables.h" />
+    <ClInclude Include="data\DefaultDisplayRules.h" />
     <ClInclude Include="data\EmbeddedTargets.h" />
     <ClInclude Include="data\RadarDefaults.h" />
     <ClInclude Include="data\RadarLog.h" />

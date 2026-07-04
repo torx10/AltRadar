@@ -1,6 +1,7 @@
 #pragma once
 
 #include "data/RadarConfig.h"
+#include "data/DisplayRulesStore.h"
 #include "data/IconTables.h"
 #include "data/TargetDatabase.h"
 #include "GameUiDiscovery.h"
@@ -1751,7 +1752,8 @@ inline void DrawDisplayRuleSection(const char* label, RuleSection section,
 
 inline void DrawDisplayRulesTab(RadarData::RadarConfig& cfg, RadarData::IconTables& icons,
                                 UiState& ui, PluginSDK::Context* ctx,
-                                const PluginSDK::Snapshot& snap) {
+                                const PluginSDK::Snapshot& snap,
+                                const std::filesystem::path& pluginDir) {
     ImGui::Checkbox("Edge Indicators (Minimap)", &cfg.EdgeIndicatorMinimap);
     ImGui::SameLine();
     ImGui::Checkbox("Edge Indicators (Large Map)", &cfg.EdgeIndicatorLargemap);
@@ -1772,7 +1774,11 @@ inline void DrawDisplayRulesTab(RadarData::RadarConfig& cfg, RadarData::IconTabl
     }
     ImGui::SameLine();
     if (ImGui::Button("Restore defaults", ImVec2(0, 0))) {
-        RadarData::IconTables::ReplaceSeededDefaults(icons.displayRules);
+        std::string note;
+        if (RadarData::DisplayRulesStore::RestoreDefaults(pluginDir, icons.displayRules, note))
+            RadarData::RadarLog::Instance().Info(note);
+        else
+            RadarData::RadarLog::Instance().Warn(note);
     }
     ImGui::Separator();
 
@@ -2405,7 +2411,7 @@ inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Display Rules")) {
-            DrawDisplayRulesTab(overlay.cfg, overlay.icons, ui, ctx, snap);
+            DrawDisplayRulesTab(overlay.cfg, overlay.icons, ui, ctx, snap, pluginDir);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("Landmarks")) {

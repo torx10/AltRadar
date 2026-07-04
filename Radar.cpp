@@ -68,7 +68,15 @@ public:
         m_overlay.cfg.Load(pluginDir);
         if (!hadSettings) m_overlay.cfg.Save(pluginDir);
         m_overlay.icons.Load(pluginDir);
-        RadarData::DisplayRulesStore::Load(pluginDir, m_overlay.icons.displayRules);
+        try {
+            RadarData::DisplayRulesStore::Load(pluginDir, m_overlay.icons.displayRules);
+        } catch (const std::exception& ex) {
+            const auto path = RadarData::DisplayRulesStore::PathFor(pluginDir);
+            RadarData::RadarLog::Instance().Warn("display_rules load failed for " + path.string() + ": " + ex.what());
+        } catch (...) {
+            const auto path = RadarData::DisplayRulesStore::PathFor(pluginDir);
+            RadarData::RadarLog::Instance().Warn("display_rules load failed for " + path.string() + ": unknown error");
+        }
         m_overlay.targets.Load(pluginDir);
         m_overlay.cache.InvalidatePoi();
         m_overlay.walkable = ctx()->Terrain.GetWalkableGrid();

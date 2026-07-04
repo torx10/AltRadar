@@ -78,14 +78,14 @@
             "Enabled": true,
             "Encounter": "",
             "Hide": true,
-            "Id": "",
+            "Id": "stock.hide_no_flame_urn",
             "Label": "",
             "Life": "",
             "MatchTerms": [
-                "Metadata/Chests/TraitorsPassagePot"
+                "NoFlameUrn"
             ],
             "Mods": [],
-            "Name": "TraitorsPassagePot",
+            "Name": "NoFlameUrn",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
@@ -93,7 +93,177 @@
             "RememberUntilZone": false,
             "Shape": "Circle",
             "Size": 1.0,
-            "Source": "User",
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "",
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": true,
+            "Id": "stock.hide_graveyard_dungeon_jug",
+            "Label": "",
+            "Life": "",
+            "MatchTerms": [
+                "GraveyardDungeonJug"
+            ],
+            "Mods": [],
+            "Name": "GraveyardDungeonJug",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Circle",
+            "Size": 1.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": true,
+            "Id": "stock.hide_flame_urn",
+            "Label": "",
+            "Life": "",
+            "MatchTerms": [
+                "FlameUrn"
+            ],
+            "Mods": [],
+            "Name": "FlameUrn",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Circle",
+            "Size": 1.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": true,
+            "Id": "stock.hide_graveyard_dungeon_urn",
+            "Label": "",
+            "Life": "",
+            "MatchTerms": [
+                "GraveyardDungeonUrn"
+            ],
+            "Mods": [],
+            "Name": "GraveyardDungeonUrn",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Circle",
+            "Size": 1.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": true,
+            "Id": "stock.hide_riverbed_boulder",
+            "Label": "",
+            "Life": "",
+            "MatchTerms": [
+                "RiverbedBoulder"
+            ],
+            "Mods": [],
+            "Name": "RiverbedBoulder",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Circle",
+            "Size": 1.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                255,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": true,
+            "Id": "stock.hide_traitors_passage_pots",
+            "Label": "",
+            "Life": "",
+            "MatchTerms": [
+                "Metadata/Chests/TraitorsPassagePot"
+            ],
+            "Mods": [],
+            "Name": "TraitorsPassagePots",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Circle",
+            "Size": 1.0,
+            "Source": "Seeded",
             "States": [],
             "Subtypes": [],
             "UseRuneshapeColor": false
@@ -112,14 +282,14 @@
             "Enabled": true,
             "Encounter": "",
             "Hide": true,
-            "Id": "",
+            "Id": "stock.hide_pillar_pots",
             "Label": "",
             "Life": "",
             "MatchTerms": [
                 "Metadata/Chests/Pillars"
             ],
             "Mods": [],
-            "Name": "Pots",
+            "Name": "PillarPots",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
@@ -127,75 +297,7 @@
             "RememberUntilZone": false,
             "Shape": "Circle",
             "Size": 1.0,
-            "Source": "User",
-            "States": [],
-            "Subtypes": [],
-            "UseRuneshapeColor": false
-        },
-        {
-            "Categories": [
-                "Other"
-            ],
-            "Chest": "",
-            "Color": [
-                128,
-                38,
-                255,
-                255
-            ],
-            "Enabled": true,
-            "Encounter": "",
-            "Hide": false,
-            "Id": "",
-            "Label": "",
-            "Life": "",
-            "MatchTerms": [
-                "MultiplexPortal"
-            ],
-            "Mods": [],
-            "Name": "MultiplexPortal",
-            "Navigable": false,
-            "Poi": "",
-            "Rarity": "",
-            "Reaction": "",
-            "RememberUntilZone": false,
-            "Shape": "Portal",
-            "Size": 6.0,
-            "Source": "User",
-            "States": [],
-            "Subtypes": [],
-            "UseRuneshapeColor": false
-        },
-        {
-            "Categories": [
-                "Other"
-            ],
-            "Chest": "",
-            "Color": [
-                255,
-                217,
-                38,
-                255
-            ],
-            "Enabled": true,
-            "Encounter": "",
-            "Hide": true,
-            "Id": "",
-            "Label": "",
-            "Life": "",
-            "MatchTerms": [
-                "Town_StandAsideGuard"
-            ],
-            "Mods": [],
-            "Name": "Town_StandAsideGuard",
-            "Navigable": false,
-            "Poi": "",
-            "Rarity": "",
-            "Reaction": "",
-            "RememberUntilZone": false,
-            "Shape": "Circle",
-            "Size": 6.0,
-            "Source": "User",
+            "Source": "Seeded",
             "States": [],
             "Subtypes": [],
             "UseRuneshapeColor": false
@@ -396,6 +498,40 @@
         },
         {
             "Categories": [
+                "Other"
+            ],
+            "Chest": "",
+            "Color": [
+                204,
+                153,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.multiplex_portal",
+            "Label": "",
+            "Life": "",
+            "MatchTerms": [
+                "MultiplexPortal"
+            ],
+            "Mods": [],
+            "Name": "MultiplexPortal",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Portal",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
                 "Chest"
             ],
             "Chest": "",
@@ -476,7 +612,7 @@
             "Hide": false,
             "Id": "stock.npc_metadata",
             "Label": "",
-            "Life": "",
+            "Life": "Alive",
             "MatchTerms": [
                 "Metadata/NPC/"
             ],
@@ -514,38 +650,6 @@
             ],
             "Mods": [],
             "Name": "Reforging Bench",
-            "Navigable": false,
-            "Poi": "",
-            "Rarity": "",
-            "Reaction": "",
-            "RememberUntilZone": false,
-            "Shape": "Coin",
-            "Size": 7.0,
-            "Source": "Seeded",
-            "States": [],
-            "Subtypes": [],
-            "UseRuneshapeColor": false
-        },
-        {
-            "Categories": [],
-            "Chest": "",
-            "Color": [
-                255,
-                102,
-                204,
-                255
-            ],
-            "Enabled": true,
-            "Encounter": "",
-            "Hide": false,
-            "Id": "stock.crafting_bench",
-            "Label": "Crafting Bench",
-            "Life": "",
-            "MatchTerms": [
-                "TransmutationBench"
-            ],
-            "Mods": [],
-            "Name": "Crafting Bench",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
@@ -609,7 +713,7 @@
                 "AbyssJumpInteractable"
             ],
             "Mods": [],
-            "Name": "Abyss Crack",
+            "Name": "Abyss Hole?",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
@@ -617,6 +721,40 @@
             "RememberUntilZone": false,
             "Shape": "Exclamation",
             "Size": 7.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Other"
+            ],
+            "Chest": "",
+            "Color": [
+                255,
+                217,
+                38,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": true,
+            "Id": "stock.hide_abyss_crack",
+            "Label": "",
+            "Life": "",
+            "MatchTerms": [
+                "AbyssCrack"
+            ],
+            "Mods": [],
+            "Name": "Abyss Crack Hide",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Circle",
+            "Size": 1.0,
             "Source": "Seeded",
             "States": [],
             "Subtypes": [],
@@ -651,6 +789,40 @@
             "RememberUntilZone": false,
             "Shape": "Star",
             "Size": 7.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Other"
+            ],
+            "Chest": "",
+            "Color": [
+                19,
+                171,
+                44,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.abyss",
+            "Label": "",
+            "Life": "",
+            "MatchTerms": [
+                "MiscellaneousObjects/Abyss/AbyssFinalNodeBase"
+            ],
+            "Mods": [],
+            "Name": "Abyss",
+            "Navigable": false,
+            "Poi": "Yes",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Cross",
+            "Size": 6.0,
             "Source": "Seeded",
             "States": [],
             "Subtypes": [],
@@ -693,104 +865,98 @@
         },
         {
             "Categories": [
-                "Chest"
+                "Other"
             ],
             "Chest": "",
             "Color": [
                 255,
                 0,
-                67,
-                255
+                115,
+                253
             ],
             "Enabled": true,
             "Encounter": "",
             "Hide": false,
-            "Id": "stock.strongbox_researcher",
-            "Label": "Researcher Strongbox",
+            "Id": "stock.delirium_spawner",
+            "Label": "",
             "Life": "",
             "MatchTerms": [
-                "StrongBoxes\\ResearcherStrongboxHigh"
+                "DeliriumInitiator"
             ],
             "Mods": [],
-            "Name": "Researcher Strongbox",
+            "Name": "Delirium Spawner",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
             "Reaction": "",
             "RememberUntilZone": false,
-            "Shape": "Chest",
-            "Size": 6.0,
+            "Shape": "Diamond",
+            "Size": 7.0,
             "Source": "Seeded",
             "States": [],
-            "Subtypes": [
-                "ResearcherStrongbox"
-            ],
+            "Subtypes": [],
             "UseRuneshapeColor": false
         },
         {
             "Categories": [
-                "Chest"
+                "Other"
             ],
             "Chest": "",
             "Color": [
-                247,
-                0,
+                38,
                 255,
+                114,
                 255
             ],
             "Enabled": true,
             "Encounter": "",
             "Hide": false,
-            "Id": "stock.strongbox_jeweller",
-            "Label": "Jeweller Strongbox",
+            "Id": "stock.runerock",
+            "Label": "",
             "Life": "",
             "MatchTerms": [
-                "StrongBoxes\\JewellerStrongboxHigh"
+                "StoneCircle/Objects/RuneRock_Controller"
             ],
             "Mods": [],
-            "Name": "Jeweller Strongbox",
+            "Name": "RuneRock",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
             "Reaction": "",
             "RememberUntilZone": false,
-            "Shape": "Chest",
+            "Shape": "Crown",
             "Size": 6.0,
             "Source": "Seeded",
             "States": [],
-            "Subtypes": [
-                "JewellerStrongbox"
-            ],
+            "Subtypes": [],
             "UseRuneshapeColor": false
         },
         {
-            "Categories": [
-                "Chest"
-            ],
+            "Categories": [],
             "Chest": "",
             "Color": [
+                125,
                 255,
-                179,
-                0,
+                125,
                 255
             ],
             "Enabled": true,
             "Encounter": "",
             "Hide": false,
-            "Id": "stock.strongbox_metadata",
-            "Label": "Strongbox",
+            "Id": "stock.shrine",
+            "Label": "Shrine",
             "Life": "",
             "MatchTerms": [
-                "StrongBoxes"
+                "Metadata/Shrines/"
             ],
             "Mods": [],
-            "Name": "Strongbox",
+            "Name": "Shrine",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
             "Reaction": "",
             "RememberUntilZone": false,
-            "Shape": "Chest",
+            "Shape": "Star",
             "Size": 6.0,
             "Source": "Seeded",
             "States": [],
@@ -833,31 +999,203 @@
             "UseRuneshapeColor": false
         },
         {
-            "Categories": [],
-            "Chest": "",
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
             "Color": [
-                125,
                 255,
-                125,
+                38,
+                244,
                 255
             ],
             "Enabled": true,
             "Encounter": "",
             "Hide": false,
-            "Id": "stock.shrine",
-            "Label": "Shrine",
+            "Id": "stock.researchers_strongbox",
+            "Label": "Researcher's",
             "Life": "",
             "MatchTerms": [
-                "Metadata/Shrines/"
+                "StrongBoxes/ResearchStrongboxHigh"
             ],
             "Mods": [],
-            "Name": "Shrine",
+            "Name": "Researchers Strongbox",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
             "Reaction": "",
             "RememberUntilZone": false,
-            "Shape": "Star",
+            "Shape": "Chest",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                0,
+                255,
+                70,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.jewellers_strongbox",
+            "Label": "Jeweller's",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes/JewellerStrongboxHigh"
+            ],
+            "Mods": [],
+            "Name": "Jewellers Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                220,
+                255,
+                0,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.ornate_strongbox",
+            "Label": "Ornate Strongbox",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes/OrnateStrongboxHigh"
+            ],
+            "Mods": [],
+            "Name": "Ornate Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                0,
+                88,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.armourer_strongbox",
+            "Label": "Armourer",
+            "Life": "",
+            "MatchTerms": [
+                "ArmourerStrongboxHigh"
+            ],
+            "Mods": [],
+            "Name": "Armourer Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                108,
+                0,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.arcane_strongbox",
+            "Label": "Arcane",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes/CasterStrongboxHigh"
+            ],
+            "Mods": [],
+            "Name": "Arcane Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "",
+            "Color": [
+                255,
+                179,
+                0,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.strongbox_metadata",
+            "Label": "Strongbox",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes"
+            ],
+            "Mods": [],
+            "Name": "Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
             "Size": 6.0,
             "Source": "Seeded",
             "States": [],
@@ -1470,7 +1808,8 @@
         },
         {
             "Categories": [
-                "Object"
+                "Object",
+                "Other"
             ],
             "Chest": "",
             "Color": [
@@ -1502,31 +1841,33 @@
         },
         {
             "Categories": [
-                "Object"
+                "Other"
             ],
             "Chest": "",
             "Color": [
                 255,
-                255,
-                255,
+                217,
+                38,
                 255
             ],
             "Enabled": true,
             "Encounter": "",
-            "Hide": false,
-            "Id": "stock.delirium_spawner",
+            "Hide": true,
+            "Id": "stock.hide_guard",
             "Label": "",
             "Life": "",
-            "MatchTerms": [],
+            "MatchTerms": [
+                "Town_StandAsideGuard"
+            ],
             "Mods": [],
-            "Name": "Delirium Spawner",
+            "Name": "Guard",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
             "Reaction": "",
             "RememberUntilZone": false,
             "Shape": "Circle",
-            "Size": 0.0,
+            "Size": 6.0,
             "Source": "Seeded",
             "States": [],
             "Subtypes": [],
