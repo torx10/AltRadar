@@ -104,6 +104,7 @@ enum class GameState : int32_t {
     DeleteCharacter   = PSDK_GAME_STATE_DELETE_CHARACTER,
     Loading           = PSDK_GAME_STATE_LOADING,
     NotLoaded         = PSDK_GAME_STATE_NOT_LOADED,
+    Unknown           = PSDK_GAME_STATE_UNKNOWN,
 };
 
 enum class EventKind : int32_t {
@@ -141,6 +142,8 @@ class OverlayService;
 class FlasksService;
 class PricesService;
 class RuneshapeService;
+class AtlasService;
+class SekhemaService;
 class Plugin;
 struct Context;
 
@@ -596,6 +599,13 @@ struct ActiveSkill {
     uintptr_t GrantedEffectStatSetsPerLevelAddr = 0;
     uintptr_t SkillDetailsAddr = 0;
 
+    // Visible-bar placement (host-decoded). SkillSlotIndex = 0-based bar slot, or
+    // -1 when the skill is not a directly-socketed skill on the main bar. For each
+    // slot i, the unique skill with IsOnSkillBar && SkillSlotIndex == i is the
+    // icon drawn there (e.g. to overlay its DPS). 0 if the host predates this field.
+    int  SkillSlotIndex = -1;
+    bool IsOnSkillBar   = false;
+
     struct EquipmentInfo {
         uint32_t  GemNameHash = 0;
         int       InventorySlot = 0;
@@ -622,6 +632,8 @@ struct ActiveSkill {
         s.ActiveSkillsDatAddr              = a.active_skills_dat_addr;
         s.GrantedEffectStatSetsPerLevelAddr = a.granted_effect_stat_sets_per_level_addr;
         s.SkillDetailsAddr                 = a.skill_details_addr;
+        s.SkillSlotIndex                   = a.skill_slot_index;
+        s.IsOnSkillBar                     = a.is_on_skill_bar != 0;
 
         uint32_t packed = a.equipment_info_packed;
         s.Equipment.GemNameHash   = packed >> 0x10;
@@ -1258,6 +1270,16 @@ public:
         return raw.area_change_counter;
     }
 
+    // Cheap town/hideout flag WITHOUT the per-entity enumeration that GetSnapshot()
+    // does in Snapshot::FromAbi (same pattern as GetAreaChangeCounter — the raw ABI
+    // fill copies only scalars + player/maps/vitals). Use it to gate map-content
+    // overlays every frame. false when not in game.
+    bool IsTownOrHideout() const {
+        SnapshotAbi raw{};
+        if (m_abi && m_abi->get_snapshot) m_abi->get_snapshot(&raw);
+        return raw.vitals.is_town_or_hideout != 0;
+    }
+
     GameState GetState() const {
         return static_cast<GameState>(
             (m_abi && m_abi->get_state) ? m_abi->get_state() : PSDK_GAME_STATE_NOT_LOADED);
@@ -1290,6 +1312,47 @@ public:
     bool RuneshapeWeightsShown() const {
         return !m_host || !m_host->get_runeshape_weights_shown ||
                m_host->get_runeshape_weights_shown() != 0;
+    }
+
+    // Raw WorldArea id of the current zone (e.g. "Sanctum_1", "Sanctum_2_Foyer_1").
+    // Carries the Trial-of-the-Sekhemas floor number even when room content is
+    // hidden on the map. Empty on hosts that predate the tail function, off-trial,
+    // or when not in game.
+    std::string GetAreaId() const {
+        if (!m_host || !m_host->get_area_id) return std::string();
+        char buf[128];
+        int n = m_host->get_area_id(buf, static_cast<int>(sizeof(buf)));
+        return (n > 0) ? std::string(buf, static_cast<size_t>(n)) : std::string();
+    }
+
+    // Genesis-tree (Hiveblood) resource counter. Returns true and writes `out`
+    // when the host's pattern-anchored chain resolves; false when not in game,
+    // the chain is broken, or the host predates the tail function (`out`
+    // untouched on false). Routed via the HostAbi TOP-LEVEL pointer
+    // (m_host->get_hiveblood), NOT a GameServiceAbi member (m_abi->) — the
+    // append-only tail keeps GameServiceAbi's layout frozen for already-compiled
+    // plugins (same asymmetry as GetGold / GetAreaId).
+    bool GetHiveblood(int32_t& out) const {
+        return m_host && m_host->get_hiveblood && m_host->get_hiveblood(&out) != 0;
+    }
+
+    // One rendered area/map modifier line.
+    struct AreaMod { uint32_t statRowIndex = 0; int32_t value = 0; std::string text; };
+
+    // Area/map modifiers — the rendered area-info panel lines ("27% increased
+    // Rarity of Items found in this Area"), in panel order. Empty outside a map
+    // or on a host that predates the tail function. Routed via the HostAbi
+    // top-level pointer (append-only tail; not a GameServiceAbi member).
+    std::vector<AreaMod> GetAreaMods() const {
+        std::vector<AreaMod> out;
+        if (!m_host || !m_host->enumerate_area_mods) return out;
+        m_host->enumerate_area_mods(
+            [](uint32_t rid, int32_t val, const char* text, void* ud) -> int32_t {
+                auto* v = static_cast<std::vector<AreaMod>*>(ud);
+                v->push_back({ rid, val, text ? std::string(text) : std::string() });
+                return 1;
+            }, &out);
+        return out;
     }
 };
 
@@ -1575,6 +1638,39 @@ public:
                 return 1;
             },
             &c);
+        return out;
+    }
+
+    // One evaluated skill stat (EnumerateSkillStats). StatId is the Stats.dat
+    // ROW INDEX + 1 (the game's runtime stat key — 0 is the "no stat"
+    // sentinel), ascending within a set. Values are raw int32; many are x100
+    // fixed-point. Useful runtime ids: 691 = attacks/s*100, 692 = DPS*100,
+    // 695 = casts/s*100, 1982/1983 = avg damage per hit/use *100, 694 = base
+    // cast time ms, 2079 = "shows average damage instead of DPS" flag.
+    struct SkillStatEntry {
+        int SetIndex = 0;   // groups pairs into the skill's stat sets (emission order)
+        int StatId   = 0;
+        int Value    = 0;
+    };
+
+    // Evaluated per-skill stat sets for ONE active skill. Pass
+    // ActiveSkill::SkillDetailsAddr from an EnumerateActiveSkills result of the
+    // SAME frame (skill addresses go stale across frames/area changes; a stale
+    // address safely returns empty). Works for any actor's skills — including
+    // minions, whose combat blocks carry real aps/dps values. NOTE: the
+    // DPS-family stats are VIRTUAL (engine compute callbacks) — they appear
+    // only where the game itself evaluated them (the character-sheet-selected
+    // skill, minion combat stats); absence means "not evaluated", not zero.
+    // Returns empty if the host predates this API (HostAbi tail; null-checked).
+    std::vector<SkillStatEntry> EnumerateSkillStats(uintptr_t skillDetailsAddr) const {
+        std::vector<SkillStatEntry> out;
+        if (!m_host || !m_host->enumerate_skill_stats) return out;
+        m_host->enumerate_skill_stats(skillDetailsAddr,
+            [](int32_t set, int32_t id, int32_t value, void* ud) -> int32_t {
+                static_cast<std::vector<SkillStatEntry>*>(ud)->push_back({ set, id, value });
+                return 1;
+            },
+            &out);
         return out;
     }
 
@@ -2541,6 +2637,331 @@ public:
     }
 };
 
+// ---------------------------------------------------------------------------
+// Atlas service — live endgame-atlas panel data (nodes / per-anchor adjacency
+// / selection vectors / Rite line seed / eligibility weights), read host-side
+// through the GameLibrary atlas offsets. See PsdkAtlasNodeDetail for the
+// per-node cost model: request only the detail bits a hot path needs.
+// ---------------------------------------------------------------------------
+
+// One atlas node (owned view of AtlasNodeAbi). Grid coords are stable per map;
+// the node ADDRESSES churn every frame as the atlas UI rebuilds.
+struct AtlasNode {
+    int         gridX = 0;
+    int         gridY = 0;
+    uintptr_t   uiAddress    = 0;   // node UI widget (Ui.ComputeScreenRect target)
+    uintptr_t   extraAddress = 0;   // per-node data record
+    uint32_t    marker   = 0;       // Record detail: Rite line-map type (0x47B = non-reward)
+    uint32_t    flags    = 0;       // Record detail: bit0 AccessibleNow, bit1 Completed
+    int         biome    = 0;       // UiState detail: EndGameMapBiomes _rid
+    int         mapState = 0;       // UiState detail: low 2 bits; bit1 = completed
+    std::string name;               // Name detail: display name ("" unresolved)
+};
+
+// One per-anchor adjacency entry (the Rite "conn table"). Neighbour slot
+// order is preserved — the reward fn's neighbour rank derives from it.
+struct AtlasConnection {
+    int x = 0, y = 0;                             // anchor map grid
+    std::vector<std::pair<int, int>> neighbors;   // linked grids (up to 5)
+};
+
+struct AtlasGridPoint { int x = 0, y = 0; };
+// One RAW weight row; keys repeat across rows — dedup-sum client-side.
+struct AtlasWeight    { int key = 0; int value = 0; };
+
+class AtlasService {
+    const AtlasServiceAbi* m_abi  = nullptr;
+    const HostAbi*         m_host = nullptr;
+public:
+    void Init(const AtlasServiceAbi* abi, const HostAbi* host) {
+        m_abi  = abi;
+        m_host = host;
+    }
+
+    // Atlas panel address; 0 = panel absent (not in game / UI not built).
+    uintptr_t GetPanel() const {
+        return (m_abi && m_abi->get_panel) ? m_abi->get_panel() : 0;
+    }
+
+    // All atlas nodes. detail = PSDK_ATLAS_NODE_* bits; the default skips the
+    // expensive names — resolve those lazily via GetNodeName().
+    std::vector<AtlasNode> Nodes(
+            int detail = PSDK_ATLAS_NODE_RECORD | PSDK_ATLAS_NODE_UISTATE) const {
+        std::vector<AtlasNode> out;
+        if (!m_abi || !m_abi->enumerate_nodes) return out;
+        struct Ctx { std::vector<AtlasNode>* out; };
+        Ctx c{ &out };
+        m_abi->enumerate_nodes(static_cast<int32_t>(detail),
+            [](const AtlasNodeAbi* a, void* ud) -> int32_t {
+                auto* p = static_cast<Ctx*>(ud);
+                AtlasNode n;
+                n.gridX        = a->grid_x;
+                n.gridY        = a->grid_y;
+                n.uiAddress    = a->ui_addr;
+                n.extraAddress = a->extra_addr;
+                n.marker       = a->marker;
+                n.flags        = a->flags;
+                n.biome        = a->biome;
+                n.mapState     = a->map_state;
+                n.name         = a->name;  // NUL-terminated char buffer
+                p->out->push_back(std::move(n));
+                return 1;
+            },
+            &c);
+        return out;
+    }
+
+    // The per-anchor adjacency table (viewport-dependent: grows/shrinks with
+    // the loaded atlas region).
+    std::vector<AtlasConnection> Connections() const {
+        std::vector<AtlasConnection> out;
+        if (!m_abi || !m_abi->enumerate_connections) return out;
+        struct Ctx { std::vector<AtlasConnection>* out; };
+        Ctx c{ &out };
+        m_abi->enumerate_connections(
+            [](const AtlasConnAbi* a, void* ud) -> int32_t {
+                auto* p = static_cast<Ctx*>(ud);
+                AtlasConnection e;
+                e.x = a->key_x;
+                e.y = a->key_y;
+                int n = a->neighbor_count;
+                if (n > 5) n = 5;
+                e.neighbors.reserve(static_cast<size_t>(n));
+                for (int i = 0; i < n; ++i)
+                    e.neighbors.emplace_back(a->neighbor_x[i], a->neighbor_y[i]);
+                p->out->push_back(std::move(e));
+                return 1;
+            },
+            &c);
+        return out;
+    }
+
+    // which = 0 -> selection A (revealed Rite-line "purple" maps),
+    // which = 1 -> selection B (picked anchors, in pick order).
+    std::vector<AtlasGridPoint> Selection(int which) const {
+        std::vector<AtlasGridPoint> out;
+        if (!m_abi || !m_abi->get_selection) return out;
+        struct Ctx { std::vector<AtlasGridPoint>* out; };
+        Ctx c{ &out };
+        m_abi->get_selection(static_cast<int32_t>(which),
+            [](const AtlasGridAbi* g, void* ud) -> int32_t {
+                static_cast<Ctx*>(ud)->out->push_back(AtlasGridPoint{ g->x, g->y });
+                return 1;
+            },
+            &c);
+        return out;
+    }
+
+    // Rite reward-selection seed; 0 = no Rite line / panel absent.
+    uint32_t GetLineSeed() const {
+        uint32_t seed = 0;
+        if (m_abi && m_abi->get_line_seed) m_abi->get_line_seed(&seed);
+        return seed;
+    }
+
+    // Raw eligibility-weight rows. The path-cap stat id is key 26379 (0.5.4).
+    std::vector<AtlasWeight> Weights() const {
+        std::vector<AtlasWeight> out;
+        if (!m_abi || !m_abi->enumerate_weights) return out;
+        struct Ctx { std::vector<AtlasWeight>* out; };
+        Ctx c{ &out };
+        m_abi->enumerate_weights(
+            [](const AtlasWeightAbi* w, void* ud) -> int32_t {
+                static_cast<Ctx*>(ud)->out->push_back(AtlasWeight{ w->key, w->value });
+                return 1;
+            },
+            &c);
+        return out;
+    }
+
+    // Display name for a node's uiAddress ("" when unresolved).
+    std::string GetNodeName(uintptr_t uiAddress) const {
+        if (!m_abi || !m_abi->get_node_name) return {};
+        char buf[128] = {};
+        int32_t n = m_abi->get_node_name(uiAddress, buf,
+                                         static_cast<int32_t>(sizeof(buf)));
+        return (n > 0) ? std::string(buf, static_cast<size_t>(n)) : std::string();
+    }
+};
+
+// ---------------------------------------------------------------------------
+// Sekhema service — Trial of the Sekhemas floor-map data (room graph /
+// choices / content FK rows) plus the StateMachine flag reads trial objects
+// need, read host-side through the GameLibrary SekhemaTrial offsets. The
+// graph calls take the trial panel UI address explicitly: keep your own panel
+// discovery (ProbeFloor is the cheap per-node BFS pre-filter) or start from
+// GetPanel(), the host's direct child-index resolution.
+// ---------------------------------------------------------------------------
+
+// Floor header: per-run dynamic state (choices/counter) + per-layer room
+// counts of the static graph. (counter & 7) = choices made.
+struct SekhemaFloor {
+    bool      valid = false;
+    uintptr_t floorData  = 0;        // resolved FloorData base (change signal)
+    int       layerCount = 0;
+    std::vector<int>     roomCounts; // rooms per layer
+    std::vector<uint8_t> choices;    // per-layer chosen room index; 0xFF = none
+    uint8_t   counter = 0;
+};
+
+// One room of the static floor graph (immutable for a whole floor).
+struct SekhemaRoom {
+    int layer = 0;
+    int index = 0;                   // room index within its layer
+    std::vector<int> connections;    // room indices in the NEXT layer
+};
+
+// One resolved content FK pair. Dispatch on tablePath and read only the field
+// meaningful for that table (SanctumRooms -> rowId, SanctumPersistentEffects
+// -> rowName) — the other may hold noise where the row layout differs.
+struct SekhemaContentFk {
+    uintptr_t   rowAddress   = 0;    // DAT row object (identity/change signal)
+    uintptr_t   tableAddress = 0;    // DAT table object
+    std::string tablePath;           // in-memory .dat table path
+    std::string rowId;               // row Id (e.g. "Caverns_Arena_03")
+    std::string rowName;             // localized display name
+};
+
+// One content entry: which (layer, room) it decorates + its FK pairs. The
+// target indices are delivered as read — bounds-check against the graph
+// before joining.
+struct SekhemaContentEntry {
+    int layer = 0;
+    int roomIndex = 0;
+    std::vector<SekhemaContentFk> fks;   // up to 3
+};
+
+class SekhemaService {
+    const SekhemaServiceAbi* m_abi  = nullptr;
+    const HostAbi*           m_host = nullptr;
+public:
+    void Init(const SekhemaServiceAbi* abi, const HostAbi* host) {
+        m_abi  = abi;
+        m_host = host;
+    }
+
+    // Host-resolved trial panel (GameUI child[84], floor-obj gated);
+    // 0 = absent / controller mode / not in game.
+    uintptr_t GetPanel() const {
+        return (m_abi && m_abi->get_panel) ? m_abi->get_panel() : 0;
+    }
+
+    // Cheap probe: the layer count of the FloorData resolving from uiAddress,
+    // 0 = not a trial floor. Use as the per-node pre-filter when BFS-scanning
+    // the UI tree for the panel.
+    int ProbeFloor(uintptr_t uiAddress) const {
+        return (m_abi && m_abi->probe_floor)
+            ? static_cast<int>(m_abi->probe_floor(uiAddress)) : 0;
+    }
+
+    // Floor header; {valid=false} when no FloorData resolves from the panel.
+    SekhemaFloor GetFloor(uintptr_t panelAddress) const {
+        SekhemaFloor out;
+        if (!m_abi || !m_abi->get_floor) return out;
+        SekhemaFloorAbi abi{};
+        if (!m_abi->get_floor(panelAddress, &abi) || !abi.valid) return out;
+        out.valid      = true;
+        out.floorData  = abi.floor_data;
+        out.layerCount = abi.layer_count;
+        int n = abi.layer_count;
+        if (n < 0) n = 0;
+        if (n > 64) n = 64;
+        out.roomCounts.reserve(static_cast<size_t>(n));
+        out.choices.reserve(static_cast<size_t>(n));
+        for (int i = 0; i < n; ++i) {
+            out.roomCounts.push_back(abi.room_counts[i]);
+            out.choices.push_back(abi.choices[i]);
+        }
+        out.counter = abi.counter;
+        return out;
+    }
+
+    // Every room of the static floor graph, in (layer, index) order.
+    std::vector<SekhemaRoom> Rooms(uintptr_t panelAddress) const {
+        std::vector<SekhemaRoom> out;
+        if (!m_abi || !m_abi->enumerate_rooms) return out;
+        struct Ctx { std::vector<SekhemaRoom>* out; };
+        Ctx c{ &out };
+        m_abi->enumerate_rooms(panelAddress,
+            [](const SekhemaRoomAbi* a, void* ud) -> int32_t {
+                auto* p = static_cast<Ctx*>(ud);
+                SekhemaRoom r;
+                r.layer = a->layer;
+                r.index = a->index;
+                int n = a->connection_count;
+                if (n > 16) n = 16;
+                r.connections.reserve(static_cast<size_t>(n > 0 ? n : 0));
+                for (int i = 0; i < n; ++i)
+                    r.connections.push_back(a->connections[i]);
+                p->out->push_back(std::move(r));
+                return 1;
+            },
+            &c);
+        return out;
+    }
+
+    // Every content entry, FK rows resolved to id/name strings.
+    std::vector<SekhemaContentEntry> Content(uintptr_t panelAddress) const {
+        std::vector<SekhemaContentEntry> out;
+        if (!m_abi || !m_abi->enumerate_content) return out;
+        struct Ctx { std::vector<SekhemaContentEntry>* out; };
+        Ctx c{ &out };
+        m_abi->enumerate_content(panelAddress,
+            [](const SekhemaContentAbi* a, void* ud) -> int32_t {
+                auto* p = static_cast<Ctx*>(ud);
+                SekhemaContentEntry e;
+                e.layer = a->layer;
+                e.roomIndex = a->room_index;
+                int n = a->fk_count;
+                if (n > 3) n = 3;
+                e.fks.reserve(static_cast<size_t>(n > 0 ? n : 0));
+                for (int i = 0; i < n; ++i) {
+                    SekhemaContentFk fk;
+                    fk.rowAddress   = a->fks[i].row_addr;
+                    fk.tableAddress = a->fks[i].table_addr;
+                    fk.tablePath    = a->fks[i].table_path;  // NUL-terminated
+                    fk.rowId        = a->fks[i].row_id;
+                    fk.rowName      = a->fks[i].row_name;
+                    e.fks.push_back(std::move(fk));
+                }
+                p->out->push_back(std::move(e));
+                return 1;
+            },
+            &c);
+        return out;
+    }
+
+    // StateMachine used/collected/closed flag: 1 = used, 0 = active,
+    // -1 = unreadable (null component / host not attached).
+    int GetRoomUsedFlag(uintptr_t stateMachineAddress) const {
+        if (!m_abi || !m_abi->get_room_used_flag) return -1;
+        int32_t used = 0;
+        if (!m_abi->get_room_used_flag(stateMachineAddress, &used)) return -1;
+        return used ? 1 : 0;
+    }
+
+    // One shared-state VALUE (8 bytes per define_shared_state entry, define
+    // order — door open/activate states). False when out of range/unreadable.
+    bool GetStateMachineValue(uintptr_t stateMachineAddress, int index,
+                              uint64_t& outValue) const {
+        outValue = 0;
+        if (!m_abi || !m_abi->get_state_machine_value) return false;
+        return m_abi->get_state_machine_value(stateMachineAddress,
+                                              static_cast<int32_t>(index),
+                                              &outValue) != 0;
+    }
+
+    // A UI element's StringId StdWString as UTF-8 — the field trial-HUD leaves
+    // render their numbers into (NOT the Ui.GetText field). "" when empty.
+    std::string GetUiStringId(uintptr_t uiAddress) const {
+        if (!m_abi || !m_abi->get_ui_string_id) return {};
+        char buf[256] = {};
+        int32_t n = m_abi->get_ui_string_id(uiAddress, buf,
+                                            static_cast<int32_t>(sizeof(buf)));
+        return (n > 0) ? std::string(buf, static_cast<size_t>(n)) : std::string();
+    }
+};
+
 // Bundles the host services plus the ImGui/D3D handles. Accessed via Plugin::ctx().
 struct Context {
     GameService       Game;
@@ -2557,6 +2978,8 @@ struct Context {
     FlasksService     Flasks;
     PricesService     Prices;
     RuneshapeService  Runeshape;
+    AtlasService      Atlas;
+    SekhemaService    Sekhema;
     void* ImGuiContext = nullptr;
     void* D3DDevice    = nullptr;
 };
@@ -2665,6 +3088,8 @@ inline void PluginSDK_AttachHost(PluginSDK::Plugin* p,
     p->m_ctx.Flasks    .Init(&abi->flasks,     abi);
     p->m_ctx.Prices    .Init(&abi->prices,     abi);
     p->m_ctx.Runeshape .Init(&abi->runeshape,  abi);
+    p->m_ctx.Atlas     .Init(&abi->atlas,      abi);
+    p->m_ctx.Sekhema   .Init(&abi->sekhema,    abi);
     p->m_ctx.ImGuiContext = abi->imgui_context;
     p->m_ctx.D3DDevice    = abi->d3d_device;
 }
