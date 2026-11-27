@@ -14,6 +14,7 @@
 #include "data/IconTables.h"
 #include "data/PathMatcher.h"
 #include "data/RadarConfig.h"
+#include "data/RoomTargets.h"
 #include "data/TargetDatabase.h"
 
 #include <cassert>
@@ -174,6 +175,64 @@ static void TestDisplayRulesUpgrade(const fs::path& pluginDir) {
     assert(IndexOf(again, "stock.ezomyte_strongbox") != SIZE_MAX);
 }
 
+// Stand-in for PluginSDK::AreaRoom (the SDK header needs Windows).
+struct FakeRoom {
+    std::string Name;
+    float GridX = 0, GridY = 0;
+    bool Matches(const std::string& pattern) const { return Name.find(pattern) != std::string::npos; }
+};
+
+static void TestSelectRoomTargets() {
+    const std::vector<FakeRoom> rooms = {
+        {"Rooms/Breach_01.arm", 100, 0}, {"Rooms/Ritual_02.arm", 5, 0},
+        {"Rooms/Breach_02.arm", 10, 0},  {"Rooms/Breach_03.arm", 50, 0}};
+    assert(SelectRoomTargets(rooms, "Breach", 0, 0, 0).size() == 3);  // 0 = every match
+    const auto nearest = SelectRoomTargets(rooms, "Breach", 2, 0, 0);
+    assert(nearest.size() == 2 && nearest[0]->GridX == 10 && nearest[1]->GridX == 50);
+    assert(SelectRoomTargets(rooms, "Breach", 9, 0, 0).size() == 3);  // more than exist
+    assert(SelectRoomTargets(rooms, "Delirium", 0, 0, 0).empty());
+}
+
+static TargetEntry RoomTarget(const char* name, const char* pattern) {
+    TargetEntry t;
+    t.name = name;
+    t.roomPattern = pattern;
+    t.expectedCount = 0;
+    return t;
+}
+
+// Room targets for one area or all areas survive a save, and two in one area stay separate.
+static void TestRoomTargetsPersist(const fs::path& pluginDir) {
+    {
+        TargetDatabase db;
+        db.Load(pluginDir);
+        db.UpsertUserTarget("*", RoomTarget("Any breach", "*breach*"));
+        db.UpsertUserTarget("G1_1", RoomTarget("Ritual", "*ritual*"));
+        db.UpsertUserTarget("G1_1", RoomTarget("Shrine", "*shrine*"));
+        assert(db.SaveUser(pluginDir));
+    }
+    TargetDatabase db;
+    db.Load(pluginDir);
+    auto names = [&](const char* area) {
+        std::vector<std::string> out;
+        for (const auto* t : db.GetTargetsForArea(area, area))
+            if (!t->roomPattern.empty()) out.push_back(t->name + "=" + t->roomPattern);
+        std::sort(out.begin(), out.end());
+        return out;
+    };
+    assert((names("G1_1") == std::vector<std::string>{"Any breach=*breach*", "Ritual=*ritual*", "Shrine=*shrine*"}));
+    assert((names("G2_3") == std::vector<std::string>{"Any breach=*breach*"}));
+    assert(db.DisplayNameForArea("*") == "Global");
+
+    // A second save must keep the all-areas target too (it used to load where SaveUser never looks).
+    assert(db.SaveUser(pluginDir));
+    TargetDatabase again;
+    again.Load(pluginDir);
+    bool kept = false;
+    for (const auto* t : again.GetTargetsForArea("G2_3", "G2_3")) kept |= t->roomPattern == "*breach*";
+    assert(kept);
+}
+
 int main() {
     const auto dir = fs::temp_directory_path() / "altradar_self_test";
     fs::remove_all(dir);
@@ -186,6 +245,8 @@ int main() {
     TestBrokenIconsAreKept(dir / "plugin3");
     TestUniqueStrongboxDefaults();
     TestDisplayRulesUpgrade(dir / "plugin4");
+    TestSelectRoomTargets();
+    TestRoomTargetsPersist(dir / "plugin5");
 
     fs::remove_all(dir);
     std::puts("AltRadar self-test: all checks passed");

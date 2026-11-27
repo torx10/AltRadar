@@ -72,6 +72,7 @@ public:
             t.anchorTileX = o.value("AnchorTileX", 0);
             t.anchorTileY = o.value("AnchorTileY", 0);
         }
+        t.roomPattern = o.value("RoomPattern", "");
         return t;
     }
 
@@ -177,7 +178,7 @@ public:
                 storage.push_back(ParseTarget(entry, category));
                 targetAreaKeys.push_back(areaKey);
                 targetOverrideKeys.emplace_back();
-                if (areaKey == "*" || areaKey == "GLOBAL") {
+                if ((areaKey == "*" || areaKey == "GLOBAL") && category != "User") {
                     if (category == "Endgame") endgameGlobalTargets.push_back(idx);
                     else actsGlobalTargets.push_back(idx);
                 } else {
@@ -352,6 +353,7 @@ public:
                     {"BGColor", std::to_string(t.bgColor.r) + ", " + std::to_string(t.bgColor.g)
                                  + ", " + std::to_string(t.bgColor.b)},
                 });
+                if (!t.roomPattern.empty()) arr.back()["RoomPattern"] = t.roomPattern;
                 if (t.hasAnchor) {
                     auto& o = arr.back();
                     o["AnchorGridX"] = t.anchorGridX;
@@ -456,7 +458,7 @@ public:
     }
 
     static bool SameTargetIdentity(const TargetEntry& a, const TargetEntry& b) {
-        if (a.path != b.path) return false;
+        if (a.path != b.path || a.roomPattern != b.roomPattern) return false;
         if (a.hasAnchor != b.hasAnchor) return !a.hasAnchor && !b.hasAnchor;
         if (!a.hasAnchor) return true;
         return a.anchorTileX == b.anchorTileX && a.anchorTileY == b.anchorTileY
@@ -530,6 +532,7 @@ public:
                     result.push_back(&storage[i]);
         };
         addIndices(actsGlobalTargets, "*");
+        if (auto it = byArea.find("*"); it != byArea.end()) addIndices(it->second, "*");  // user, all areas
         const std::string key = ResolveAreaKey(areaHash, areaName);
         const auto srcIt = areaSource.find(key);
         const bool isEndgameArea =
@@ -556,7 +559,7 @@ public:
         // Keep Acts/Endgame source for bundled areas — only tag new areas as User.
         if (!areaSource.count(key)) {
             areaSource[key] = "User";
-            areaDisplayNames[key] = key;
+            areaDisplayNames[key] = key == "*" ? "Global" : key;
         }
     }
 

@@ -66,6 +66,7 @@ struct AreaCacheState {
     RadarRender::PoiDrawCache       pois;
     uint64_t                        entitySnapshotTime = 0;
     bool                            poiDirty = true;
+    uint64_t                        lastRoomsRevision = 0;
     int                             lastTgtMatchCount = -1;
     int                             lastEntityMatchCount = -1;
     std::chrono::steady_clock::time_point lastTgtPollTimePoint = std::chrono::steady_clock::now();
@@ -92,6 +93,7 @@ struct AreaCacheState {
         pois.Clear();
         entitySnapshotTime = 0;
         poiDirty = true;
+        lastRoomsRevision = 0;
         lastTgtMatchCount = -1;
         lastEntityMatchCount = -1;
         lastTgtPollTimePoint = std::chrono::steady_clock::now();
@@ -233,6 +235,11 @@ struct AreaCacheState {
                             const RadarData::RadarConfig& cfg,
                             const RadarData::TargetDatabase& db,
                             const RadarData::IconTables& icons) {
+        // An area's rooms arrive after it loads; rebuild when the host publishes a new list.
+        if (const uint64_t rev = ctx ? ctx->Terrain.GetAreaRoomsRevision() : 0; rev != lastRoomsRevision) {
+            lastRoomsRevision = rev;
+            poiDirty = true;
+        }
         if (!poiDirty) return;
         MarkHeavyRebuildThisFrame();
         const auto poiStart = std::chrono::steady_clock::now();

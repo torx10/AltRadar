@@ -11,6 +11,7 @@
 #include "ui/RadarUi.h"
 
 #include <imgui.h>
+#include <algorithm>
 #include <cmath>
 #include <filesystem>
 #include <optional>
@@ -26,6 +27,28 @@ std::string PathBaseName(const std::string& path) {
     if (const size_t slash = path.find_last_of('/'); slash != std::string::npos)
         return path.substr(slash + 1);
     return path;
+}
+
+// A room's short name: its file name without folder or extension.
+std::string RoomShortName(const std::string& name) {
+    std::string base = PathBaseName(name);
+    if (const size_t dot = base.find_last_of('.'); dot != std::string::npos) base.resize(dot);
+    return base;
+}
+
+// q is convex and its corners go round in one direction.
+bool PointInQuad(const ImVec2& p, const ImVec2 (&q)[4]) {
+    int sign = 0;
+    for (int i = 0; i < 4; ++i) {
+        const ImVec2& a = q[i];
+        const ImVec2& b = q[(i + 1) % 4];
+        const float cross = (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+        const int s = cross > 0.f ? 1 : (cross < 0.f ? -1 : 0);
+        if (s == 0) continue;
+        if (sign == 0) sign = s;
+        else if (s != sign) return false;
+    }
+    return true;
 }
 
 void EnsureRuntimeDirectories(const std::filesystem::path& pluginDir) {
@@ -164,7 +187,7 @@ public:
         const auto snap = ctx()->Game.GetSnapshot();
         m_overlay.runeIcons.SetPluginDir(DirectoryPath());
 
-        if (m_ui.pickerPoiMode || m_ui.pickerEntityMode) {
+        if (m_ui.pickerPoiMode || m_ui.pickerEntityMode || m_ui.pickerRoomMode) {
             DrawPicker(snap);
             return;
         }
@@ -191,9 +214,10 @@ private:
     RadarUi::UiState          m_ui;
 
     void EndPickerMode() {
-        if (!m_ui.pickerPoiMode && !m_ui.pickerEntityMode) return;
+        if (!m_ui.pickerPoiMode && !m_ui.pickerEntityMode && !m_ui.pickerRoomMode) return;
         m_ui.pickerPoiMode = false;
         m_ui.pickerEntityMode = false;
+        m_ui.pickerRoomMode = false;
         ctx()->Overlay.SetIncludeSleepingEntities(false);
         ctx()->Overlay.SetWantsOverlayInput(false);
     }
@@ -333,10 +357,79 @@ private:
             }
         }
 
+        if (m_ui.pickerRoomMode) DrawRoomPicker(snap, dl, mouse, clicked);
+
         dl->AddText(ImVec2(12, 12), IM_COL32(255, 255, 255, 255),
                     m_ui.pickerPoiMode
                         ? "Click nearest yellow marker (cyan = selected, Esc to cancel)"
-                        : "Click nearest entity marker (Esc to cancel)");
+                        : m_ui.pickerRoomMode ? "Click a room to mark rooms like it (Esc to cancel)"
+                                              : "Click nearest entity marker (Esc to cancel)");
+    }
+
+    // Outlines every room of the area on the map; clicking one opens the editor for a room target.
+    void DrawRoomPicker(const PluginSDK::Snapshot& snap, ImDrawList* dl, const ImVec2& mouse,
+                        bool clicked) {
+        const auto rooms = ctx()->Terrain.GetAreaRooms();
+        const char* status = !rooms.Supported      ? "This POE2Fixer version does not report rooms."
+                             : !rooms.Ready         ? "Rooms are still loading..."
+                             : !snap.LargeMap.IsVisible ? "Open the large map to pick a room."
+                                                         : nullptr;
+        if (status) {
+            dl->AddText(ImVec2(12.f, 32.f), IM_COL32(255, 200, 120, 255), status);
+            return;
+        }
+        constexpr float kTileCells = 23.f;  // one tile spans 23 grid cells (PluginSDK::AreaRoom)
+        auto* gameCtx = const_cast<PluginSDK::Context*>(ctx());
+        const PluginSDK::AreaRoom* hovered = nullptr;
+        ImVec2 hoveredQuad[4];
+        float hoveredDistSq = 0.f;
+        for (const auto& room : rooms.Rooms) {
+            const float z = ctx()->Terrain.GetTerrainHeight(static_cast<int>(room.GridX),
+                                                           static_cast<int>(room.GridY));
+            const float x0 = room.MinTileX * kTileCells, y0 = room.MinTileY * kTileCells;
+            const float x1 = room.MaxTileX * kTileCells, y1 = room.MaxTileY * kTileCells;
+            const float corners[4][2] = {{x0, y0}, {x1, y0}, {x1, y1}, {x0, y1}};
+            ImVec2 quad[4];
+            bool onScreen = true;
+            for (int i = 0; i < 4 && onScreen; ++i) {
+                const auto s = RadarRender::ProjectGridToScreen(gameCtx, snap, corners[i][0], corners[i][1], z);
+                onScreen = s.valid;
+                quad[i] = ImVec2(s.sx, s.sy);
+            }
+            const auto centre = RadarRender::ProjectGridToScreen(gameCtx, snap, room.GridX, room.GridY, z);
+            if (!onScreen || !centre.valid) continue;
+            dl->AddPolyline(quad, 4, IM_COL32(255, 255, 0, 110), ImDrawFlags_Closed, 1.f);
+            const std::string label = RoomShortName(room.Name);
+            const ImVec2 size = ImGui::CalcTextSize(label.c_str());
+            dl->AddText(ImVec2(centre.sx - size.x * 0.5f, centre.sy - size.y * 0.5f),
+                        IM_COL32(255, 255, 160, 200), label.c_str());
+            if (!PointInQuad(mouse, quad)) continue;
+            const float dx = mouse.x - centre.sx, dy = mouse.y - centre.sy;
+            if (hovered && dx * dx + dy * dy >= hoveredDistSq) continue;  // nested rooms: nearest centre wins
+            hovered = &room;
+            hoveredDistSq = dx * dx + dy * dy;
+            std::copy(std::begin(quad), std::end(quad), hoveredQuad);
+        }
+        if (!hovered) return;
+
+        dl->AddPolyline(hoveredQuad, 4, IM_COL32(0, 255, 255, 255), ImDrawFlags_Closed, 2.5f);
+        ImGui::SetTooltip("%s\ntiles %d,%d - %d,%d  centre %.0f, %.0f", hovered->Name.c_str(),
+                          hovered->MinTileX, hovered->MinTileY, hovered->MaxTileX, hovered->MaxTileY,
+                          hovered->GridX, hovered->GridY);
+        if (!clicked) return;
+        m_ui.editTarget = {};
+        m_ui.editTarget.name = RoomShortName(hovered->Name);
+        m_ui.editTarget.roomPattern = hovered->Name;
+        m_ui.editTarget.category = "User";
+        m_ui.editTarget.enabled = true;
+        m_ui.editTarget.showIcon = true;
+        m_ui.editTarget.expectedCount = 0;
+        m_ui.editAreaKey = m_overlay.targets.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
+        m_ui.editAllAreas = false;
+        m_ui.editIsNew = true;
+        m_ui.editStorageIndex = SIZE_MAX;
+        m_ui.editModalOpen = true;
+        EndPickerMode();
     }
 };
 

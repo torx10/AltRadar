@@ -4,6 +4,7 @@
 #include "MapProjection.h"
 #include "data/PathMatcher.h"
 #include "data/RadarConfig.h"
+#include "data/RoomTargets.h"
 #include "data/TargetDatabase.h"
 #include "data/IconTables.h"
 #include "plugin_sdk/PluginSDK.h"
@@ -40,6 +41,31 @@ struct PoiDrawCache {
             if (auto d = findIn(icons.expeditionIcons)) return *d;
         }
         return icons.otherImportantDefault;
+    }
+
+    // A marker at (gx, gy) styled like target t.
+    static RadarData::PoiResolved MakePoi(const RadarData::TargetEntry& t,
+                                          const RadarData::IconTables& icons, float gx, float gy,
+                                          float terrainZ, bool fromTgt) {
+        RadarData::PoiResolved p;
+        p.name = t.name;
+        p.gridX = gx;
+        p.gridY = gy;
+        p.terrainZ = terrainZ;
+        p.fromTgt = fromTgt;
+        p.showIcon = t.showIcon;
+        p.iconSize = t.iconSize > 0 ? t.iconSize : 30.f;
+        const auto iconDef = ResolvePoiIcon(t, icons);
+        p.iconCx = iconDef.cx;
+        p.iconCy = iconDef.cy;
+        p.markerShape = iconDef.markerShape == RadarData::MarkerShape::None
+                            ? RadarData::DefaultTargetMarkerShape()
+                            : iconDef.markerShape;
+        p.markerColor = iconDef.markerColor.a ? iconDef.markerColor
+                                              : RadarData::DefaultTargetMarkerColor();
+        p.nameColor = t.nameColor;
+        p.bgColor = t.bgColor;
+        return p;
     }
 
     void Clear() { pois.clear(); }
@@ -406,24 +432,7 @@ struct PoiDrawCache {
                 }
                 if (tooClose) continue;
 
-                RadarData::PoiResolved p;
-                p.name = t->name;
-                p.gridX = sc.gx;
-                p.gridY = sc.gy;
-                p.terrainZ = 0.f;
-                p.fromTgt = true;
-                p.showIcon = t->showIcon;
-                p.iconSize = t->iconSize > 0 ? t->iconSize : 30.f;
-                const auto iconDef = ResolvePoiIcon(*t, icons);
-                p.iconCx = iconDef.cx;
-                p.iconCy = iconDef.cy;
-                p.markerShape = iconDef.markerShape == RadarData::MarkerShape::None
-                                    ? RadarData::DefaultTargetMarkerShape()
-                                    : iconDef.markerShape;
-                p.markerColor = iconDef.markerColor.a ? iconDef.markerColor
-                                                      : RadarData::DefaultTargetMarkerColor();
-                p.nameColor = t->nameColor;
-                p.bgColor = t->bgColor;
+                auto p = MakePoi(*t, icons, sc.gx, sc.gy, 0.f, true);
                 FillMetatileCells(ctx, p, *t, compiled[i]);
                 pois.push_back(std::move(p));
                 ++placed;
@@ -436,26 +445,26 @@ struct PoiDrawCache {
             if (cand.normalized.empty()) continue;
             for (size_t i = 0; i < targets.size(); ++i) {
                 if (!RadarData::MatchPattern(compiled[i], cand)) continue;
-                const auto* t = targets[i];
-                RadarData::PoiResolved p;
-                p.name = t->name;
-                p.gridX = e.GridPositionX;
-                p.gridY = e.GridPositionY;
-                p.terrainZ = e.TerrainHeight;
-                p.fromTgt = false;
-                p.showIcon = t->showIcon;
-                p.iconSize = t->iconSize > 0 ? t->iconSize : 30.f;
-                const auto iconDef = ResolvePoiIcon(*t, icons);
-                p.iconCx = iconDef.cx;
-                p.iconCy = iconDef.cy;
-                p.markerShape = iconDef.markerShape == RadarData::MarkerShape::None
-                                    ? RadarData::DefaultTargetMarkerShape()
-                                    : iconDef.markerShape;
-                p.markerColor = iconDef.markerColor.a ? iconDef.markerColor
-                                                      : RadarData::DefaultTargetMarkerColor();
-                p.nameColor = t->nameColor;
-                p.bgColor = t->bgColor;
-                pois.push_back(std::move(p));
+                pois.push_back(MakePoi(*targets[i], icons, e.GridPositionX, e.GridPositionY,
+                                       e.TerrainHeight, false));
+            }
+        }
+
+        // Room targets: a marker at the centre of each matching room of the area layout.
+        if (std::none_of(targets.begin(), targets.end(),
+                         [](const auto* t) { return !t->roomPattern.empty(); }))
+            return;
+        const auto rooms = ctx->Terrain.GetAreaRooms();
+        if (!rooms.Ready) return;
+        for (const auto* t : targets) {
+            if (t->roomPattern.empty()) continue;
+            for (const auto* room : RadarData::SelectRoomTargets(rooms.Rooms, t->roomPattern,
+                                                                t->expectedCount,
+                                                                snap.Player.GridPositionX,
+                                                                snap.Player.GridPositionY)) {
+                const float z = ctx->Terrain.GetTerrainHeight(static_cast<int>(room->GridX),
+                                                             static_cast<int>(room->GridY));
+                pois.push_back(MakePoi(*t, icons, room->GridX, room->GridY, z, false));
             }
         }
     }

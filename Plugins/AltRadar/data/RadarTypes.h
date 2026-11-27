@@ -273,6 +273,7 @@ struct TargetEntry {
     float       anchorGridY = 0.f;
     int         anchorTileX = 0;
     int         anchorTileY = 0;
+    std::string roomPattern;  // non-empty: a room target, marked at the centre of matching rooms
 };
 
 struct PoiResolved {
