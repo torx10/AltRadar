@@ -145,11 +145,82 @@ static void WriteRulesFile(const fs::path& pluginDir, const std::vector<DisplayR
     WriteRaw(DisplayRulesStore::PathFor(pluginDir), j.dump(4));
 }
 
-// A schema-1 file gets the new stock rules once, in place, without touching the user's edits.
+static std::vector<std::string> StockIds(const std::vector<DisplayRule>& rules) {
+    std::vector<std::string> ids;
+    for (const auto& r : rules)
+        if (r.id.rfind("stock.", 0) == 0) ids.push_back(r.id);
+    return ids;
+}
+
+// Rules are first-match: a specific rule behind a catch-all never runs.
+static void TestStockRuleOrder() {
+    const auto rules = IconTables::DefaultDisplayRules();
+    for (const auto& r : rules)
+        for (const auto& term : r.matchTerms) assert(term.find('\\') == std::string::npos);  // game paths use '/'
+    auto before = [&](const char* a, const char* b) { return IndexOf(rules, a) < IndexOf(rules, b); };
+    for (const char* id : {"stock.legacy_of_the_order", "stock.researchers_strongbox", "stock.blacksmiths_strongbox",
+                           "stock.cartographers_strongbox", "stock.corruption_strongbox", "stock.strongbox_large"})
+        assert(before(id, "stock.strongbox_metadata"));
+    for (const char* id : {"stock.omen_chest", "stock.breach_chest", "stock.expedition_chest", "stock.abyssal_strongbox"})
+        assert(before(id, "stock.chest_generic"));
+    assert(before("stock.expedition", "stock.delirium_bomb"));  // the size-0 catch-all hides everything after it
+}
+
+// Chest paths from the PoE2 0.5.5.10 Chests table and the rule each should reach. Only rules that
+// decide on path alone take part, which is how these chests are told apart.
+static void TestChestPathsReachTheRightRule() {
+    const auto rules = IconTables::DefaultDisplayRules();
+    auto firstPathRule = [&](const std::string& path) -> std::string {
+        for (const auto& r : rules) {
+            if (!r.enabled || r.hide || r.categories != std::vector<std::string>{"Chest"}) continue;
+            if (!r.models.empty() || !r.subtypes.empty() || !r.states.empty() || !r.rarity.empty()) continue;
+            if (r.matchTerms.empty()) return r.id;
+            for (const auto& term : r.matchTerms)
+                if (ContainsCaseInsensitiveRuleText(path, term)) return r.id;
+        }
+        return "";
+    };
+    const std::pair<const char*, const char*> cases[] = {
+        {"StrongBoxes/ResearchStrongboxLow", "stock.researchers_strongbox"},
+        {"StrongBoxes/ResearchStrongbox", "stock.researchers_strongbox"},
+        {"StrongBoxes/JewellerStrongboxExpedition", "stock.jewellers_strongbox"},
+        {"StrongBoxes/CasterStrongboxHigh", "stock.arcane_strongbox"},
+        {"StrongBoxes/ArmourerStrongboxLow", "stock.armourer_strongbox"},
+        {"StrongBoxes/OrnateStrongbox", "stock.ornate_strongbox"},
+        {"StrongBoxes/MartialStrongbox", "stock.blacksmiths_strongbox"},
+        {"StrongBoxes/MapStrongboxExpedition", "stock.cartographers_strongbox"},
+        {"StrongBoxes/LargeStrongboxHigh", "stock.strongbox_large"},
+        {"StrongBoxes/GemStrongbox", "stock.corruption_strongbox"},
+        {"StrongBoxes/BasicStrongbox", "stock.strongbox_metadata"},
+        {"StrongBoxes/LandmarkStrongbox/P1_4LandmarkStrongbox1", "stock.strongbox_metadata"},
+        {"Abyss/AbyssStrongboxWeapons", "stock.abyssal_strongbox"},
+        {"LeagueAzmeri/OmenChest", "stock.omen_chest"},
+        {"LeagueAzmeri/LandmarkOmenChest", "stock.omen_chest"},
+        {"Barrels/Barrel1", "stock.chest_generic"},
+    };
+    for (const auto& [path, want] : cases) {
+        const auto got = firstPathRule(std::string("Metadata/Chests/") + path);
+        if (got != want) std::fprintf(stderr, "%s -> %s (want %s)\n", path, got.c_str(), want);
+        assert(got == want);
+    }
+}
+
+// An old file gets the later stock changes once and in place, without touching the user's edits.
 static void TestDisplayRulesUpgrade(const fs::path& pluginDir) {
-    auto old = IconTables::DefaultDisplayRules();
-    for (const char* id : kUniqueBoxRules) old.erase(old.begin() + IndexOf(old, id));
+    const auto defaults = IconTables::DefaultDisplayRules();
+    auto old = defaults;  // roughly the schema-1 defaults
+    for (const char* id : {"stock.vaal_strongbox", "stock.ezomyte_strongbox", "stock.ventors_strongbox",
+                           "stock.etched_beetle_strongbox", "stock.legacy_of_the_order", "stock.blacksmiths_strongbox",
+                           "stock.cartographers_strongbox", "stock.corruption_strongbox", "stock.abyssal_strongbox"})
+        old.erase(old.begin() + IndexOf(old, id));
+    old[IndexOf(old, "stock.researchers_strongbox")].matchTerms = {"StrongBoxes/ResearchStrongboxHigh"};
     old[IndexOf(old, "stock.researchers_strongbox")].markerColor = {1, 2, 3, 255};  // user edit
+    old[IndexOf(old, "stock.omen_chest")].matchTerms = {"Chests\\LeagueAzmeri\\OmenChest"};
+    for (const char* id : {"stock.strongbox_large", "stock.breach_chest", "stock.expedition_chest", "stock.expedition"}) {
+        const auto rule = old[IndexOf(old, id)];  // where the old defaults had them
+        old.erase(old.begin() + IndexOf(old, id));
+        old.push_back(rule);
+    }
     DisplayRule mine;
     mine.id = "user.my_rule";
     mine.source = "User";
@@ -159,20 +230,31 @@ static void TestDisplayRulesUpgrade(const fs::path& pluginDir) {
 
     std::vector<DisplayRule> rules;
     DisplayRulesStore::Load(pluginDir, rules);
-    const size_t researchers = IndexOf(rules, "stock.researchers_strongbox");
-    for (size_t k = 0; k < 4; ++k) assert(IndexOf(rules, kUniqueBoxRules[k]) == researchers - 4 + k);
-    assert(rules[researchers].markerColor.r == 1);
-    assert(IndexOf(rules, "user.my_rule") != SIZE_MAX);
-    assert(nlohmann::json::parse(ReadAll(DisplayRulesStore::PathFor(pluginDir)))["SchemaVersion"] == 2);
+    assert(StockIds(rules) == StockIds(defaults));  // same order as a fresh install
+    const auto& researchers = rules[IndexOf(rules, "stock.researchers_strongbox")];
+    assert(researchers.matchTerms == defaults[IndexOf(defaults, "stock.researchers_strongbox")].matchTerms);
+    assert(researchers.markerColor.r == 1);
+    assert(rules[IndexOf(rules, "stock.omen_chest")].matchTerms == std::vector<std::string>{"OmenChest"});
+    assert(IndexOf(rules, "user.my_rule") == 0);
+    assert(nlohmann::json::parse(ReadAll(DisplayRulesStore::PathFor(pluginDir)))["SchemaVersion"] == DisplayRulesStore::kSchemaVersion);
 
-    // Deleting a new rule afterwards sticks.
+    // Deleting a stock rule afterwards sticks.
     rules.erase(rules.begin() + IndexOf(rules, "stock.vaal_strongbox"));
     std::string note;
     assert(DisplayRulesStore::Save(pluginDir, rules, note));
     std::vector<DisplayRule> again;
     DisplayRulesStore::Load(pluginDir, again);
     assert(IndexOf(again, "stock.vaal_strongbox") == SIZE_MAX);
-    assert(IndexOf(again, "stock.ezomyte_strongbox") != SIZE_MAX);
+
+    // A schema-2 file (from the first unique-box build) gets only the schema-3 changes.
+    auto v2 = defaults;
+    v2.erase(v2.begin() + IndexOf(v2, "stock.ezomyte_strongbox"));  // deleted by the user under schema 2
+    v2.erase(v2.begin() + IndexOf(v2, "stock.abyssal_strongbox"));
+    WriteRulesFile(pluginDir, v2, 2);
+    std::vector<DisplayRule> fromV2;
+    DisplayRulesStore::Load(pluginDir, fromV2);
+    assert(IndexOf(fromV2, "stock.ezomyte_strongbox") == SIZE_MAX);
+    assert(IndexOf(fromV2, "stock.abyssal_strongbox") != SIZE_MAX);
 }
 
 // Stand-in for PluginSDK::AreaRoom (the SDK header needs Windows).
@@ -244,6 +326,8 @@ int main() {
     TestBrokenSettingsAreKept(dir / "plugin2");
     TestBrokenIconsAreKept(dir / "plugin3");
     TestUniqueStrongboxDefaults();
+    TestStockRuleOrder();
+    TestChestPathsReachTheRightRule();
     TestDisplayRulesUpgrade(dir / "plugin4");
     TestSelectRoomTargets();
     TestRoomTargetsPersist(dir / "plugin5");

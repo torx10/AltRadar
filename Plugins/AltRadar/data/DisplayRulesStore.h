@@ -14,32 +14,84 @@ namespace RadarData {
 
 class DisplayRulesStore {
 public:
-    static constexpr int kSchemaVersion = 2;
+    static constexpr int kSchemaVersion = 3;
 
-    // Stock rules added in schema 2. An older file gets them once on load; after that the
-    // file says 2, so a rule the user deletes stays deleted.
-    static inline const std::vector<std::string_view> kStockRulesAddedInV2 = {
-        "stock.vaal_strongbox", "stock.ezomyte_strongbox", "stock.ventors_strongbox",
-        "stock.etched_beetle_strongbox"};
+    // Changes to the stock rules, applied once to a file older than `version`. After that the file
+    // carries the new version, so a rule the user deletes or edits afterwards stays that way.
+    struct StockRuleChange {
+        int version;
+        std::vector<std::string_view> added;  // inserted where a fresh install has them
+        std::vector<std::string_view> fixed;  // matching conditions corrected; colour, size, label kept
+        std::vector<std::string_view> moved;  // moved to where a fresh install has them
+    };
+    static inline const std::vector<StockRuleChange> kStockRuleChanges = {
+        {2, {"stock.vaal_strongbox", "stock.ezomyte_strongbox", "stock.ventors_strongbox",
+             "stock.etched_beetle_strongbox"}, {}, {}},
+        // PoE2 0.5.5 data: typed boxes come in Low/High/Expedition tiers, Abyssal boxes live outside
+        // StrongBoxes/, the Omen chest path uses forward slashes, and three chest rules sat behind
+        // catch-alls that matched first.
+        {3, {"stock.legacy_of_the_order", "stock.blacksmiths_strongbox", "stock.cartographers_strongbox",
+             "stock.corruption_strongbox", "stock.abyssal_strongbox"},
+            {"stock.researchers_strongbox", "stock.jewellers_strongbox", "stock.ornate_strongbox",
+             "stock.armourer_strongbox", "stock.arcane_strongbox", "stock.strongbox_large", "stock.omen_chest"},
+            {"stock.strongbox_large", "stock.breach_chest", "stock.expedition_chest", "stock.expedition"}},
+    };
 
-    // Inserts each listed stock rule the user does not have, just before the next stock rule
-    // that follows it in the defaults (or at the end), so the evaluation order matches a fresh install.
-    static size_t AddStockRules(std::vector<DisplayRule>& rules, const std::vector<std::string_view>& ids) {
+    static void CopyMatchConditions(const DisplayRule& from, DisplayRule& to) {
+        to.categories = from.categories;
+        to.subtypes = from.subtypes;
+        to.states = from.states;
+        to.matchTerms = from.matchTerms;
+        to.models = from.models;
+        to.mods = from.mods;
+        to.rarity = from.rarity;
+        to.reaction = from.reaction;
+        to.life = from.life;
+        to.chest = from.chest;
+        to.poi = from.poi;
+        to.encounter = from.encounter;
+    }
+
+    // Applies every change newer than fileVersion; returns how many rules were added, fixed or moved.
+    static size_t UpgradeStockRules(std::vector<DisplayRule>& rules, int fileVersion) {
         const auto defaults = SeededDefaults();
-        auto findId = [&](std::string_view id) {
-            return std::find_if(rules.begin(), rules.end(), [&](const DisplayRule& r) { return r.id == id; });
+        auto findIn = [](std::vector<DisplayRule>& v, std::string_view id) {
+            return std::find_if(v.begin(), v.end(), [&](const DisplayRule& r) { return r.id == id; });
         };
-        size_t added = 0;
-        for (size_t i = 0; i < defaults.size(); ++i) {
-            const auto& def = defaults[i];
-            if (std::find(ids.begin(), ids.end(), def.id) == ids.end() || findId(def.id) != rules.end())
-                continue;
-            auto pos = rules.end();
-            for (size_t k = i + 1; k < defaults.size() && pos == rules.end(); ++k) pos = findId(defaults[k].id);
-            rules.insert(pos, def);
-            ++added;
+        auto listed = [](const std::vector<std::string_view>& ids, std::string_view id) {
+            return std::find(ids.begin(), ids.end(), id) != ids.end();
+        };
+        size_t changed = 0;
+        for (const auto& change : kStockRuleChanges) {
+            if (fileVersion >= change.version) continue;
+            for (const auto& def : defaults)
+                if (listed(change.fixed, def.id))
+                    if (auto it = findIn(rules, def.id); it != rules.end()) {
+                        CopyMatchConditions(def, *it);
+                        ++changed;
+                    }
+            // Take out the moved rules, then put them and the added ones back in default order,
+            // each just before the next default rule the file has.
+            std::vector<DisplayRule> pending;
+            for (const auto id : change.moved)
+                if (auto it = findIn(rules, id); it != rules.end()) {
+                    pending.push_back(std::move(*it));
+                    rules.erase(it);
+                }
+            for (size_t i = 0; i < defaults.size(); ++i) {
+                const auto& def = defaults[i];
+                DisplayRule rule;
+                if (auto it = findIn(pending, def.id); it != pending.end()) rule = std::move(*it);
+                else if (listed(change.added, def.id) && findIn(rules, def.id) == rules.end()) rule = def;
+                else continue;
+                auto pos = rules.end();
+                for (size_t k = i + 1; k < defaults.size() && pos == rules.end(); ++k)
+                    pos = findIn(rules, defaults[k].id);
+                rules.insert(pos, std::move(rule));
+                ++changed;
+            }
         }
-        return added;
+        return changed;
     }
 
     static std::filesystem::path PathFor(const std::filesystem::path& pluginDir) {
@@ -300,12 +352,13 @@ public:
             std::vector<DisplayRule> loaded;
             int fileSchemaVersion = kSchemaVersion;
             if (TryLoadFromFile(path, loaded, note, &fileSchemaVersion)) {
-                if (fileSchemaVersion < 2) {
-                    const size_t added = AddStockRules(loaded, kStockRulesAddedInV2);
+                if (fileSchemaVersion < kSchemaVersion) {
+                    const size_t changed = UpgradeStockRules(loaded, fileSchemaVersion);
                     std::string upgradeNote;
                     Save(pluginDir, loaded, upgradeNote);
-                    RadarLog::Instance().Info("display_rules upgraded to schema 2: added "
-                                              + std::to_string(added) + " stock rules; " + upgradeNote);
+                    RadarLog::Instance().Info("display_rules upgraded from schema "
+                                              + std::to_string(fileSchemaVersion) + ": "
+                                              + std::to_string(changed) + " stock rules changed; " + upgradeNote);
                 }
                 RadarLog::Instance().Info("display_rules parse result: ok");
                 RadarLog::Instance().Info("loaded display rule count: " + std::to_string(loaded.size()));

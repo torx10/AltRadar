@@ -1013,7 +1013,7 @@
             "Encounter": "",
             "Hide": false,
             "Id": "stock.vaal_strongbox",
-            "Label": "Vaal",
+            "Label": "Ixchel's Torment",
             "Life": "",
             "MatchTerms": [
                 "StrongBoxes"
@@ -1050,7 +1050,7 @@
             "Encounter": "",
             "Hide": false,
             "Id": "stock.ezomyte_strongbox",
-            "Label": "Ezomyte",
+            "Label": "Ogham's Legacy",
             "Life": "",
             "MatchTerms": [
                 "StrongBoxes"
@@ -1087,7 +1087,7 @@
             "Encounter": "",
             "Hide": false,
             "Id": "stock.ventors_strongbox",
-            "Label": "Ventor's",
+            "Label": "Ventor's Contraption",
             "Life": "",
             "MatchTerms": [
                 "StrongBoxes"
@@ -1124,7 +1124,7 @@
             "Encounter": "",
             "Hide": false,
             "Id": "stock.etched_beetle_strongbox",
-            "Label": "Etched Beetle",
+            "Label": "Rain Festival Beetle",
             "Life": "",
             "MatchTerms": [
                 "StrongBoxes"
@@ -1134,6 +1134,43 @@
             ],
             "Mods": [],
             "Name": "Etched Beetle Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 7.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                140,
+                60,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.legacy_of_the_order",
+            "Label": "Legacy of the Order",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes"
+            ],
+            "Models": [
+                "MarakethReliquaryStrongbox"
+            ],
+            "Mods": [],
+            "Name": "Legacy of the Order Strongbox",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
@@ -1164,7 +1201,7 @@
             "Label": "Researcher's",
             "Life": "",
             "MatchTerms": [
-                "StrongBoxes/ResearchStrongboxHigh"
+                "StrongBoxes/ResearchStrongbox"
             ],
             "Mods": [],
             "Name": "Researchers Strongbox",
@@ -1198,7 +1235,7 @@
             "Label": "Jeweller's",
             "Life": "",
             "MatchTerms": [
-                "StrongBoxes/JewellerStrongboxHigh"
+                "StrongBoxes/JewellerStrongbox"
             ],
             "Mods": [],
             "Name": "Jewellers Strongbox",
@@ -1232,7 +1269,7 @@
             "Label": "Ornate Strongbox",
             "Life": "",
             "MatchTerms": [
-                "StrongBoxes/OrnateStrongboxHigh"
+                "StrongBoxes/OrnateStrongbox"
             ],
             "Mods": [],
             "Name": "Ornate Strongbox",
@@ -1266,7 +1303,7 @@
             "Label": "Armourer",
             "Life": "",
             "MatchTerms": [
-                "ArmourerStrongboxHigh"
+                "StrongBoxes/ArmourerStrongbox"
             ],
             "Mods": [],
             "Name": "Armourer Strongbox",
@@ -1300,7 +1337,7 @@
             "Label": "Arcane",
             "Life": "",
             "MatchTerms": [
-                "StrongBoxes/CasterStrongboxHigh"
+                "StrongBoxes/CasterStrongbox"
             ],
             "Mods": [],
             "Name": "Arcane Strongbox",
@@ -1311,6 +1348,142 @@
             "RememberUntilZone": false,
             "Shape": "Chest",
             "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                200,
+                200,
+                200,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.blacksmiths_strongbox",
+            "Label": "Blacksmith's",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes/MartialStrongbox"
+            ],
+            "Mods": [],
+            "Name": "Blacksmiths Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                90,
+                170,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.cartographers_strongbox",
+            "Label": "Cartographer's",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes/MapStrongbox"
+            ],
+            "Mods": [],
+            "Name": "Cartographers Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                180,
+                40,
+                120,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.corruption_strongbox",
+            "Label": "Corruption",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes/GemStrongbox"
+            ],
+            "Mods": [],
+            "Name": "Solidified Corruption",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                179,
+                0,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.strongbox_large",
+            "Label": "Large Strongbox",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes/LargeStrongbox"
+            ],
+            "Mods": [],
+            "Name": "Chest - Large",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 6.199999809265137,
             "Source": "Seeded",
             "States": [],
             "Subtypes": [],
@@ -1338,6 +1511,40 @@
             ],
             "Mods": [],
             "Name": "Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                150,
+                90,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.abyssal_strongbox",
+            "Label": "Abyssal",
+            "Life": "",
+            "MatchTerms": [
+                "Chests/Abyss/AbyssStrongbox"
+            ],
+            "Mods": [],
+            "Name": "Abyssal Strongbox",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",
@@ -1734,7 +1941,7 @@
             "Label": "Unique Chest",
             "Life": "",
             "MatchTerms": [
-                "Chests\\LeagueAzmeri\\OmenChest"
+                "OmenChest"
             ],
             "Mods": [],
             "Name": "Chest - Omen",
@@ -1747,9 +1954,7 @@
             "Size": 5.5,
             "Source": "Seeded",
             "States": [],
-            "Subtypes": [
-                "OmenChest"
-            ],
+            "Subtypes": [],
             "UseRuneshapeColor": false
         },
         {
@@ -1824,72 +2029,6 @@
             "Categories": [
                 "Chest"
             ],
-            "Chest": "Unopened",
-            "Color": [
-                255,
-                255,
-                255,
-                224
-            ],
-            "Enabled": true,
-            "Encounter": "",
-            "Hide": false,
-            "Id": "stock.chest_generic",
-            "Label": "",
-            "Life": "",
-            "MatchTerms": [],
-            "Mods": [],
-            "Name": "Chest - Generic",
-            "Navigable": false,
-            "Poi": "",
-            "Rarity": "",
-            "Reaction": "",
-            "RememberUntilZone": false,
-            "Shape": "Chest",
-            "Size": 3.5,
-            "Source": "Seeded",
-            "States": [],
-            "Subtypes": [],
-            "UseRuneshapeColor": false
-        },
-        {
-            "Categories": [
-                "Chest"
-            ],
-            "Chest": "",
-            "Color": [
-                255,
-                179,
-                0,
-                255
-            ],
-            "Enabled": true,
-            "Encounter": "",
-            "Hide": false,
-            "Id": "stock.strongbox_large",
-            "Label": "Large Strongbox",
-            "Life": "",
-            "MatchTerms": [],
-            "Mods": [],
-            "Name": "Chest - Large",
-            "Navigable": false,
-            "Poi": "",
-            "Rarity": "",
-            "Reaction": "",
-            "RememberUntilZone": false,
-            "Shape": "Chest",
-            "Size": 6.199999809265137,
-            "Source": "Seeded",
-            "States": [],
-            "Subtypes": [
-                "LargeStrongbox"
-            ],
-            "UseRuneshapeColor": false
-        },
-        {
-            "Categories": [
-                "Chest"
-            ],
             "Chest": "",
             "Color": [
                 242,
@@ -1953,6 +2092,72 @@
                 "ExpeditionChest"
             ],
             "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                255,
+                255,
+                224
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.chest_generic",
+            "Label": "",
+            "Life": "",
+            "MatchTerms": [],
+            "Mods": [],
+            "Name": "Chest - Generic",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 3.5,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Other"
+            ],
+            "Chest": "",
+            "Color": [
+                38,
+                230,
+                217,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.expedition",
+            "Label": "Expedition",
+            "Life": "",
+            "MatchTerms": [
+                "Expedition2/Expedition2Encounter"
+            ],
+            "Mods": [],
+            "Name": "Expedition",
+            "Navigable": true,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Square",
+            "Size": 7.0,
+            "Source": "RuneShape",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": true
         },
         {
             "Categories": [
@@ -2020,41 +2225,7 @@
             "States": [],
             "Subtypes": [],
             "UseRuneshapeColor": false
-        },
-        {
-            "Categories": [
-                "Other"
-            ],
-            "Chest": "",
-            "Color": [
-                38,
-                230,
-                217,
-                255
-            ],
-            "Enabled": true,
-            "Encounter": "",
-            "Hide": false,
-            "Id": "stock.expedition",
-            "Label": "Expedition",
-            "Life": "",
-            "MatchTerms": [
-                "Expedition2/Expedition2Encounter"
-            ],
-            "Mods": [],
-            "Name": "Expedition",
-            "Navigable": true,
-            "Poi": "",
-            "Rarity": "",
-            "Reaction": "",
-            "RememberUntilZone": false,
-            "Shape": "Square",
-            "Size": 7.0,
-            "Source": "RuneShape",
-            "States": [],
-            "Subtypes": [],
-            "UseRuneshapeColor": true
         }
     ],
-    "SchemaVersion": 1
+    "SchemaVersion": 3
 }
