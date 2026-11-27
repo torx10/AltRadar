@@ -14,7 +14,7 @@ namespace RadarData {
 
 class DisplayRulesStore {
 public:
-    static constexpr int kSchemaVersion = 3;
+    static constexpr int kSchemaVersion = 4;
 
     // Changes to the stock rules, applied once to a file older than `version`. After that the file
     // carries the new version, so a rule the user deletes or edits afterwards stays that way.
@@ -35,6 +35,8 @@ public:
             {"stock.researchers_strongbox", "stock.jewellers_strongbox", "stock.ornate_strongbox",
              "stock.armourer_strongbox", "stock.arcane_strongbox", "stock.strongbox_large", "stock.omen_chest"},
             {"stock.strongbox_large", "stock.breach_chest", "stock.expedition_chest", "stock.expedition"}},
+        // Azmeri wisp deposits were caught by the size-0 rule that hides other objects.
+        {4, {"stock.azmeri_wisps"}, {}, {}},
     };
 
     static void CopyMatchConditions(const DisplayRule& from, DisplayRule& to) {

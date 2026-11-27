@@ -170,11 +170,13 @@ static void TestStockRuleOrder() {
 // decide on path alone take part, which is how these chests are told apart.
 static void TestChestPathsReachTheRightRule() {
     const auto rules = IconTables::DefaultDisplayRules();
-    auto firstPathRule = [&](const std::string& path) -> std::string {
+    auto firstPathRule = [&](const std::string& path, const char* category = "Chest") -> std::string {
         for (const auto& r : rules) {
-            if (!r.enabled || r.hide || r.categories != std::vector<std::string>{"Chest"}) continue;
+            if (!r.enabled || r.hide || r.categories.empty()
+                || std::find(r.categories.begin(), r.categories.end(), category) == r.categories.end())
+                continue;
             if (!r.models.empty() || !r.subtypes.empty() || !r.states.empty() || !r.rarity.empty()) continue;
-            if (r.matchTerms.empty()) return r.id;
+            if (r.matchTerms.empty()) return r.id;  // a catch-all (the hide rules come first and are skipped)
             for (const auto& term : r.matchTerms)
                 if (ContainsCaseInsensitiveRuleText(path, term)) return r.id;
         }
@@ -203,6 +205,10 @@ static void TestChestPathsReachTheRightRule() {
         if (got != want) std::fprintf(stderr, "%s -> %s (want %s)\n", path, got.c_str(), want);
         assert(got == want);
     }
+    // Azmeri wisp deposits (MiscObjects AzmeriDustCloud): one path for every kind, shown as an
+    // object instead of falling into the size-0 catch-all that hides other objects.
+    assert(firstPathRule("Metadata/MiscellaneousObjects/Azmeri/AzmeriResourceBase", "Object") == "stock.azmeri_wisps");
+    assert(firstPathRule("Metadata/MiscellaneousObjects/SomethingElse", "Object") == "stock.delirium_bomb");
 }
 
 // An old file gets the later stock changes once and in place, without touching the user's edits.
@@ -211,7 +217,8 @@ static void TestDisplayRulesUpgrade(const fs::path& pluginDir) {
     auto old = defaults;  // roughly the schema-1 defaults
     for (const char* id : {"stock.vaal_strongbox", "stock.ezomyte_strongbox", "stock.ventors_strongbox",
                            "stock.etched_beetle_strongbox", "stock.legacy_of_the_order", "stock.blacksmiths_strongbox",
-                           "stock.cartographers_strongbox", "stock.corruption_strongbox", "stock.abyssal_strongbox"})
+                           "stock.cartographers_strongbox", "stock.corruption_strongbox", "stock.abyssal_strongbox",
+                           "stock.azmeri_wisps"})
         old.erase(old.begin() + IndexOf(old, id));
     old[IndexOf(old, "stock.researchers_strongbox")].matchTerms = {"StrongBoxes/ResearchStrongboxHigh"};
     old[IndexOf(old, "stock.researchers_strongbox")].markerColor = {1, 2, 3, 255};  // user edit
@@ -250,11 +257,13 @@ static void TestDisplayRulesUpgrade(const fs::path& pluginDir) {
     auto v2 = defaults;
     v2.erase(v2.begin() + IndexOf(v2, "stock.ezomyte_strongbox"));  // deleted by the user under schema 2
     v2.erase(v2.begin() + IndexOf(v2, "stock.abyssal_strongbox"));
+    v2.erase(v2.begin() + IndexOf(v2, "stock.azmeri_wisps"));
     WriteRulesFile(pluginDir, v2, 2);
     std::vector<DisplayRule> fromV2;
     DisplayRulesStore::Load(pluginDir, fromV2);
     assert(IndexOf(fromV2, "stock.ezomyte_strongbox") == SIZE_MAX);
     assert(IndexOf(fromV2, "stock.abyssal_strongbox") != SIZE_MAX);
+    assert(IndexOf(fromV2, "stock.azmeri_wisps") != SIZE_MAX);
 }
 
 // Stand-in for PluginSDK::AreaRoom (the SDK header needs Windows).

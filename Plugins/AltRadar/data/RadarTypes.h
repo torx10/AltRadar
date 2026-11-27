@@ -303,6 +303,7 @@ struct EntityDrawCmd {
     float       markerSize = 0.f;
     ImU32       markerColor = 0;
     std::string label;
+    float       labelScale = 1.f;
 };
 
 } // namespace RadarData

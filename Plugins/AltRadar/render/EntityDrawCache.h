@@ -5,6 +5,7 @@
 #include "MapProjection.h"
 #include "data/RadarConfig.h"
 #include "data/TargetDatabase.h"
+#include "data/TextUtil.h"
 #include "plugin_sdk/PluginSDK.h"
 
 #include <imgui.h>
@@ -85,6 +86,13 @@ struct EntityDrawCache {
         return rule && rule->enabled && rule->rememberUntilZone;
     }
 
+    static void SetPlayerLabel(RadarData::EntityDrawCmd& cmd, const PluginSDK::Entity& e,
+                               const RadarData::RadarConfig& cfg) {
+        const std::string name = RadarData::WideToUtf8(e.PlayerName);
+        cmd.label = cfg.PlayerNameStyle == 1 || name.empty() ? std::string("Player") : name;
+        cmd.labelScale = cfg.PlayerNameTextScale;
+    }
+
     static bool IsSelfEntity(const PluginSDK::Entity& e, const PluginSDK::Snapshot& snap) {
         if (!snap.Player.IsValid) return false;
         if (e.EntitySubtype == PluginSDK::EntitySubtype::PlayerSelf) return true;
@@ -151,6 +159,8 @@ struct EntityDrawCache {
             cmd.markerSize = marker.style.size;
             cmd.markerColor = marker.style.color;
             cmd.label = marker.style.label;
+            if (cfg.ShowPlayerNames && e.EntitySubtype == PluginSDK::EntitySubtype::PlayerOther)
+                SetPlayerLabel(cmd, e, cfg);
             if (marker.useRuneshapeColor && e.Id != 0) {
                 if (const auto it = runeshapeColors.find(e.Id); it != runeshapeColors.end())
                     cmd.markerColor = it->second;
@@ -215,6 +225,7 @@ struct EntityDrawCache {
                 cmd.markerSize = marker->size;
                 cmd.markerColor = marker->color;
                 cmd.label = marker->label;
+                if (cfg.ShowPlayerNames && cfg.PlayerNameIncludeSelf) SetPlayerLabel(cmd, snap.Player, cfg);
                 cmds.push_back(cmd);
             }
         }
@@ -239,7 +250,8 @@ struct EntityDrawCache {
             const float drawX = scr.sx + (snap.LargeMap.IsVisible ? kLargeMapMarkerOffsetX : 0.0f);
             DrawEntityMarker(dl, c.markerShape, drawX, scr.sy, c.markerSize, c.markerColor);
             if (!c.label.empty())
-                dl->AddText(ImVec2(drawX + c.markerSize + 4.f, scr.sy - c.markerSize - 2.f),
+                dl->AddText(nullptr, ImGui::GetFontSize() * c.labelScale,
+                            ImVec2(drawX + c.markerSize + 4.f, scr.sy - c.markerSize - 2.f),
                             c.markerColor, c.label.c_str());
         }
     }

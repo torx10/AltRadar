@@ -87,6 +87,7 @@ inline const char* EntityCategoryName(const PluginSDK::Entity& e) {
         case ET::DeliriumSpawner:
         case ET::ExpeditionMarker:
         case ET::ExpeditionRemnant:
+        case ET::AzmeriWisp:
             return "Object";
         default:
             return "Other";

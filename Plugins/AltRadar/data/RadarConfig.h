@@ -174,8 +174,6 @@ inline Rgba8 ParseRgbString(const std::string& s, Rgba8 fallback = {}) {
 }
 
 struct RadarConfig {
-    static constexpr int kRuneShapeRareCount = 11;
-    static constexpr int kRuneShapeCommonCount = 23;
 
     bool  OverlayEnabled = true;
     bool  EnableDebugTools = false;
@@ -214,13 +212,14 @@ struct RadarConfig {
     int   DotCellStep = 2;
     float DotSize = 1.5f;
     bool  ShowPlayerNames = false;
+    int   PlayerNameStyle = 0;          // 0 = character name, 1 = the word "Player"
+    float PlayerNameTextScale = 1.f;
+    bool  PlayerNameIncludeSelf = false;
     bool  ShowImportantPOI = true;
     bool  DrawPoiIcons = false;
     bool  EnablePOIBackground = true;
     bool  RuneShapeShowWeights = false;
     int   RuneShapeMinimumWeight = 0;
-    std::array<int, kRuneShapeRareCount> RuneShapeRareWeights{100, 100, 75, 0, 25, 25, 50, 0, 25, 75, 0};
-    std::array<int, kRuneShapeCommonCount> RuneShapeCommonWeights{};
     bool  EdgeIndicatorMinimap = true;
     bool  EdgeIndicatorLargemap = true;
     bool  UseLegacyClassifier = false;
@@ -322,20 +321,15 @@ struct RadarConfig {
         DotCellStep = std::clamp(j.value("DotCellStep", j.value("WalkableDecimation", DotCellStep)), 1, 16);
         DotSize = std::clamp(j.value("DotSize", DotSize), 0.5f, 6.0f);
         ShowPlayerNames = j.value("ShowPlayerNames", ShowPlayerNames);
+        PlayerNameStyle = std::clamp(j.value("PlayerNameStyle", PlayerNameStyle), 0, 1);
+        PlayerNameTextScale = std::clamp(j.value("PlayerNameTextScale", PlayerNameTextScale), 0.5f, 3.f);
+        PlayerNameIncludeSelf = j.value("PlayerNameIncludeSelf", PlayerNameIncludeSelf);
         ShowImportantPOI = j.value("ShowImportantPOI", ShowImportantPOI);
         DrawPoiIcons = j.value("DrawPoiIcons", DrawPoiIcons);
         EnablePOIBackground = j.value("EnablePOIBackground", EnablePOIBackground);
         RuneShapeShowWeights = j.value("RuneShapeShowWeights", RuneShapeShowWeights);
         (void)j.value("RuneShapeShowPath", false);
         RuneShapeMinimumWeight = std::clamp(j.value("RuneShapeMinimumWeight", RuneShapeMinimumWeight), -100, 100);
-        auto readIntArray = [&](const char* key, auto& out) {
-            if (!j.contains(key) || !j[key].is_array()) return;
-            const auto& a = j[key];
-            for (size_t i = 0; i < out.size() && i < a.size(); ++i)
-                if (a[i].is_number_integer()) out[i] = std::clamp(a[i].get<int>(), -100, 100);
-        };
-        readIntArray("RuneShapeRareWeights", RuneShapeRareWeights);
-        readIntArray("RuneShapeCommonWeights", RuneShapeCommonWeights);
         EdgeIndicatorMinimap = j.value("EdgeIndicatorMinimap", EdgeIndicatorMinimap);
         EdgeIndicatorLargemap = j.value("EdgeIndicatorLargemap", EdgeIndicatorLargemap);
         UseLegacyClassifier = j.value("UseLegacyClassifier", UseLegacyClassifier);
@@ -409,10 +403,12 @@ struct RadarConfig {
         j["ShowImportantPOI"] = ShowImportantPOI;
         j["DrawPoiIcons"] = DrawPoiIcons;
         j["EnablePOIBackground"] = EnablePOIBackground;
+        j["ShowPlayerNames"] = ShowPlayerNames;
+        j["PlayerNameStyle"] = PlayerNameStyle;
+        j["PlayerNameTextScale"] = PlayerNameTextScale;
+        j["PlayerNameIncludeSelf"] = PlayerNameIncludeSelf;
         j["RuneShapeShowWeights"] = RuneShapeShowWeights;
         j["RuneShapeMinimumWeight"] = RuneShapeMinimumWeight;
-        j["RuneShapeRareWeights"] = RuneShapeRareWeights;
-        j["RuneShapeCommonWeights"] = RuneShapeCommonWeights;
         j["EdgeIndicatorMinimap"] = EdgeIndicatorMinimap;
         j["EdgeIndicatorLargemap"] = EdgeIndicatorLargemap;
         j["UseLegacyClassifier"] = UseLegacyClassifier;

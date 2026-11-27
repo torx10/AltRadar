@@ -5,6 +5,7 @@
 #include "data/DisplayRulesStore.h"
 #include "data/IconTables.h"
 #include "data/TargetDatabase.h"
+#include "data/TextUtil.h"
 #include "GameUiDiscovery.h"
 #include "render/EntityMarkers.h"
 #include "render/RadarOverlay.h"
@@ -417,6 +418,22 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
     ImGui::Separator();
     ImGui::Spacing();
 
+    if (ImGui::CollapsingHeader("Player Names", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Indent(12.f);
+        ImGui::Checkbox("Draw player names", &cfg.ShowPlayerNames);
+        ImGui::BeginDisabled(!cfg.ShowPlayerNames);
+        ImGui::SetNextItemWidth(180.f);
+        ImGui::Combo("Show", &cfg.PlayerNameStyle, "Character name\0\"Player\"\0");
+        ImGui::SetNextItemWidth(180.f);
+        ImGui::SliderFloat("Text size", &cfg.PlayerNameTextScale, 0.5f, 3.f, "%.1fx");
+        ImGui::Checkbox("Include yourself", &cfg.PlayerNameIncludeSelf);
+        ImGui::EndDisabled();
+        ImGui::Unindent(12.f);
+    }
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Spacing();
+
     if (ImGui::CollapsingHeader("Performance / Entity Limits", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent(12.f);
         ImGui::Checkbox("Hide Distant Entities (network bubble)", &cfg.HideOutsideNetworkBubble);
@@ -761,39 +778,7 @@ inline std::string BaseNameForPath(const std::string& path) {
     return slash == std::string::npos ? path : path.substr(slash + 1);
 }
 
-inline std::string WideToUtf8(const std::wstring& text) {
-    if (text.empty() || text.size() > static_cast<size_t>(std::numeric_limits<int>::max())) return {};
-    const int size = WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), nullptr, 0, nullptr, nullptr);
-    if (size <= 0) return {};
-    std::string result(static_cast<size_t>(size), '\0');
-    WideCharToMultiByte(CP_UTF8, 0, text.data(), static_cast<int>(text.size()), result.data(), size, nullptr, nullptr);
-    return result;
-}
-
-inline const char* DisplayRuleCategoryForEntity(const PluginSDK::Entity& e) {
-    if (e.EntitySubtype == PluginSDK::EntitySubtype::PlayerOther
-        || e.EntitySubtype == PluginSDK::EntitySubtype::PlayerSelf)
-        return "Player";
-    switch (e.EntityType) {
-        case PluginSDK::EntityType::Monster:
-            return "Monster";
-        case PluginSDK::EntityType::Chest:
-            return "Chest";
-        case PluginSDK::EntityType::NPC:
-            return "Npc";
-        case PluginSDK::EntityType::AreaTransition:
-            return "Transition";
-        case PluginSDK::EntityType::Shrine:
-        case PluginSDK::EntityType::OtherImportant:
-        case PluginSDK::EntityType::DeliriumBomb:
-        case PluginSDK::EntityType::DeliriumSpawner:
-        case PluginSDK::EntityType::ExpeditionMarker:
-        case PluginSDK::EntityType::ExpeditionRemnant:
-            return "Object";
-        default:
-            return "Other";
-    }
-}
+using RadarData::WideToUtf8;
 
 inline RadarData::DisplayRule SeedRuleFromEntity(const PluginSDK::Entity& e) {
     const std::string path = WideToUtf8(e.Path);
@@ -801,7 +786,7 @@ inline RadarData::DisplayRule SeedRuleFromEntity(const PluginSDK::Entity& e) {
     RadarData::DisplayRule rule;
     rule.source = "User";
     rule.name = base.empty() ? "New rule" : base;
-    rule.categories = {DisplayRuleCategoryForEntity(e)};
+    rule.categories = {RadarRender::EntityCategoryName(e)};
     if (!base.empty()) rule.matchTerms = {base};
     const bool isWaypoint = path.find("Waypoint") != std::string::npos;
     const bool isCheckpoint = path.find("Checkpoint") != std::string::npos;
@@ -1564,12 +1549,12 @@ inline void DrawRulePicker(UiState& ui, PluginSDK::Context* ctx, const PluginSDK
             ctx && e.Components.Animated ? ctx->Components.ReadAnimated(e.Components.Animated).Path
                                          : std::string{};
         const std::string key =
-            std::string(DisplayRuleCategoryForEntity(e)) + "|" + path + "|" + model;
+            std::string(RadarRender::EntityCategoryName(e)) + "|" + path + "|" + model;
         if (!seenEntities.insert(key).second) continue;
 
         RulePickerRow row;
         row.kind = RulePickerRow::Kind::Entity;
-        row.category = DisplayRuleCategoryForEntity(e);
+        row.category = RadarRender::EntityCategoryName(e);
         row.name = BaseNameForPath(path);
         row.detail = model.empty() ? path : path + "  | model: " + model;
         row.seedValue = path;
@@ -1725,32 +1710,6 @@ inline void DrawDisplayRulesTab(RadarData::RadarConfig& cfg, RadarData::IconTabl
         MarkDisplayRulesDirty(ui, "edit/delete/reorder");
 }
 
-inline constexpr const char* kRuneShapeRareNames[] = {
-    "Opulent", "Bond", "Death", "Earth", "Life", "Oath", "Power", "Sky", "Soul", "Time", "Ward"};
-
-inline constexpr const char* kRuneShapeCommonNames[] = {
-    "Adaptive", "Arcane", "Bait", "Bloodletting", "Celestial", "Cold", "Cyclonic",
-    "Electrocuting", "Fire", "Gasp", "Lightning", "Momentum", "Moon", "Prismatic",
-    "Protective", "Rage", "Rebirth", "Stone", "Tempest", "Tidal", "Toxic", "Vision", "Wisdom"};
-
-inline constexpr std::array<int, RadarData::RadarConfig::kRuneShapeRareCount> kRuneShapeRareDefaultWeights{
-    100, 100, 75, 0, 25, 25, 50, 0, 25, 75, 0};
-
-inline constexpr std::array<int, RadarData::RadarConfig::kRuneShapeCommonCount> kRuneShapeCommonDefaultWeights{};
-
-inline bool RuneShapeCustomWeightEditingSupported() {
-    return false;
-}
-
-inline bool RuneShapeReadableDefaultWeightsSupported() {
-    return false;
-}
-
-inline void ResetRuneShapeWeightsToDefaults(RadarData::RadarConfig& cfg) {
-    cfg.RuneShapeRareWeights = kRuneShapeRareDefaultWeights;
-    cfg.RuneShapeCommonWeights = kRuneShapeCommonDefaultWeights;
-}
-
 inline RadarData::DisplayRule BuildExpeditionRuleDefault() {
     RadarData::DisplayRule rule;
     rule.enabled = true;
@@ -1791,53 +1750,8 @@ inline RadarData::DisplayRule& EnsureExpeditionRule(RadarData::IconTables& icons
     return icons.displayRules.back();
 }
 
-template <size_t N>
-inline void DrawRuneShapeWeightList(const char* label, const char* const (&names)[N],
-                                    std::array<int, N>& weights, const std::array<int, N>& displayWeights,
-                                    RadarRender::RadarOverlay& overlay, PluginSDK::Context* ctx,
-                                    bool editable) {
-    if (!ImGui::CollapsingHeader(label, ImGuiTreeNodeFlags_DefaultOpen)) return;
-    if (!ImGui::BeginTable(label, 2, ImGuiTableFlags_SizingStretchSame)) {
-        return;
-    }
-    for (size_t i = 0; i < N; ++i) {
-        ImGui::TableNextColumn();
-        ImGui::PushID(static_cast<int>(i));
-        const float rowStartX = ImGui::GetCursorPosX();
-        const float rowStartY = ImGui::GetCursorPosY();
-        const ImVec2 iconMin = ImGui::GetCursorScreenPos();
-        const ImVec2 iconMax(iconMin.x + 22.f, iconMin.y + 22.f);
-        RadarRender::DrawRuneshapeBadgeIcon(ImGui::GetWindowDrawList(), iconMin, iconMax,
-                                            &overlay.runeIcons, ctx ? ctx->D3DDevice : nullptr,
-                                             names[i], IM_COL32(138, 124, 255, 255));
-        ImGui::Dummy(ImVec2(22.f, 22.f));
-        ImGui::SetCursorPosX(rowStartX + 26.f);
-        ImGui::SetCursorPosY(rowStartY + 3.f);
-        ImGui::TextUnformatted(names[i]);
-        ImGui::SetCursorPosX(rowStartX + 120.f);
-        ImGui::SetCursorPosY(rowStartY + 1.f);
-        int sliderValue = editable ? weights[i] : displayWeights[i];
-        ImGui::BeginDisabled(!editable);
-        ImGui::SetNextItemWidth(96.f);
-        if (ImGui::SliderInt("##weight", &sliderValue, -100, 100, "%d") && editable)
-            weights[i] = sliderValue;
-        ImGui::EndDisabled();
-        ImGui::SetCursorPosX(rowStartX + 224.f);
-        ImGui::SetCursorPosY(rowStartY + 3.f);
-        const std::string valueText = RadarRender::FormatRuneshapeWeight(displayWeights[i]);
-        ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(
-                                RadarRender::RuneshapeWeightTextColor(displayWeights[i])),
-                            "%s", valueText.c_str());
-        ImGui::PopID();
-    }
-    ImGui::EndTable();
-}
-
 inline void DrawRuneShapeTab(RadarData::RadarConfig& cfg, RadarData::IconTables& icons,
-                             PluginSDK::Context* ctx, RadarRender::RadarOverlay& overlay) {
-    const bool editable = RuneShapeCustomWeightEditingSupported();
-    const bool canResetDefaults = RuneShapeReadableDefaultWeightsSupported();
-    const bool canZeroAll = editable;
+                             PluginSDK::Context* ctx) {
     ImGui::Checkbox("Show weights on map", &cfg.RuneShapeShowWeights);
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted("Minimum weight");
@@ -1891,22 +1805,9 @@ inline void DrawRuneShapeTab(RadarData::RadarConfig& cfg, RadarData::IconTables&
     ImGui::SliderFloat("##ExpeditionMarkerSize", &rule.size, 1.5f, 22.f, "%.1f");
     ImGui::PopID();
 
+    // The map weights are the host's (PluginSDK::Runeshape::comboWeight), not editable from a plugin.
     ImGui::SeparatorText("Rune weights");
-    if (canResetDefaults || canZeroAll) {
-        const float buttonsWidth = 250.f;
-        ImGui::SetCursorPosX(std::max(0.f, ImGui::GetContentRegionAvail().x - buttonsWidth));
-    }
-    if (canResetDefaults && ImGui::Button("Reset to tier defaults")) ResetRuneShapeWeightsToDefaults(cfg);
-    if (canResetDefaults && canZeroAll) ImGui::SameLine();
-    if (canZeroAll && ImGui::Button("Zero all")) {
-        cfg.RuneShapeRareWeights.fill(0);
-        cfg.RuneShapeCommonWeights.fill(0);
-    }
-    DrawRuneShapeWeightList("Rare rune weights", kRuneShapeRareNames, cfg.RuneShapeRareWeights,
-                            kRuneShapeRareDefaultWeights, overlay, ctx, editable);
-    DrawRuneShapeWeightList("Common rune weights", kRuneShapeCommonNames,
-                            cfg.RuneShapeCommonWeights, kRuneShapeCommonDefaultWeights,
-                            overlay, ctx, editable);
+    ImGui::TextWrapped("Weights are set in POE2Fixer: Radar > RuneShape. Show weights and Minimum weight above use them.");
 }
 
 inline void PushPoiActionButtonStyle() {
@@ -2505,7 +2406,7 @@ inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("RuneShape")) {
-            DrawRuneShapeTab(overlay.cfg, overlay.icons, ctx, overlay);
+            DrawRuneShapeTab(overlay.cfg, overlay.icons, ctx);
             ImGui::EndTabItem();
         }
         ImGui::EndTabBar();
