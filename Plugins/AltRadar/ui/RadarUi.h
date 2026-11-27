@@ -39,6 +39,9 @@ struct UiState {
     bool        pickerPoiMode = false;
     bool        pickerEntityMode = false;
     bool        pickerRoomMode = false;
+    bool        pickerForIgnore = false;  // entity picker adds to the Ignore list instead
+    char        ignoreNewName[128]{};
+    char        ignoreNewPattern[256]{};
     bool        requestResetSettings = false;
     bool        requestResetCustomLandmarks = false;
     bool        requestResetLandmarkOverrides = false;
@@ -50,6 +53,7 @@ struct UiState {
     bool        editModalOpen = false;
     RadarData::TargetEntry editTarget;
     std::string editAreaKey;
+    bool        editGlobal = false;  // user landmark under "*" (all areas)
     bool        editIsNew = false;
     size_t      editStorageIndex = SIZE_MAX;
 
@@ -1865,10 +1869,30 @@ inline void DrawTargetIconCell(const RadarData::TargetEntry& t, const RadarData:
                                   iconDef.markerColor.ToImU32());
 }
 
-inline void DrawTargetIconFields(RadarData::TargetEntry& t) {
+inline void DrawTargetIconFields(RadarData::TargetEntry& t, const RadarData::IconTables& icons) {
     ImGui::Checkbox("Show as Icon", &t.showIcon);
     if (!t.showIcon) return;
     ImGui::DragFloat("Icon Size", &t.iconSize, 1, 5, 80);
+    // PoiDrawCache::ResolvePoiIcon uses the named icon only when no marker shape is set.
+    if (ImGui::BeginCombo("Icon", t.iconName.empty() ? "(marker shape)" : t.iconName.c_str())) {
+        if (ImGui::Selectable("(marker shape)", t.iconName.empty())) {
+            t.iconName.clear();
+            if (t.markerShape == RadarData::MarkerShape::None) t.markerShape = RadarData::DefaultTargetMarkerShape();
+        }
+        for (const auto* table : {&icons.baseIcons, &icons.chestIcons, &icons.breachIcons,
+                                  &icons.deliriumIcons, &icons.expeditionIcons}) {
+            std::vector<std::string> names;
+            for (const auto& [name, _] : *table) names.push_back(name);
+            std::sort(names.begin(), names.end());
+            for (const auto& name : names)
+                if (ImGui::Selectable(name.c_str(), t.iconName == name)) {
+                    t.iconName = name;
+                    t.markerShape = RadarData::MarkerShape::None;
+                }
+        }
+        ImGui::EndCombo();
+    }
+    if (!t.iconName.empty()) return;
     DrawMarkerShapeCombo("Marker Shape", t.markerShape);
     ImVec4 markerColor = t.markerColor.ToImVec4();
     if (ImGui::ColorEdit4("Marker Colour", &markerColor.x,
@@ -1951,6 +1975,7 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
         if (DrawEditButton("##edit", ImVec2(22.f, 20.f))) {
             ui.editTarget = t;
             ui.editAreaKey = areaKey;
+            ui.editGlobal = areaKey == "*";
             ui.editIsNew = false;
             ui.editStorageIndex = idx;
             ui.editModalOpen = true;
@@ -2157,9 +2182,18 @@ inline void DrawCustomTreeSection(RadarData::TargetDatabase& db, const std::stri
     ImGui::TreePop();
 }
 
+inline bool DrawRgbEdit(const char* label, RadarData::Rgba8& c) {
+    float rgb[3] = {c.r / 255.f, c.g / 255.f, c.b / 255.f};
+    if (!ImGui::ColorEdit3(label, rgb, ImGuiColorEditFlags_NoInputs)) return false;
+    c.r = static_cast<uint8_t>(rgb[0] * 255.f + 0.5f);
+    c.g = static_cast<uint8_t>(rgb[1] * 255.f + 0.5f);
+    c.b = static_cast<uint8_t>(rgb[2] * 255.f + 0.5f);
+    return true;
+}
+
 inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
                                 const std::filesystem::path& pluginDir,
-                                RadarRender::RadarOverlay& overlay) {
+                                RadarRender::RadarOverlay& overlay, const std::string& currentArea) {
     if (!ui.editModalOpen) return;
     ImGui::SetNextWindowSize(ImVec2(480, 300), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Edit Target", &ui.editModalOpen)) {
@@ -2176,14 +2210,33 @@ inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
     ui.editTarget.path = pathBuf;
     ImGui::Checkbox("Enabled", &ui.editTarget.enabled);
     ImGui::DragInt("Count", &ui.editTarget.expectedCount, 1, 1, 99);
-    DrawTargetIconFields(ui.editTarget);
-    if (ImGui::Button("Save", ImVec2(90, 0))) {
-        if (ui.editStorageIndex < db.storage.size()
-            && db.storage[ui.editStorageIndex].category != "User") {
+    DrawRgbEdit("Name Colour", ui.editTarget.nameColor);
+    ImGui::SameLine();
+    DrawRgbEdit("Text Background", ui.editTarget.bgColor);
+    DrawTargetIconFields(ui.editTarget, overlay.icons);
+    const bool isUser = !(ui.editStorageIndex < db.storage.size()
+                          && db.storage[ui.editStorageIndex].category != "User");
+    std::string saveKey = ui.editAreaKey;
+    if (isUser) {
+        ImGui::Checkbox("Global (all areas)", &ui.editGlobal);
+        saveKey = ui.editGlobal ? std::string("*") : (ui.editAreaKey == "*" ? currentArea : ui.editAreaKey);
+    }
+    const bool needsArea = isUser && saveKey.empty();
+    if (needsArea) ImGui::TextDisabled("Enter an area to save a landmark for this area only.");
+    ImGui::BeginDisabled(needsArea);
+    const bool save = ImGui::Button("Save", ImVec2(90, 0));
+    ImGui::EndDisabled();
+    if (save) {
+        if (!isUser) {
             db.storage[ui.editStorageIndex] = ui.editTarget;
             db.SaveBundledOverride(ui.editStorageIndex, pluginDir);
         } else {
-            db.UpsertUserTarget(ui.editAreaKey, ui.editTarget, ui.editStorageIndex);
+            // Switching between one area and all areas moves the landmark to the other bucket.
+            if (ui.editStorageIndex < db.storage.size() && saveKey != ui.editAreaKey) {
+                db.RemoveUserTargetFromArea(ui.editStorageIndex, ui.editAreaKey);
+                ui.editStorageIndex = SIZE_MAX;
+            }
+            db.UpsertUserTarget(saveKey, ui.editTarget, ui.editStorageIndex);
             db.SaveUser(pluginDir);
         }
         overlay.cache.InvalidatePoi();
@@ -2192,6 +2245,18 @@ inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
     }
     ImGui::SameLine();
     if (ImGui::Button("Cancel", ImVec2(90, 0))) ui.editModalOpen = false;
+    // Entity landmarks only: a tile landmark (anchored) is not an entity the radar draws.
+    if (!ui.editTarget.hasAnchor && !ui.editTarget.path.empty()) {
+        ImGui::SameLine();
+        if (ImGui::Button("Ignore this entity")) {
+            db.AddIgnore(ui.editTarget.name, ui.editTarget.path);
+            db.SaveIgnore(pluginDir);
+            overlay.cache.InvalidatePoi();
+            ui.editModalOpen = false;
+        }
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Stop drawing entities with this path (Ignore tab).");
+    }
     ImGui::End();
 }
 
@@ -2307,7 +2372,7 @@ inline void DrawEditRoomModal(UiState& ui, RadarRender::RadarOverlay& overlay,
     ImGui::Checkbox("Global (all areas in category)", &ui.editRoomGlobal);
     ImGui::SameLine();
     ImGui::TextDisabled("%s", r.category == "Endgame" ? "Endgame" : "Acts (Level < 65)");
-    DrawTargetIconFields(r.look);
+    DrawTargetIconFields(r.look, overlay.icons);
 
     const std::string area = ui.editRoomGlobal ? std::string("*") : (r.area == "*" ? currentArea : r.area);
     const char* blocked = r.pattern.empty() ? "Enter a room pattern."
@@ -2327,6 +2392,80 @@ inline void DrawEditRoomModal(UiState& ui, RadarRender::RadarOverlay& overlay,
     ImGui::SameLine();
     if (ImGui::Button("Cancel", ImVec2(90, 0))) ui.editRoomOpen = false;
     ImGui::End();
+}
+
+// Entities matching an enabled pattern are not drawn (EntityDrawCache) or used as landmarks (PoiDrawCache).
+inline void DrawIgnoreTab(RadarData::TargetDatabase& db, UiState& ui, const std::filesystem::path& pluginDir,
+                          RadarRender::RadarOverlay& overlay) {
+    auto changed = [&] {
+        db.RebuildIgnorePatterns();
+        db.SaveIgnore(pluginDir);
+        overlay.cache.InvalidatePoi();
+    };
+    ImGui::TextWrapped("Entities whose path matches an enabled pattern are not drawn on the radar. "
+                       "* matches anything, e.g. Metadata/Chests/Barrels*.");
+    if (ImGui::Button("Ignore Entity from Map")) {
+        ui.pickerEntityMode = true;
+        ui.pickerForIgnore = true;
+        ui.pickerPoiMode = false;
+        ui.pickerRoomMode = false;
+    }
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Click an entity to stop drawing everything with its path.");
+    ImGui::SetNextItemWidth(160.f);
+    ImGui::InputTextWithHint("##ignoreName", "name", ui.ignoreNewName, IM_ARRAYSIZE(ui.ignoreNewName));
+    ImGui::SameLine();
+    ImGui::SetNextItemWidth(420.f);
+    ImGui::InputTextWithHint("##ignorePattern", "path pattern", ui.ignoreNewPattern,
+                             IM_ARRAYSIZE(ui.ignoreNewPattern));
+    ImGui::SameLine();
+    ImGui::BeginDisabled(ui.ignoreNewPattern[0] == '\0');
+    if (ImGui::Button("Add")) {
+        db.AddIgnore(ui.ignoreNewName, ui.ignoreNewPattern);
+        ui.ignoreNewName[0] = ui.ignoreNewPattern[0] = '\0';
+        changed();
+    }
+    ImGui::EndDisabled();
+
+    if (!ImGui::BeginTable("ignore", 4, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg
+                                            | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoHostExtendX))
+        return;
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 24.f);
+    ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 180.f);
+    ImGui::TableSetupColumn("Pattern", ImGuiTableColumnFlags_WidthFixed, 520.f);
+    ImGui::TableSetupColumn("Del", ImGuiTableColumnFlags_WidthFixed, 30.f);
+    ImGui::TableHeadersRow();
+    for (size_t i = 0; i < db.ignoreEntries.size(); ++i) {
+        auto& e = db.ignoreEntries[i];
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::Checkbox("##en", &e.enabled)) changed();
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextUnformatted(e.name.c_str());
+        ImGui::TableSetColumnIndex(2);
+        char buf[256];
+        strncpy_s(buf, e.path.c_str(), sizeof(buf) - 1);
+        ImGui::SetNextItemWidth(-1.f);
+        if (ImGui::InputText("##pattern", buf, sizeof(buf))) e.path = buf;
+        if (ImGui::IsItemDeactivatedAfterEdit()) changed();
+        ImGui::TableSetColumnIndex(3);
+        PushPoiActionButtonStyle();
+        CenterCursorForCell(22.f, 20.f);
+        const bool remove = DrawTrashButton("##delete", ImVec2(22.f, 20.f));
+        PopPoiActionButtonStyle();
+        ImGui::PopID();
+        if (remove) {
+            db.ignoreEntries.erase(db.ignoreEntries.begin() + static_cast<std::ptrdiff_t>(i));
+            changed();
+            break;
+        }
+    }
+    if (db.ignoreEntries.empty()) {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextDisabled("Nothing ignored");
+    }
+    ImGui::EndTable();
 }
 
 inline void DrawLandmarksTab(RadarData::RadarConfig& cfg, RadarData::TargetDatabase& db,
@@ -2385,7 +2524,7 @@ inline void DrawLandmarksTab(RadarData::RadarConfig& cfg, RadarData::TargetDatab
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
 
-    DrawEditTargetModal(ui, db, pluginDir, overlay);
+    DrawEditTargetModal(ui, db, pluginDir, overlay, currentArea);
     DrawEditRoomModal(ui, overlay, pluginDir, currentArea);
 }
 
@@ -2403,6 +2542,10 @@ inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,
         }
         if (ImGui::BeginTabItem("Landmarks")) {
             DrawLandmarksTab(overlay.cfg, overlay.targets, ui, snap, pluginDir, overlay);
+            ImGui::EndTabItem();
+        }
+        if (ImGui::BeginTabItem("Ignore")) {
+            DrawIgnoreTab(overlay.targets, ui, pluginDir, overlay);
             ImGui::EndTabItem();
         }
         if (ImGui::BeginTabItem("RuneShape")) {

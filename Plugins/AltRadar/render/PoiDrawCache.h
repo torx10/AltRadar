@@ -444,6 +444,7 @@ struct PoiDrawCache {
             if (!e.IsValid) continue;
             const auto cand = RadarData::CompileCandidate(std::wstring_view(e.Path));
             if (cand.normalized.empty()) continue;
+            if (db.ignorePatterns.MatchesAny(RadarData::NarrowPath(e.Path))) continue;
             for (size_t i = 0; i < targets.size(); ++i) {
                 if (!RadarData::MatchPattern(compiled[i], cand)) continue;
                 pois.push_back(MakePoi(*targets[i], icons, e.GridPositionX, e.GridPositionY,

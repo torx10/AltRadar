@@ -347,6 +347,59 @@ static void TestRoomTargetsMoveOutOfUserJson(const fs::path& pluginDir) {
     assert(user.find("RoomPattern") == std::string::npos && user.find("Metadata/Spot") != std::string::npos);
 }
 
+// The Ignore tab edits ignore.json: names and switches survive a save, and disabled entries stop matching.
+static void TestIgnoreList(const fs::path& pluginDir) {
+    const auto file = pluginDir / "config" / "targets" / "ignore.json";
+    const char* armoury = "Metadata/Chests/LeagueIncursion/ArmouryTier3";
+    {
+        TargetDatabase db;
+        db.Load(pluginDir);  // no file yet: the bundled list
+        assert(db.ignoreEntries.size() == 7);
+        assert(db.ignorePatterns.MatchesAny(armoury));
+        db.ignoreEntries[0].enabled = false;  // the Armoury entry
+        db.RebuildIgnorePatterns();
+        assert(!db.ignorePatterns.MatchesAny(armoury));
+        db.AddIgnore("Barrels", "Metadata/Chests/Barrels*");
+        assert(db.ignorePatterns.MatchesAny("Metadata/Chests/Barrels/Barrel1"));
+        assert(db.SaveIgnore(pluginDir));
+    }
+    TargetDatabase db;
+    db.Load(pluginDir);
+    assert(db.ignoreEntries.size() == 8 && !db.ignoreEntries[0].enabled);
+    assert(db.ignoreEntries[7].name == "Barrels");
+    assert(!db.ignorePatterns.MatchesAny(armoury));
+    assert(db.ignorePatterns.MatchesAny("Metadata/Chests/Barrels/Barrel1"));
+
+    WriteRaw(file, "{ \"*\": [");  // broken: kept, and the bundled list is used meanwhile
+    db.Load(pluginDir);
+    assert(fs::exists(fs::path(file) += ".bad"));
+    assert(db.ignoreEntries.size() == 7);
+}
+
+// A user landmark saved for all areas shows everywhere and survives saving twice.
+static void TestGlobalUserLandmark(const fs::path& pluginDir) {
+    TargetEntry t;
+    t.name = "Everywhere";
+    t.path = "Metadata/Spot*";
+    {
+        TargetDatabase db;
+        db.Load(pluginDir);
+        db.UpsertUserTarget("*", t);
+        assert(db.SaveUser(pluginDir));
+    }
+    for (int round = 0; round < 2; ++round) {
+        TargetDatabase db;
+        db.Load(pluginDir);
+        for (const char* area : {"G1_1", "MAPBLUFF"}) {
+            bool found = false;
+            for (const auto* e : db.GetTargetsForArea(area, area)) found |= e->name == "Everywhere";
+            assert(found);
+        }
+        assert(db.DisplayNameForArea("*") == "Global");
+        assert(db.SaveUser(pluginDir));
+    }
+}
+
 int main() {
     const auto dir = fs::temp_directory_path() / "altradar_self_test";
     fs::remove_all(dir);
@@ -364,6 +417,8 @@ int main() {
     TestSelectRoomTargets();
     TestRoomTargetStore(dir / "plugin5");
     TestRoomTargetsMoveOutOfUserJson(dir / "plugin6");
+    TestIgnoreList(dir / "plugin7");
+    TestGlobalUserLandmark(dir / "plugin8");
 
     fs::remove_all(dir);
     std::puts("AltRadar self-test: all checks passed");

@@ -226,6 +226,7 @@ private:
         m_ui.pickerPoiMode = false;
         m_ui.pickerEntityMode = false;
         m_ui.pickerRoomMode = false;
+        m_ui.pickerForIgnore = false;
         ctx()->Overlay.SetIncludeSleepingEntities(false);
         ctx()->Overlay.SetWantsOverlayInput(false);
     }
@@ -303,6 +304,7 @@ private:
                 m_ui.editTarget.anchorTileY = nearest->TileY;
                 m_ui.editAreaKey = m_overlay.targets.ResolveAreaKey(snap.CurrentAreaHash,
                                                                     snap.CurrentAreaName);
+                m_ui.editGlobal = false;
                 m_ui.editIsNew = true;
                 m_ui.editStorageIndex = SIZE_MAX;
                 m_ui.editModalOpen = true;
@@ -346,6 +348,14 @@ private:
                 dl->AddText(ImVec2(12.f, 32.f), IM_COL32(255, 200, 150, 255), path.c_str());
             }
 
+            if (clicked && nearestEnt && m_ui.pickerForIgnore) {
+                const std::string path = RadarUi::WideToUtf8(nearestEnt->Path);  // exact; widen it in the Ignore tab
+                m_overlay.targets.AddIgnore(PathBaseName(path), path);
+                m_overlay.targets.SaveIgnore(DirectoryPath());
+                m_overlay.cache.InvalidatePoi();
+                EndPickerMode();
+                return;
+            }
             if (clicked && nearestEnt) {
                 m_ui.editTarget = {};
                 std::string path = RadarUi::WideToUtf8(nearestEnt->Path);
@@ -358,6 +368,7 @@ private:
                 m_ui.editTarget.expectedCount = 1;
                 m_ui.editAreaKey = m_overlay.targets.ResolveAreaKey(snap.CurrentAreaHash,
                                                                     snap.CurrentAreaName);
+                m_ui.editGlobal = false;
                 m_ui.editIsNew = true;
                 m_ui.editStorageIndex = SIZE_MAX;
                 m_ui.editModalOpen = true;
@@ -371,6 +382,7 @@ private:
                     m_ui.pickerPoiMode
                         ? "Click nearest yellow marker (cyan = selected, Esc to cancel)"
                         : m_ui.pickerRoomMode ? "Click a room to mark rooms like it (Esc to cancel)"
+                        : m_ui.pickerForIgnore ? "Click an entity to ignore it (Esc to cancel)"
                                               : "Click nearest entity marker (Esc to cancel)");
     }
 

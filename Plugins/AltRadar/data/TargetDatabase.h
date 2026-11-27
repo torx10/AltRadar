@@ -39,7 +39,8 @@ public:
     std::vector<std::string> targetOverrideKeys;
     std::unordered_map<std::string, TargetEntry> bundledDefaults;
     TargetOverridesStore overrides;
-    PatternMatcherSet ignorePatterns;
+    PatternMatcherSet ignorePatterns;  // built from the enabled ignoreEntries
+    std::vector<TargetEntry> ignoreEntries;  // config/targets/ignore.json: entities not drawn
     // Room targets an earlier build saved in user.json; RoomTargetStore::Adopt moves them to rooms.json.
     std::vector<std::pair<std::string, nlohmann::json>> legacyRoomTargets;
 
@@ -210,7 +211,7 @@ public:
                 storage.push_back(ParseTarget(entry, category));
                 targetAreaKeys.push_back(areaKey);
                 targetOverrideKeys.emplace_back();
-                if (areaKey == "*" || areaKey == "GLOBAL") {
+                if ((areaKey == "*" || areaKey == "GLOBAL") && category != "User") {
                     if (category == "Endgame") endgameGlobalTargets.push_back(idx);
                     else actsGlobalTargets.push_back(idx);
                 } else {
@@ -240,14 +241,44 @@ public:
         auto loadArr = [&](const nlohmann::json& arr) {
             if (!arr.is_array()) return;
             for (const auto& e : arr) {
-                if (e.is_string()) ignorePatterns.Add(e.get<std::string>());
-                else if (e.is_object() && e.contains("Path"))
-                    ignorePatterns.Add(e["Path"].get<std::string>());
+                TargetEntry entry;
+                if (e.is_string()) entry.name = entry.path = e.get<std::string>();
+                else if (e.is_object() && e.contains("Path")) entry = ParseTarget(e, "Ignore");
+                else continue;
+                ignoreEntries.push_back(std::move(entry));
             }
         };
         if (j.is_array()) loadArr(j);
         else if (j.is_object())
             for (auto it = j.begin(); it != j.end(); ++it) loadArr(it.value());
+        RebuildIgnorePatterns();
+    }
+
+    void RebuildIgnorePatterns() {
+        ignorePatterns.patterns.clear();
+        for (const auto& e : ignoreEntries)
+            if (e.enabled && !e.path.empty()) ignorePatterns.Add(e.path);
+    }
+
+    void AddIgnore(const std::string& name, const std::string& path) {
+        TargetEntry e;
+        e.name = name.empty() ? path : name;
+        e.path = path;
+        e.category = "Ignore";
+        ignoreEntries.push_back(std::move(e));
+        RebuildIgnorePatterns();
+    }
+
+    bool SaveIgnore(const std::filesystem::path& pluginDir) const {
+        nlohmann::json j;
+        j["*"] = nlohmann::json::array();
+        for (const auto& e : ignoreEntries) j["*"].push_back(WriteTarget(e));
+        const auto path = TargetConfigDir(pluginDir) / "ignore.json";
+        std::error_code ec;
+        std::filesystem::create_directories(path.parent_path(), ec);
+        if (WriteFileAtomic(path, j.dump(4))) return true;
+        RadarLog::Instance().Warn("Failed to save ignore list: " + path.string());
+        return false;
     }
 
     bool LoadIgnoreText(std::string_view jsonText, const std::string& sourceLabel,
@@ -280,9 +311,11 @@ public:
                                   const char* label) {
         std::string fileText;
         if (ReadJsonFileText(path, fileText) && LoadIgnoreText(fileText, path.string())) return;
-        if (std::filesystem::exists(path))
+        if (std::filesystem::exists(path)) {
             RadarLog::Instance().Warn(std::string("Falling back to embedded default for corrupt ignore file: ")
                                       + path.string());
+            BackupUnreadableFile(path);
+        }
         LoadIgnoreText(embeddedJson, std::string(label), true);
     }
 
@@ -315,6 +348,7 @@ public:
         bundledDefaults.clear();
         overrides.Clear();
         ignorePatterns.patterns.clear();
+        ignoreEntries.clear();
         legacyRoomTargets.clear();
         const auto targetDir = TargetConfigDir(pluginDir);
         std::string actsJson;
@@ -548,6 +582,7 @@ public:
                     result.push_back(&storage[i]);
         };
         addIndices(actsGlobalTargets, "*");
+        if (auto it = byArea.find("*"); it != byArea.end()) addIndices(it->second, "*");  // user, all areas
         const std::string key = ResolveAreaKey(areaHash, areaName);
         if (IsEndgameArea(key)) addIndices(endgameGlobalTargets, "*");
         if (auto it = byArea.find(key); it != byArea.end()) addIndices(it->second, key);
@@ -570,7 +605,7 @@ public:
         // Keep Acts/Endgame source for bundled areas — only tag new areas as User.
         if (!areaSource.count(key)) {
             areaSource[key] = "User";
-            areaDisplayNames[key] = key;
+            areaDisplayNames[key] = key == "*" ? "Global" : key;
         }
     }
 
