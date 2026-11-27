@@ -64,10 +64,47 @@ public:
         return r;
     }
 
+    // Built in: the Viridian Wildwood's feature rooms (AzmeriFeatureRooms, PoE2 0.5.5.10; area
+    // MapUniqueWildwood, so Endgame). The patterns only match Wildwood rooms, so they are global.
+    static std::vector<RoomTarget> WildwoodTargets() {
+        static const std::pair<const char*, const char*> kRooms[] = {
+            {"clearing_ambush", "Ambush"},           {"clearing_dustpile", "Dust Pile"},
+            {"clearing_gruthkul_blood", "Gruthkul's Blood"}, {"clearing_huts", "Huts"},
+            {"clearing_saplings", "Saplings"},       {"clearing_spidernest", "Spider Nest"},
+            {"clearing_treant_henge", "Treant Henge"}, {"clearing_trout_swamp", "Trout Swamp"},
+            {"clearing_wolves", "Wolves"},           {"shrine_gruthkul", "Shrine of Gruthkul"},
+            {"shrine_lunaris", "Shrine of Lunaris"}, {"shrine_ryslatha", "Shrine of Ryslatha"},
+            {"shrine_sisters", "Shrine of the Sisters"}, {"shrine_solaris", "Shrine of Solaris"}};
+        std::vector<RoomTarget> out;
+        for (const auto& [file, name] : kRooms) {
+            RoomTarget r;
+            r.pattern = std::string("Metadata/Terrain/Maps/UniqueWildwood/Rooms/Features/") + file + "*";
+            r.category = "Endgame";
+            r.look.name = name;
+            r.look.category = "User";
+            r.look.showIcon = true;
+            r.look.expectedCount = 0;
+            out.push_back(std::move(r));
+        }
+        return out;
+    }
+
+    // Defaults whose pattern is not in the list yet.
+    std::vector<RoomTarget> Missing(const std::vector<RoomTarget>& defaults) const {
+        std::vector<RoomTarget> out;
+        for (const auto& d : defaults)
+            if (std::none_of(targets.begin(), targets.end(), [&](const RoomTarget& r) { return r.pattern == d.pattern; }))
+                out.push_back(d);
+        return out;
+    }
+
     void Load(const std::filesystem::path& pluginDir) {
         targets.clear();
         const auto path = PathFor(pluginDir);
-        if (!std::filesystem::exists(path)) return;
+        if (!std::filesystem::exists(path)) {
+            targets = WildwoodTargets();  // first run
+            return;
+        }
         std::ifstream in(path);
         try {
             nlohmann::json j;

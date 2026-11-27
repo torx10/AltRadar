@@ -1005,6 +1005,158 @@
             ],
             "Chest": "",
             "Color": [
+                255,
+                205,
+                60,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.wisps_vivid",
+            "Label": "Vivid",
+            "Life": "",
+            "MatchTerms": [
+                "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
+            ],
+            "Models": [
+                "wisp_warden"
+            ],
+            "Mods": [],
+            "Name": "Vivid Wisps",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Star",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Object",
+                "Other"
+            ],
+            "Chest": "",
+            "Color": [
+                60,
+                230,
+                240,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.wisps_primal",
+            "Label": "Primal",
+            "Life": "",
+            "MatchTerms": [
+                "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
+            ],
+            "Models": [
+                "wisp_primal"
+            ],
+            "Mods": [],
+            "Name": "Primal Wisps",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Star",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Object",
+                "Other"
+            ],
+            "Chest": "",
+            "Color": [
+                185,
+                95,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.wisps_wild",
+            "Label": "Wild",
+            "Life": "",
+            "MatchTerms": [
+                "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
+            ],
+            "Models": [
+                "wisp_vodoo"
+            ],
+            "Mods": [],
+            "Name": "Wild Wisps",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Star",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Object",
+                "Other"
+            ],
+            "Chest": "",
+            "Color": [
+                255,
+                225,
+                190,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.wisps_sacred",
+            "Label": "Sacred",
+            "Life": "",
+            "MatchTerms": [
+                "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
+            ],
+            "Models": [
+                "wisp_sacred"
+            ],
+            "Mods": [],
+            "Name": "Sacred Wisps",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Star",
+            "Size": 6.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Object",
+                "Other"
+            ],
+            "Chest": "",
+            "Color": [
                 150,
                 230,
                 255,
@@ -1020,7 +1172,7 @@
                 "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
             ],
             "Mods": [],
-            "Name": "Azmeri Wisps",
+            "Name": "Unknown Wisps",
             "Navigable": false,
             "Poi": "",
             "Rarity": "",

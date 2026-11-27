@@ -416,6 +416,8 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
         ImGui::Checkbox("Hide on Pause", &cfg.DrawWhenNotPaused);
         ImGui::Checkbox("Hide when alt-tabbed", &cfg.HideWhenNotForeground);
         ImGui::Checkbox("Enable UI Blocker Detection", &cfg.EnableUiBlockerDetection);
+        ImGui::Checkbox("Scale wisps by deposit size", &cfg.ScaleWispsBySize);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Azmeri wisp deposits: large 100%%, medium 85%%, small 70%%.");
         ImGui::Unindent(12.f);
     }
     ImGui::Spacing();
@@ -2521,6 +2523,11 @@ inline void DrawLandmarksTab(RadarData::RadarConfig& cfg, RadarData::TargetDatab
                         ui, overlay, pluginDir, landmarkSearch);
     DrawRoomTargetSection("Room Targets (Level < 65)", "Acts", ui, overlay, pluginDir, currentArea);
     DrawRoomTargetSection("Room Targets Endgame", "Endgame", ui, overlay, pluginDir, currentArea);
+    if (const auto missing = overlay.roomTargets.Missing(RadarData::RoomTargetStore::WildwoodTargets());
+        !missing.empty() && ImGui::Button(("Add Wildwood room targets (" + std::to_string(missing.size()) + ")").c_str())) {
+        overlay.roomTargets.targets.insert(overlay.roomTargets.targets.end(), missing.begin(), missing.end());
+        SaveRoomTargets(overlay, pluginDir);
+    }
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
 

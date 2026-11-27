@@ -215,6 +215,7 @@ struct RadarConfig {
     int   PlayerNameStyle = 0;          // 0 = character name, 1 = the word "Player"
     float PlayerNameTextScale = 1.f;
     bool  PlayerNameIncludeSelf = false;
+    bool  ScaleWispsBySize = true;
     bool  ShowImportantPOI = true;
     bool  DrawPoiIcons = false;
     bool  EnablePOIBackground = true;
@@ -324,6 +325,7 @@ struct RadarConfig {
         PlayerNameStyle = std::clamp(j.value("PlayerNameStyle", PlayerNameStyle), 0, 1);
         PlayerNameTextScale = std::clamp(j.value("PlayerNameTextScale", PlayerNameTextScale), 0.5f, 3.f);
         PlayerNameIncludeSelf = j.value("PlayerNameIncludeSelf", PlayerNameIncludeSelf);
+        ScaleWispsBySize = j.value("ScaleWispsBySize", ScaleWispsBySize);
         ShowImportantPOI = j.value("ShowImportantPOI", ShowImportantPOI);
         DrawPoiIcons = j.value("DrawPoiIcons", DrawPoiIcons);
         EnablePOIBackground = j.value("EnablePOIBackground", EnablePOIBackground);
@@ -407,6 +409,7 @@ struct RadarConfig {
         j["PlayerNameStyle"] = PlayerNameStyle;
         j["PlayerNameTextScale"] = PlayerNameTextScale;
         j["PlayerNameIncludeSelf"] = PlayerNameIncludeSelf;
+        j["ScaleWispsBySize"] = ScaleWispsBySize;
         j["RuneShapeShowWeights"] = RuneShapeShowWeights;
         j["RuneShapeMinimumWeight"] = RuneShapeMinimumWeight;
         j["EdgeIndicatorMinimap"] = EdgeIndicatorMinimap;

@@ -35,8 +35,9 @@ public:
             {"stock.researchers_strongbox", "stock.jewellers_strongbox", "stock.ornate_strongbox",
              "stock.armourer_strongbox", "stock.arcane_strongbox", "stock.strongbox_large", "stock.omen_chest"},
             {"stock.strongbox_large", "stock.breach_chest", "stock.expedition_chest", "stock.expedition"}},
-        // Azmeri wisp deposits were caught by the size-0 rule that hides other objects.
-        {4, {"stock.azmeri_wisps"}, {}, {}},
+        // Azmeri wisp deposits were caught by the size-0 rule that hides other objects. Kinds by model.
+        {4, {"stock.wisps_vivid", "stock.wisps_primal", "stock.wisps_wild", "stock.wisps_sacred",
+             "stock.azmeri_wisps"}, {}, {}},
     };
 
     static void CopyMatchConditions(const DisplayRule& from, DisplayRule& to) {

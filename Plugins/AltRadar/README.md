@@ -51,13 +51,16 @@ POE2Fixer/Plugins/AltRadar/
 
 Open the Plugins tab → **Alt Radar** → three tabs:
 
-- **General Settings** — overlay toggle, walkable map, visibility rules
+- **General Settings** — overlay toggle, walkable map, visibility rules, player names (character
+  name or "Player", text size, optionally yourself), wisp size scaling
 - **Display Rules** — generated vector marker rules and sizes; rules can also match an entity's
   model (`Model`), which is how the Vaal, Ezomyte, Ventor's and Etched Beetle strongboxes are told apart
 - **Objects** — landmarks by area, Add POI/Entity from map
 - **Room Targets** (Objects tab, Add Room from Map) — a marker at the centre of every room whose
   name matches a pattern, for one area or every area of its category (Acts or Endgame); saved in
-  `config/targets/rooms.json`
+  `config/targets/rooms.json`; ships with the Viridian Wildwood's feature rooms
+- **Ignore** — entities that are never drawn (`config/targets/ignore.json`): add by pattern or
+  from the map, switch or delete entries
 
 ## SDK
 

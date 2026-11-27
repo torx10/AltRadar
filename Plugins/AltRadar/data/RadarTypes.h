@@ -235,6 +235,14 @@ inline bool ContainsCaseInsensitiveRuleText(std::string_view text, std::string_v
     return false;
 }
 
+// Marker scale for an Azmeri wisp deposit from its model, wisp_<kind>_<sml|med|big>.ao
+// (AzmeriWoodsDustType.WispAnimations, 0.5.5); 1 when the size is not in the name.
+inline float WispSizeScale(std::string_view model) {
+    if (ContainsCaseInsensitiveRuleText(model, "_sml")) return 0.70f;
+    if (ContainsCaseInsensitiveRuleText(model, "_med")) return 0.85f;
+    return 1.f;
+}
+
 inline bool IsRuneshapeColourEligible(const DisplayRule& rule) {
     for (const auto& term : rule.matchTerms) {
         if (ContainsCaseInsensitiveRuleText(term, "Expedition2/Expedition2Encounter")

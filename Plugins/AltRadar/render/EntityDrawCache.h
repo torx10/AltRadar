@@ -161,6 +161,9 @@ struct EntityDrawCache {
             cmd.label = marker.style.label;
             if (cfg.ShowPlayerNames && e.EntitySubtype == PluginSDK::EntitySubtype::PlayerOther)
                 SetPlayerLabel(cmd, e, cfg);
+            if (cfg.ScaleWispsBySize && ctx && e.EntityType == PluginSDK::EntityType::AzmeriWisp
+                && e.Components.Animated)
+                cmd.markerSize *= RadarData::WispSizeScale(ctx->Components.ReadAnimated(e.Components.Animated).Path);
             if (marker.useRuneshapeColor && e.Id != 0) {
                 if (const auto it = runeshapeColors.find(e.Id); it != runeshapeColors.end())
                     cmd.markerColor = it->second;

@@ -400,6 +400,52 @@ static void TestGlobalUserLandmark(const fs::path& pluginDir) {
     }
 }
 
+// Wisp models from AzmeriWoodsDustType.WispAnimations (0.5.5.10): each reaches exactly its kind
+// rule, ahead of the Unknown fallback, and the size part sets the marker scale.
+static void TestWispKinds() {
+    const auto rules = IconTables::DefaultDisplayRules();
+    const std::pair<const char*, const char*> kinds[] = {
+        {"warden", "stock.wisps_vivid"}, {"primal", "stock.wisps_primal"},
+        {"vodoo", "stock.wisps_wild"}, {"sacred", "stock.wisps_sacred"}};
+    for (const auto& [kind, id] : kinds) {
+        assert(IndexOf(rules, id) < IndexOf(rules, "stock.azmeri_wisps"));
+        for (const char* size : {"sml", "med", "big"}) {
+            const std::string model = std::string("Metadata/Effects/Spells/monsters_effects/League_Azmeri/resources/"
+                                                  "wisp_doodads/wisp_") + kind + "_" + size + ".ao";
+            std::string first;
+            for (const auto& r : rules)
+                if (!r.models.empty() && ContainsCaseInsensitiveRuleText(model, r.models[0]) && first.empty()) first = r.id;
+            assert(first == id);
+        }
+    }
+    assert(WispSizeScale("wisp_primal_big.ao") == 1.f);
+    assert(WispSizeScale("wisp_primal_med.ao") == 0.85f);
+    assert(WispSizeScale("wisp_primal_sml.ao") == 0.70f);
+    assert(WispSizeScale("Metadata/MiscellaneousObjects/Azmeri/AzmeriResourceBase") == 1.f);
+}
+
+// First run gets the Wildwood feature rooms; every room file of AzmeriFeatureRooms matches one.
+static void TestWildwoodRoomTargets(const fs::path& pluginDir) {
+    RoomTargetStore store;
+    store.Load(pluginDir);  // no rooms.json yet
+    assert(store.targets.size() == 14);
+    assert(store.ForArea("MAPUNIQUEWILDWOOD", true).size() == 14 && store.ForArea("G1_1", false).empty());
+    for (const char* file : {"clearing_ambush_01.arm","clearing_dustpile_02.arm","clearing_gruthkul_blood_01_01.arm","clearing_gruthkul_blood_01_02.arm","clearing_gruthkul_blood_01_03.arm","clearing_gruthkul_blood_01_04.arm","clearing_gruthkul_blood_02_01.arm","clearing_ambush_02.arm","clearing_dustpile_01.arm","clearing_treant_henge_01_01.arm","clearing_treant_henge_01_02.arm","clearing_treant_henge_01_03.arm","clearing_treant_henge_01_04.arm","clearing_treant_henge_02_01.arm","clearing_ambush_03.arm","clearing_dustpile_03.arm","clearing_huts_01_01.arm","clearing_huts_01_02.arm","clearing_huts_01_03.arm","clearing_huts_01_04.arm","clearing_huts_02_02.arm","clearing_huts_02_03.arm","clearing_huts_02_01.arm","clearing_huts_03_01.arm","clearing_huts_03_04.arm","clearing_wolves_01.arm","shrine_gruthkul.arm","clearing_spidernest_01.arm","clearing_saplings_01.arm","shrine_ryslatha.arm","clearing_trout_swamp_01.arm","shrine_lunaris.arm","shrine_sisters.arm","shrine_solaris.arm"}) {
+        const std::string name = std::string("Metadata/Terrain/Maps/UniqueWildwood/Rooms/Features/") + file;
+        int matches = 0;
+        for (const auto& r : store.targets)  // every default pattern is "<prefix>*"
+            matches += name.rfind(r.pattern.substr(0, r.pattern.size() - 1), 0) == 0;
+        assert(matches == 1);
+    }
+    assert(store.Missing(RoomTargetStore::WildwoodTargets()).empty());
+    store.targets.erase(store.targets.begin());
+    assert(store.Missing(RoomTargetStore::WildwoodTargets()).size() == 1);
+    assert(store.Save(pluginDir));
+    RoomTargetStore again;  // an existing file is never re-seeded
+    again.Load(pluginDir);
+    assert(again.targets.size() == 13);
+}
+
 int main() {
     const auto dir = fs::temp_directory_path() / "altradar_self_test";
     fs::remove_all(dir);
@@ -419,6 +465,8 @@ int main() {
     TestRoomTargetsMoveOutOfUserJson(dir / "plugin6");
     TestIgnoreList(dir / "plugin7");
     TestGlobalUserLandmark(dir / "plugin8");
+    TestWispKinds();
+    TestWildwoodRoomTargets(dir / "plugin9");
 
     fs::remove_all(dir);
     std::puts("AltRadar self-test: all checks passed");
