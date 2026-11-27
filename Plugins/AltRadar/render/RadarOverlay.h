@@ -489,15 +489,16 @@ inline bool ProjectTerrainGridCorner(PluginSDK::Context* ctx, const PluginSDK::S
                                      float& sy, const TerrainAnchorDelta* anchor = nullptr,
                                      const MapLayerProjection* largeMapProj = nullptr) {
     if (!ctx) return false;
-    const float terrainZ = ResolveTerrainProjectionZ(ctx, cfg, gridWidth, gridHeight, gx, gy);
     if (useLargeMap && largeMapProj) {
+        // The 2D large-map layer ignores height, so skip the per-vertex height lookup (a host call;
+        // up to 73x73 vertices every frame).
         const auto projected =
-            ProjectGridLargeMapLayer(*largeMapProj, ctx, snap, gx, gy, terrainZ,
-                                     MapLayerSubject::Terrain);
+            ProjectGridLargeMapLayer(*largeMapProj, ctx, snap, gx, gy, 0.f, MapLayerSubject::Terrain);
         if (!projected.valid) return false;
         sx = projected.sx;
         sy = projected.sy;
     } else {
+        const float terrainZ = ResolveTerrainProjectionZ(ctx, cfg, gridWidth, gridHeight, gx, gy);
         if (!ProjectTerrainWithSdk(ctx, snap, useLargeMap, gx, gy, terrainZ, sx, sy)) return false;
     }
     if (!useLargeMap || !largeMapProj
@@ -582,16 +583,47 @@ inline void DrawTerrainLargeMap(ImDrawList* dl, PluginSDK::Context* ctx,
         return;
     }
 
+    const TerrainGridExtents extents = ResolveTerrainGridExtents(cfg, terrain);
+    constexpr float kTerrainTextureTintAlpha = 1.0f;
+    if (stats) stats->tintAlpha = kTerrainTextureTintAlpha;
+
+    // Unified2D is affine (ProjectGridUnified2D), so the texture rectangle maps exactly onto one
+    // quad: draw it once, clipped to the map rect, instead of up to 72x72 cell quads that each
+    // needed projecting every frame. The cell grid clipped by dropping cells that crossed the rect.
+    const auto& t = largeMapProj.transform;
+    if (largeMapProj.mode == RadarData::MapLayerProjectionMode::Unified2D && largeMapProj.map.IsVisible
+        && t.IsVisible && largeMapProj.map.SizeX > 0.f && largeMapProj.map.SizeY > 0.f) {
+        auto corner = [&](float gx, float gy) {
+            const float dx = gx - t.PlayerGridX, dy = gy - t.PlayerGridY;
+            return ImVec2(t.CenterX + (dx - dy) * t.ScaleX, t.CenterY - (dx + dy) * t.ScaleY);
+        };
+        const float gx0 = extents.gxMin, gy0 = extents.gyMin;
+        const float gx1 = gx0 + extents.gxSpan, gy1 = gy0 + extents.gySpan;
+        const ImVec2 p0 = corner(gx0, gy0), p1 = corner(gx1, gy0), p2 = corner(gx1, gy1), p3 = corner(gx0, gy1);
+        constexpr float kMargin = 2.f;  // IsInsideMapRect's margin
+        const auto& m = largeMapProj.map;
+        dl->PushClipRect(ImVec2(m.CenterX - m.SizeX * 0.5f + kMargin, m.CenterY - m.SizeY * 0.5f + kMargin),
+                         ImVec2(m.CenterX + m.SizeX * 0.5f - kMargin, m.CenterY + m.SizeY * 0.5f - kMargin), true);
+        dl->AddImageQuad(terrain.TexRef(), p0, p1, p2, p3, ImVec2(0.f, 0.f), ImVec2(1.f, 0.f), ImVec2(1.f, 1.f),
+                         ImVec2(0.f, 1.f), IM_COL32_WHITE);
+        dl->PopClipRect();
+        if (stats) {
+            stats->submitted = stats->rectValid = true;
+            stats->minX = std::min({p0.x, p1.x, p2.x, p3.x});
+            stats->maxX = std::max({p0.x, p1.x, p2.x, p3.x});
+            stats->minY = std::min({p0.y, p1.y, p2.y, p3.y});
+            stats->maxY = std::max({p0.y, p1.y, p2.y, p3.y});
+        }
+        return;
+    }
+
     const int cols = std::clamp(terrain.Width() / 20, 36, 72);
     const int rows = std::clamp(terrain.Height() / 20, 36, 72);
-    const TerrainGridExtents extents = ResolveTerrainGridExtents(cfg, terrain);
     std::vector<ProjectedTerrainVertex> vertices;
     BuildProjectedTerrainVertexGrid(vertices, ctx, snap, cfg, terrain.Width(),
                                     terrain.Height(), cols, rows, extents.gxMin, extents.gyMin,
                                     extents.gxSpan, extents.gySpan, nullptr,
                                     &largeMapProj);
-    constexpr float kTerrainTextureTintAlpha = 1.0f;
-    if (stats) stats->tintAlpha = kTerrainTextureTintAlpha;
 
     for (int row = 0; row < rows; ++row) {
         const float v0 = static_cast<float>(row) / static_cast<float>(rows);

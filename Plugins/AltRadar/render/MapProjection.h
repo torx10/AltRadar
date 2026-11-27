@@ -64,13 +64,27 @@ inline bool IsInsideMapRect(const PluginSDK::MapData& map, float sx, float sy,
            && sy >= map.CenterY - halfH + margin && sy <= map.CenterY + halfH - margin;
 }
 
+// The minimap transform is fixed within a frame, but markers asked the host for it once each.
+inline PluginSDK::MapTransform MiniMapTransformThisFrame(PluginSDK::Context* ctx) {
+    static PluginSDK::Context* cachedCtx = nullptr;
+    static int cachedFrame = -1;
+    static PluginSDK::MapTransform cached{};
+    const int frame = ImGui::GetFrameCount();
+    if (ctx != cachedCtx || frame != cachedFrame) {
+        cached = ctx->Render.GetMiniMapTransform();
+        cachedCtx = ctx;
+        cachedFrame = frame;
+    }
+    return cached;
+}
+
 // GridToMiniMap projects around GetMiniMapTransform().Center, not MapData.Center (host Y often wrong).
 inline void GetMinimapClipOrigin(PluginSDK::Context* ctx, const PluginSDK::MapData& map,
                                  float& cx, float& cy) {
     cx = map.CenterX;
     cy = map.CenterY;
     if (!ctx) return;
-    const auto t = ctx->Render.GetMiniMapTransform();
+    const auto t = MiniMapTransformThisFrame(ctx);
     if (t.IsVisible) {
         cx = t.CenterX;
         cy = t.CenterY;
@@ -223,7 +237,7 @@ inline ProjectedScreen ProjectGridToMiniMapScreen(PluginSDK::Context* ctx,
 
     if (!allowTransformFallback) return out;
 
-    const auto t = ctx->Render.GetMiniMapTransform();
+    const auto t = MiniMapTransformThisFrame(ctx);
     const float wtg = WorldToGridScale(snap, ctx);
     float sx = 0.f, sy = 0.f;
     if (ProjectWithMapTransform(t, gx, gy, worldZ, wtg, sx, sy)
@@ -313,7 +327,7 @@ inline ProjectedScreen ProjectEntityToMiniMapScreen(PluginSDK::Context* ctx,
     const bool needTransform = !gridOk || MiniMapGridLooksLikeViewport(ctx, snap, sx, sy);
     if (needTransform) {
         const float wtg = WorldToGridScale(snap, ctx);
-        const auto t = ctx->Render.GetMiniMapTransform();
+        const auto t = MiniMapTransformThisFrame(ctx);
         float tsx = 0.f, tsy = 0.f;
         if (t.IsVisible && ProjectWithMapTransform(t, gx, gy, terrainZ, wtg, tsx, tsy)
             && IsOnMinimapSurface(ctx, snap.MiniMap, tsx, tsy, kInset)) {
