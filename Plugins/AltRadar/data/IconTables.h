@@ -128,6 +128,7 @@ struct IconTables {
         rule.matchTerms = ReadStringList(j, "MatchTerms");
         if (rule.matchTerms.empty()) rule.matchTerms = ReadStringList(j, "Match");
         rule.mods = ReadStringList(j, "Mods");
+        rule.models = ReadStringList(j, "Models");
         rule.rarity = j.value("Rarity", std::string{});
         rule.reaction = j.value("Reaction", std::string{});
         rule.life = j.value("Life", std::string{});
@@ -162,6 +163,7 @@ struct IconTables {
                 {"States", rule.states},
                 {"MatchTerms", rule.matchTerms},
                 {"Mods", rule.mods},
+                {"Models", rule.models},
                 {"Rarity", rule.rarity},
                 {"Reaction", rule.reaction},
                 {"Life", rule.life},

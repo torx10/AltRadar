@@ -276,6 +276,17 @@ inline EntityClassification ClassifyByRules(const PluginSDK::Entity& e, PluginSD
             }
             if (!anyMod) continue;
         }
+        if (!rule.models.empty()) {
+            if (!ctx || e.Components.Animated == 0) continue;
+            const auto model = ctx->Components.ReadAnimated(e.Components.Animated).Path;
+            bool anyModel = false;
+            for (const auto& term : rule.models)
+                if (MatchesRuleTerm(model, term)) {
+                    anyModel = true;
+                    break;
+                }
+            if (!anyModel) continue;
+        }
         EntityClassification out;
         out.matched = true;
         out.hidden = rule.hide || rule.size <= 0.f;

@@ -3,15 +3,44 @@
 #include "IconTables.h"
 #include "RadarLog.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
+#include <string_view>
 #include <unordered_set>
+#include <vector>
 
 namespace RadarData {
 
 class DisplayRulesStore {
 public:
-    static constexpr int kSchemaVersion = 1;
+    static constexpr int kSchemaVersion = 2;
+
+    // Stock rules added in schema 2. An older file gets them once on load; after that the
+    // file says 2, so a rule the user deletes stays deleted.
+    static inline const std::vector<std::string_view> kStockRulesAddedInV2 = {
+        "stock.vaal_strongbox", "stock.ezomyte_strongbox", "stock.ventors_strongbox",
+        "stock.etched_beetle_strongbox"};
+
+    // Inserts each listed stock rule the user does not have, just before the next stock rule
+    // that follows it in the defaults (or at the end), so the evaluation order matches a fresh install.
+    static size_t AddStockRules(std::vector<DisplayRule>& rules, const std::vector<std::string_view>& ids) {
+        const auto defaults = SeededDefaults();
+        auto findId = [&](std::string_view id) {
+            return std::find_if(rules.begin(), rules.end(), [&](const DisplayRule& r) { return r.id == id; });
+        };
+        size_t added = 0;
+        for (size_t i = 0; i < defaults.size(); ++i) {
+            const auto& def = defaults[i];
+            if (std::find(ids.begin(), ids.end(), def.id) == ids.end() || findId(def.id) != rules.end())
+                continue;
+            auto pos = rules.end();
+            for (size_t k = i + 1; k < defaults.size() && pos == rules.end(); ++k) pos = findId(defaults[k].id);
+            rules.insert(pos, def);
+            ++added;
+        }
+        return added;
+    }
 
     static std::filesystem::path PathFor(const std::filesystem::path& pluginDir) {
         return pluginDir / "config" / "display_rules.json";
@@ -162,7 +191,7 @@ public:
     }
 
     static bool TryLoadFromFile(const std::filesystem::path& path, std::vector<DisplayRule>& outRules,
-                                std::string& note) {
+                                std::string& note, int* fileSchemaVersion = nullptr) {
         if (!std::filesystem::exists(path)) return false;
         std::ifstream in(path);
         if (!in.is_open()) {
@@ -188,6 +217,7 @@ public:
             parsed = SanitizeRules(std::move(parsed));
             EnsureStableIds(parsed);
             if (!ValidateRules(parsed, note)) return false;
+            if (fileSchemaVersion) *fileSchemaVersion = j.value("SchemaVersion", 1);
             outRules = std::move(parsed);
             size_t user = 0, defaults = 0, stateHides = 0;
             CountSections(outRules, user, defaults, stateHides);
@@ -268,7 +298,15 @@ public:
 
             std::string note;
             std::vector<DisplayRule> loaded;
-            if (TryLoadFromFile(path, loaded, note)) {
+            int fileSchemaVersion = kSchemaVersion;
+            if (TryLoadFromFile(path, loaded, note, &fileSchemaVersion)) {
+                if (fileSchemaVersion < 2) {
+                    const size_t added = AddStockRules(loaded, kStockRulesAddedInV2);
+                    std::string upgradeNote;
+                    Save(pluginDir, loaded, upgradeNote);
+                    RadarLog::Instance().Info("display_rules upgraded to schema 2: added "
+                                              + std::to_string(added) + " stock rules; " + upgradeNote);
+                }
                 RadarLog::Instance().Info("display_rules parse result: ok");
                 RadarLog::Instance().Info("loaded display rule count: " + std::to_string(loaded.size()));
                 RadarLog::Instance().Info("duplicate display rule id count: " + std::to_string(DuplicateIdCount(loaded)));

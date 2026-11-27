@@ -1055,6 +1055,11 @@ inline std::string DisplayRuleSummary(const RadarData::DisplayRule& rule) {
         summary += JoinCsv(rule.matchTerms);
         summary += "\"";
     }
+    if (!rule.models.empty()) {
+        summary += " · model \"";
+        summary += JoinCsv(rule.models);
+        summary += "\"";
+    }
     if (!rule.rarity.empty()) {
         summary += " · ";
         summary += rule.rarity;
@@ -1284,6 +1289,18 @@ inline void DrawDisplayRuleMatcherFields(RadarData::DisplayRule& rule, bool edit
                                  "monster mods: aura/buff/mod ids, comma-separated (blank = any)",
                                  modsBuf, sizeof(modsBuf)))
         SplitCsv(modsBuf, rule.mods);
+    ImGui::EndDisabled();
+    DrawRuleEditorRowGap();
+
+    std::string modelsCsv = JoinCsv(rule.models);
+    char modelsBuf[512]{};
+    strncpy_s(modelsBuf, modelsCsv.c_str(), sizeof(modelsBuf) - 1);
+    ImGui::BeginDisabled(!editable);
+    DrawRuleEditorTextLabel("Model", kMatchWidth);
+    if (ImGui::InputTextWithHint((std::string(idPrefix) + "##models").c_str(),
+                                 "model (.ao) path terms, comma-separated (blank = any)",
+                                 modelsBuf, sizeof(modelsBuf)))
+        SplitCsv(modelsBuf, rule.models);
     ImGui::EndDisabled();
     DrawRuleEditorRowGap();
 
@@ -1605,14 +1622,18 @@ inline void DrawRulePicker(UiState& ui, PluginSDK::Context* ctx, const PluginSDK
         if (!e.IsValid) continue;
         const std::string path = WideToUtf8(e.Path);
         if (path.empty()) continue;
-        const std::string key = std::string(DisplayRuleCategoryForEntity(e)) + "|" + path;
+        const std::string model =
+            ctx && e.Components.Animated ? ctx->Components.ReadAnimated(e.Components.Animated).Path
+                                         : std::string{};
+        const std::string key =
+            std::string(DisplayRuleCategoryForEntity(e)) + "|" + path + "|" + model;
         if (!seenEntities.insert(key).second) continue;
 
         RulePickerRow row;
         row.kind = RulePickerRow::Kind::Entity;
         row.category = DisplayRuleCategoryForEntity(e);
         row.name = BaseNameForPath(path);
-        row.detail = path;
+        row.detail = model.empty() ? path : path + "  | model: " + model;
         row.seedValue = path;
         rows.push_back(std::move(row));
 

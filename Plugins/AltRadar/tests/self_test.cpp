@@ -10,6 +10,7 @@
 #endif
 
 #undef NDEBUG
+#include "data/DisplayRulesStore.h"
 #include "data/IconTables.h"
 #include "data/PathMatcher.h"
 #include "data/RadarConfig.h"
@@ -110,6 +111,69 @@ static void TestBrokenIconsAreKept(const fs::path& pluginDir) {
     assert(ReadAll(pluginDir / "config" / "icons.json.bad") == broken);
 }
 
+static size_t IndexOf(const std::vector<DisplayRule>& rules, std::string_view id) {
+    for (size_t i = 0; i < rules.size(); ++i)
+        if (rules[i].id == id) return i;
+    return SIZE_MAX;
+}
+
+static const char* const kUniqueBoxRules[] = {"stock.vaal_strongbox", "stock.ezomyte_strongbox",
+                                              "stock.ventors_strongbox", "stock.etched_beetle_strongbox"};
+
+// Unique strongboxes share a normal box's path, so their stock rules must come first and match on Model.
+static void TestUniqueStrongboxDefaults() {
+    const auto rules = IconTables::DefaultDisplayRules();
+    for (const char* id : kUniqueBoxRules) {
+        const size_t i = IndexOf(rules, id);
+        assert(i != SIZE_MAX);
+        assert(!rules[i].models.empty());
+        assert(i < IndexOf(rules, "stock.researchers_strongbox"));
+        assert(i < IndexOf(rules, "stock.strongbox_metadata"));
+    }
+    const auto& vaal = rules[IndexOf(rules, "stock.vaal_strongbox")];
+    assert(vaal.models[0] == "VaalStrongbox");
+    const auto back = IconTables::ParseDisplayRule(IconTables::WriteDisplayRule(vaal));
+    assert(back.models == vaal.models);
+}
+
+static void WriteRulesFile(const fs::path& pluginDir, const std::vector<DisplayRule>& rules, int schema) {
+    nlohmann::json j;
+    j["SchemaVersion"] = schema;
+    j["DisplayRules"] = nlohmann::json::array();
+    for (const auto& r : rules) j["DisplayRules"].push_back(IconTables::WriteDisplayRule(r));
+    WriteRaw(DisplayRulesStore::PathFor(pluginDir), j.dump(4));
+}
+
+// A schema-1 file gets the new stock rules once, in place, without touching the user's edits.
+static void TestDisplayRulesUpgrade(const fs::path& pluginDir) {
+    auto old = IconTables::DefaultDisplayRules();
+    for (const char* id : kUniqueBoxRules) old.erase(old.begin() + IndexOf(old, id));
+    old[IndexOf(old, "stock.researchers_strongbox")].markerColor = {1, 2, 3, 255};  // user edit
+    DisplayRule mine;
+    mine.id = "user.my_rule";
+    mine.source = "User";
+    mine.name = "Mine";
+    old.insert(old.begin(), mine);
+    WriteRulesFile(pluginDir, old, 1);
+
+    std::vector<DisplayRule> rules;
+    DisplayRulesStore::Load(pluginDir, rules);
+    const size_t researchers = IndexOf(rules, "stock.researchers_strongbox");
+    for (size_t k = 0; k < 4; ++k) assert(IndexOf(rules, kUniqueBoxRules[k]) == researchers - 4 + k);
+    assert(rules[researchers].markerColor.r == 1);
+    assert(IndexOf(rules, "user.my_rule") != SIZE_MAX);
+    assert(nlohmann::json::parse(ReadAll(DisplayRulesStore::PathFor(pluginDir)))["SchemaVersion"] == 2);
+
+    // Deleting a new rule afterwards sticks.
+    rules.erase(rules.begin() + IndexOf(rules, "stock.vaal_strongbox"));
+    std::string note;
+    assert(DisplayRulesStore::Save(pluginDir, rules, note));
+    std::vector<DisplayRule> again;
+    DisplayRulesStore::Load(pluginDir, again);
+    assert(IndexOf(again, "stock.vaal_strongbox") == SIZE_MAX);
+    assert(IndexOf(again, "stock.ezomyte_strongbox") != SIZE_MAX);
+}
+
 int main() {
     const auto dir = fs::temp_directory_path() / "altradar_self_test";
     fs::remove_all(dir);
@@ -120,6 +184,8 @@ int main() {
     TestBrokenUserTargetsAreKept(dir / "plugin1");
     TestBrokenSettingsAreKept(dir / "plugin2");
     TestBrokenIconsAreKept(dir / "plugin3");
+    TestUniqueStrongboxDefaults();
+    TestDisplayRulesUpgrade(dir / "plugin4");
 
     fs::remove_all(dir);
     std::puts("AltRadar self-test: all checks passed");

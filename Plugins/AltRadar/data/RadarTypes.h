@@ -199,6 +199,7 @@ struct DisplayRule {
     std::vector<std::string> states;
     std::vector<std::string> matchTerms;
     std::vector<std::string> mods;
+    std::vector<std::string> models;  // terms matched against the entity's model (.ao) path
     std::string              rarity;
     std::string              reaction;
     std::string              life;

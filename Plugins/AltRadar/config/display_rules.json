@@ -1004,6 +1004,154 @@
             ],
             "Chest": "Unopened",
             "Color": [
+                230,
+                40,
+                40,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.vaal_strongbox",
+            "Label": "Vaal",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes"
+            ],
+            "Models": [
+                "VaalStrongbox"
+            ],
+            "Mods": [],
+            "Name": "Vaal Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 7.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                120,
+                200,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.ezomyte_strongbox",
+            "Label": "Ezomyte",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes"
+            ],
+            "Models": [
+                "Ezomyte"
+            ],
+            "Mods": [],
+            "Name": "Ezomyte Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 7.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                255,
+                215,
+                0,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.ventors_strongbox",
+            "Label": "Ventor's",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes"
+            ],
+            "Models": [
+                "Ventor"
+            ],
+            "Mods": [],
+            "Name": "Ventor's Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 7.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
+                175,
+                110,
+                255,
+                255
+            ],
+            "Enabled": true,
+            "Encounter": "",
+            "Hide": false,
+            "Id": "stock.etched_beetle_strongbox",
+            "Label": "Etched Beetle",
+            "Life": "",
+            "MatchTerms": [
+                "StrongBoxes"
+            ],
+            "Models": [
+                "EtchedBeetle"
+            ],
+            "Mods": [],
+            "Name": "Etched Beetle Strongbox",
+            "Navigable": false,
+            "Poi": "",
+            "Rarity": "",
+            "Reaction": "",
+            "RememberUntilZone": false,
+            "Shape": "Chest",
+            "Size": 7.0,
+            "Source": "Seeded",
+            "States": [],
+            "Subtypes": [],
+            "UseRuneshapeColor": false
+        },
+        {
+            "Categories": [
+                "Chest"
+            ],
+            "Chest": "Unopened",
+            "Color": [
                 255,
                 38,
                 244,
