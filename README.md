@@ -1,68 +1,39 @@
-# Alt Radar — POE2Fixer Radar Fork
+> **AltRadar fork.** The AltRadar plugin lives in [`Plugins/AltRadar/`](Plugins/AltRadar/README.md)
+> and builds from `AltRadar.sln`. Everything else is kept identical to upstream
+> [POEFixer/Radar](https://github.com/POEFixer/Radar), so syncing is just
+> `git fetch upstream && git merge upstream/master`.
 
-Self-contained radar overlay for Path of Exile 2: walkable terrain map, entity icons, and POI labels. This fork stays distinct from the official POE2Fixer Radar release. **No pathfinder / path lines.**
+# Radar — POE2Fixer Plugin SDK Example
 
-Current version: **AltRadar v0.1.0**
+Current version: 1.0.6
 
-## Performance
+Requires POE2Fixer 364 or newer.
 
-- Overlay draws from **baked caches** rebuilt on area change only (not per frame).
-- Walkable mesh is decimated (default 4×) and pre-projected to screen space.
-- POI targets use `EnumerateTgtLocations` once per area, not every frame.
-- `SetIncludeSleepingEntities` is enabled **only** during Add POI / Add Entity map picker.
+Minimal radar overlay plugin demonstrating the v6 Plugin SDK. Draws
+monsters / NPCs / chests / area transitions and the walkable map onto
+the in-game large map.
+
+## What It Does
+
+Hooks into POE2Fixer's plugin system. When enabled, it draws colored
+dots on the in-game large map for nearby entities, plus a translucent
+walkable-tile overlay. Per-rarity monster colors, NPCs, chests
+(closed vs opened), and area transitions are configurable from the
+Plugins settings tab inside POE2Fixer.
 
 ## Install
 
-1. Build `AltRadar.sln` Release|x64 → `bin/Release/AltRadar.dll`
-2. Copy into POE2Fixer:
+Install it from POE2Fixer → Plugins → Plugin Manager (one click, updates included), or download `Radar.zip` from [Releases](https://github.com/POEFixer/Radar/releases/latest) and extract it into the POE2Fixer folder (it creates `Plugins\Radar\`). Then enable the plugin in the Plugins tab.
 
-```
-POE2Fixer/Plugins/AltRadar/
-  AltRadar.dll
-```
+## Build from source
 
-3. Enable **Alt Radar** in the Plugins tab.
+This repository is the plugin folder from the POE2Fixer source tree (`Plugins/Radar/`) together with the host files it compiles against, kept at the same relative paths:
 
-On first run, Alt Radar creates `logs/`, `config/`, `config/settings.json`,
-`config/display_rules.json`, and `config/targets/`.
+- `POEFixer/plugin_sdk/` - the POE2Fixer Plugin SDK v6 headers (`PluginAbi.h`, `PluginSDK.h`)
+- `POEFixer/imgui/` - the Dear ImGui sources the DLL compiles against
+- `tools/plugin_i18n/gen.py` - the translation tool: after editing `Plugins/Radar/lang/en.json` run `python tools/plugin_i18n/gen.py Plugins/Radar` (it rewrites the embedded English header); `--gate` checks every language file and the keys the sources use
 
-`config/display_rules.json`, `config/targets/acts.json`,
-`config/targets/endgame.json`, and `config/targets/ignore.json` are embedded in
-`AltRadar.dll` and generated on first run if missing.
-
-- Existing target JSON files are never overwritten.
-- Existing `config/display_rules.json` is never overwritten.
-- You may edit generated target JSON files directly.
-- Delete generated `display_rules.json` or target JSON to regenerate the default
-  copy on next start.
-- If a generated file is corrupt, Alt Radar logs a warning and uses embedded
-  defaults in memory without overwriting the corrupt file.
-- `config/targets/user.json` stays separate and is only created when user edits
-  exist.
-
-Minimum package remains:
-
-```text
-POE2Fixer/Plugins/AltRadar/
-  AltRadar.dll
-```
-
-## Settings UI
-
-Open the Plugins tab → **Alt Radar** → three tabs:
-
-- **General Settings** — overlay toggle, walkable map, visibility rules
-- **Display Rules** — generated vector marker rules and sizes
-- **Objects** — POI targets by area, Add POI/Entity from map
-
-## SDK
-
-Targets Plugin SDK **v6**. Bundled headers in `sdk/` must match the host.
-
-## Build
-
-```text
-MSBuild AltRadar.sln -p:Configuration=Release -p:Platform=x64
-```
-
-Requires Visual Studio 2022 Build Tools (v143), Windows SDK, D3D11.
+1. Install Visual Studio 2022 with the "Desktop development with C++" workload (MSVC v143, Windows 10/11 SDK).
+2. Open `Radar.sln`, select **Release | x64** and build the solution.
+3. The plugin is written to `x64\Release\Plugins\Radar\Radar.dll` (Release builds carry no debug information, see `Directory.Build.targets`).
+4. Copy `Radar.dll` into `Plugins\Radar\` next to the POE2Fixer executable, together with `Plugins\Radar\lang` from this repository (same folder names).
