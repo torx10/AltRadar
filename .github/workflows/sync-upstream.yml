@@ -1,15 +1,22 @@
 name: Build and sync upstream
 
-# push:              build AltRadar and publish AltRadar.dll as a release.
-# schedule / manual: merge POEFixer/Radar into main if it merges cleanly and still
-#                    builds, then push and release. Conflicts or a broken build fail
-#                    the run (GitHub emails you) and push nothing.
+# push:                build AltRadar, run the self-test, replace the "latest" release.
+# schedule / manual:   merge POEFixer/Radar into main if it merges cleanly and still
+#                      builds, then push and replace "latest". Conflicts or a broken
+#                      build fail the run (GitHub emails you) and push nothing.
+# manual with a ref:   only build that commit/branch/tag; the DLL is attached to the
+#                      run as an artifact (no release, nothing pushed).
 on:
   push:
     branches: [main, restructure/upstream-layout]
   schedule:
     - cron: "17 6 * * *"
   workflow_dispatch:
+    inputs:
+      ref:
+        description: "Commit, branch or tag to build (DLL appears under the run's Artifacts). Leave empty to sync with upstream."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -17,18 +24,20 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
+    env:
+      MODE: ${{ github.event_name == 'push' && 'release' || (github.event_name == 'workflow_dispatch' && inputs.ref != '' && 'old') || 'sync' }}
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'push' && github.sha || 'main' }}
+          ref: ${{ github.event_name == 'push' && github.sha || (github.event_name == 'workflow_dispatch' && inputs.ref != '' && inputs.ref) || 'main' }}
           fetch-depth: 0
 
       - name: Merge upstream
         id: merge
-        if: github.event_name != 'push'
+        if: env.MODE == 'sync'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -46,11 +55,21 @@ jobs:
           fi
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
+      - name: Decide whether to build
+        id: go
+        run: echo "build=${{ env.MODE != 'sync' || steps.merge.outputs.changed == 'true' }}" >> "$GITHUB_OUTPUT"
+
+      - name: Self-test
+        if: steps.go.outputs.build == 'true' && hashFiles('Plugins/AltRadar/tests/self_test.cpp') != ''
+        run: |
+          g++ -std=c++20 -static -IPlugins/AltRadar -IPOEFixer/imgui Plugins/AltRadar/tests/self_test.cpp -o self_test.exe
+          ./self_test.exe
+
       - uses: microsoft/setup-msbuild@v2
-        if: github.event_name == 'push' || steps.merge.outputs.changed == 'true'
+        if: steps.go.outputs.build == 'true'
 
       - name: Build AltRadar
-        if: github.event_name == 'push' || steps.merge.outputs.changed == 'true'
+        if: steps.go.outputs.build == 'true'
         shell: pwsh  # setup-msbuild puts msbuild on the PowerShell PATH, not bash's
         run: msbuild AltRadar.sln -p:Configuration=Release -p:Platform=x64 -m
 
@@ -58,16 +77,25 @@ jobs:
         if: steps.merge.outputs.changed == 'true'
         run: git push origin HEAD:main
 
-      # Pushes made by this workflow don't start new runs, so the sync releases here too.
-      - name: Publish release
-        if: github.event_name == 'push' || steps.merge.outputs.changed == 'true'
+      # Older commits kept the project at the repo root, so look for the DLL anywhere.
+      - name: Attach DLL to this run
+        if: env.MODE == 'old'
+        uses: actions/upload-artifact@v4
+        with:
+          name: AltRadar-dll
+          path: "**/bin/Release/AltRadar.dll"
+          if-no-files-found: error
+
+      # One rolling release. Pushes made by this workflow don't start new runs, so the sync releases here too.
+      - name: Replace the "latest" release
+        if: steps.go.outputs.build == 'true' && env.MODE != 'old'
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ github.event_name == 'push' && github.ref_name || 'main' }}
+          BRANCH: ${{ env.MODE == 'release' && github.ref_name || 'main' }}
         run: |
           sha=$(git rev-parse HEAD)
-          prerelease=$([ "$BRANCH" = main ] || echo --prerelease)
-          gh release create "build-${{ github.run_number }}" Plugins/AltRadar/bin/Release/AltRadar.dll \
-            --target "$sha" $prerelease \
-            --title "AltRadar build ${{ github.run_number }} ($BRANCH, ${sha:0:7})" \
-            --notes "Built from \`$BRANCH\` at $sha. Copy AltRadar.dll into POE2Fixer/Plugins/AltRadar/."
+          gh release delete latest --cleanup-tag --yes || true
+          gh release create latest Plugins/AltRadar/bin/Release/AltRadar.dll \
+            --target "$sha" --latest \
+            --title "AltRadar latest ($BRANCH, ${sha:0:7})" \
+            --notes "Built from \`$BRANCH\` at $sha. Copy AltRadar.dll into POE2Fixer/Plugins/AltRadar/. To build an older commit: Actions → Build and sync upstream → Run workflow, and enter the commit."
