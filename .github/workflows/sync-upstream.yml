@@ -1,8 +1,12 @@
-name: Sync upstream
+name: Build and sync upstream
 
-# Merges POEFixer/Radar into main when it merges cleanly and AltRadar still builds.
-# Conflicts or a broken build fail the run (GitHub emails you) and push nothing.
+# push:              build AltRadar and publish AltRadar.dll as a release.
+# schedule / manual: merge POEFixer/Radar into main if it merges cleanly and still
+#                    builds, then push and release. Conflicts or a broken build fail
+#                    the run (GitHub emails you) and push nothing.
 on:
+  push:
+    branches: [main, restructure/upstream-layout]
   schedule:
     - cron: "17 6 * * *"
   workflow_dispatch:
@@ -11,7 +15,7 @@ permissions:
   contents: write
 
 jobs:
-  sync:
+  build:
     runs-on: windows-latest
     defaults:
       run:
@@ -19,11 +23,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.event_name == 'push' && github.sha || 'main' }}
           fetch-depth: 0
 
       - name: Merge upstream
         id: merge
+        if: github.event_name != 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -42,12 +47,26 @@ jobs:
           echo "changed=true" >> "$GITHUB_OUTPUT"
 
       - uses: microsoft/setup-msbuild@v2
-        if: steps.merge.outputs.changed == 'true'
+        if: github.event_name == 'push' || steps.merge.outputs.changed == 'true'
 
       - name: Build AltRadar
-        if: steps.merge.outputs.changed == 'true'
+        if: github.event_name == 'push' || steps.merge.outputs.changed == 'true'
         run: msbuild AltRadar.sln -p:Configuration=Release -p:Platform=x64 -m
 
-      - name: Push
+      - name: Push merge
         if: steps.merge.outputs.changed == 'true'
         run: git push origin HEAD:main
+
+      # Pushes made by this workflow don't start new runs, so the sync releases here too.
+      - name: Publish release
+        if: github.event_name == 'push' || steps.merge.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event_name == 'push' && github.ref_name || 'main' }}
+        run: |
+          sha=$(git rev-parse HEAD)
+          prerelease=$([ "$BRANCH" = main ] || echo --prerelease)
+          gh release create "build-${{ github.run_number }}" Plugins/AltRadar/bin/Release/AltRadar.dll \
+            --target "$sha" $prerelease \
+            --title "AltRadar build ${{ github.run_number }} ($BRANCH, ${sha:0:7})" \
+            --notes "Built from \`$BRANCH\` at $sha. Copy AltRadar.dll into POE2Fixer/Plugins/AltRadar/."
