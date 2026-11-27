@@ -562,13 +562,14 @@ public:
         return areas;
     }
 
-    // Endgame when the bundled files say so or the area id looks like a map (areas only the user
-    // added have no Acts/Endgame source).
-    bool IsEndgameArea(std::string_view areaKey) const {
+    // Endgame when the bundled files say so, the area id looks like a map (areas only the user added
+    // have no Acts/Endgame source), or the area level is 65+ (maps are; WorldAreas 0.5.5).
+    bool IsEndgameArea(std::string_view areaKey, int areaLevel = 0) const {
         const std::string key = NormalizeAreaKey(std::string(areaKey));
         const auto it = areaSource.find(key);
         return (it != areaSource.end() && it->second == "Endgame")
-               || (key.size() >= 3 && (key.rfind("MAP", 0) == 0 || key.rfind("SANCTUM", 0) == 0));
+               || (key.size() >= 3 && (key.rfind("MAP", 0) == 0 || key.rfind("SANCTUM", 0) == 0))
+               || areaLevel >= 65;
     }
 
     std::vector<const TargetEntry*> GetTargetsForArea(std::string_view areaHash,

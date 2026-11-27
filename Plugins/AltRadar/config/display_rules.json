@@ -1017,7 +1017,7 @@
             "Label": "Vivid",
             "Life": "",
             "MatchTerms": [
-                "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
+                "MiscellaneousObjects/Azmeri/AzmeriResource"
             ],
             "Models": [
                 "wisp_warden"
@@ -1055,7 +1055,7 @@
             "Label": "Primal",
             "Life": "",
             "MatchTerms": [
-                "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
+                "MiscellaneousObjects/Azmeri/AzmeriResource"
             ],
             "Models": [
                 "wisp_primal"
@@ -1093,7 +1093,7 @@
             "Label": "Wild",
             "Life": "",
             "MatchTerms": [
-                "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
+                "MiscellaneousObjects/Azmeri/AzmeriResource"
             ],
             "Models": [
                 "wisp_vodoo"
@@ -1131,7 +1131,7 @@
             "Label": "Sacred",
             "Life": "",
             "MatchTerms": [
-                "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
+                "MiscellaneousObjects/Azmeri/AzmeriResource"
             ],
             "Models": [
                 "wisp_sacred"
@@ -1169,7 +1169,7 @@
             "Label": "Wisps",
             "Life": "",
             "MatchTerms": [
-                "MiscellaneousObjects/Azmeri/AzmeriResourceBase"
+                "MiscellaneousObjects/Azmeri/AzmeriResource"
             ],
             "Mods": [],
             "Name": "Unknown Wisps",
@@ -2414,5 +2414,5 @@
             "UseRuneshapeColor": false
         }
     ],
-    "SchemaVersion": 4
+    "SchemaVersion": 5
 }

@@ -440,7 +440,7 @@ private:
         const std::string area = m_overlay.targets.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
         RadarData::RoomTarget room;
         room.pattern = hovered->Name;  // the exact room; widen it with * in the editor
-        room.category = m_overlay.targets.IsEndgameArea(area) ? "Endgame" : "Acts";
+        room.category = m_overlay.targets.IsEndgameArea(area, snap.CurrentAreaLevel) ? "Endgame" : "Acts";
         room.area = area;
         room.look.name = RoomShortName(hovered->Name);
         room.look.category = "User";

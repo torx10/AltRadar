@@ -14,7 +14,7 @@ namespace RadarData {
 
 class DisplayRulesStore {
 public:
-    static constexpr int kSchemaVersion = 4;
+    static constexpr int kSchemaVersion = 5;
 
     // Changes to the stock rules, applied once to a file older than `version`. After that the file
     // carries the new version, so a rule the user deletes or edits afterwards stays that way.
@@ -38,6 +38,9 @@ public:
         // Azmeri wisp deposits were caught by the size-0 rule that hides other objects. Kinds by model.
         {4, {"stock.wisps_vivid", "stock.wisps_primal", "stock.wisps_wild", "stock.wisps_sacred",
              "stock.azmeri_wisps"}, {}, {}},
+        // Special deposits use AzmeriResourcePrimalist* paths, not only AzmeriResourceBase.
+        {5, {}, {"stock.wisps_vivid", "stock.wisps_primal", "stock.wisps_wild", "stock.wisps_sacred",
+                 "stock.azmeri_wisps"}, {}},
     };
 
     static void CopyMatchConditions(const DisplayRule& from, DisplayRule& to) {

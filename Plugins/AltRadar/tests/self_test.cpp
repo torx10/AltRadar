@@ -208,6 +208,7 @@ static void TestChestPathsReachTheRightRule() {
     // Azmeri wisp deposits (MiscObjects AzmeriDustCloud): one path for every kind, shown as an
     // object instead of falling into the size-0 catch-all that hides other objects.
     assert(firstPathRule("Metadata/MiscellaneousObjects/Azmeri/AzmeriResourceBase", "Object") == "stock.azmeri_wisps");
+    assert(firstPathRule("Metadata/MiscellaneousObjects/Azmeri/AzmeriResourcePrimalistBig", "Object") == "stock.azmeri_wisps");
     assert(firstPathRule("Metadata/MiscellaneousObjects/SomethingElse", "Object") == "stock.delirium_bomb");
 }
 
@@ -264,6 +265,18 @@ static void TestDisplayRulesUpgrade(const fs::path& pluginDir) {
     assert(IndexOf(fromV2, "stock.ezomyte_strongbox") == SIZE_MAX);
     assert(IndexOf(fromV2, "stock.abyssal_strongbox") != SIZE_MAX);
     assert(IndexOf(fromV2, "stock.azmeri_wisps") != SIZE_MAX);
+
+    // A schema-4 file (the first wisp build) gets the wider wisp path, keeping its colour.
+    auto v4 = defaults;
+    auto& wild = v4[IndexOf(v4, "stock.wisps_wild")];
+    wild.matchTerms = {"MiscellaneousObjects/Azmeri/AzmeriResourceBase"};
+    wild.markerColor = {9, 9, 9, 255};
+    WriteRulesFile(pluginDir, v4, 4);
+    std::vector<DisplayRule> fromV4;
+    DisplayRulesStore::Load(pluginDir, fromV4);
+    const auto& wildNow = fromV4[IndexOf(fromV4, "stock.wisps_wild")];
+    assert(wildNow.matchTerms == std::vector<std::string>{"MiscellaneousObjects/Azmeri/AzmeriResource"});
+    assert(wildNow.markerColor.r == 9);
 }
 
 // Stand-in for PluginSDK::AreaRoom (the SDK header needs Windows).
@@ -426,6 +439,12 @@ static void TestWispKinds() {
 
 // First run gets the Wildwood feature rooms; every room file of AzmeriFeatureRooms matches one.
 static void TestWildwoodRoomTargets(const fs::path& pluginDir) {
+    // The Wildwood is MapUniqueWildwood, level 65, IsMapArea (WorldAreas 0.5.5): Endgame by id or by level.
+    TargetDatabase db;
+    assert(db.IsEndgameArea("MapUniqueWildwood"));
+    assert(db.IsEndgameArea("The Viridian Wildwood", 65));
+    assert(!db.IsEndgameArea("G1_1", 12));
+
     RoomTargetStore store;
     store.Load(pluginDir);  // no rooms.json yet
     assert(store.targets.size() == 14);

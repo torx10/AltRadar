@@ -458,7 +458,7 @@ struct PoiDrawCache {
                         const RadarData::TargetDatabase& db, const RadarData::RoomTargetStore& roomTargets,
                         const RadarData::IconTables& icons) {
         const std::string area = db.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
-        const auto targets = roomTargets.ForArea(area, db.IsEndgameArea(area));
+        const auto targets = roomTargets.ForArea(area, db.IsEndgameArea(area, snap.CurrentAreaLevel));
         if (targets.empty()) return;
         const auto rooms = ctx->Terrain.GetAreaRooms();
         if (!rooms.Ready) return;
