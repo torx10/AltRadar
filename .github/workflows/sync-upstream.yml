@@ -94,11 +94,24 @@ jobs:
           BRANCH: ${{ env.MODE == 'release' && github.ref_name || 'main' }}
         run: |
           sha=$(git rev-parse HEAD)
+          # Notes list the commits since the build the old release was made from (else the last 10).
+          prev=$(gh release view latest --json targetCommitish --jq .targetCommitish 2>/dev/null || true)
+          if [ -n "$prev" ] && git merge-base --is-ancestor "$prev" "$sha" 2>/dev/null; then range=("$prev..$sha"); else range=(-10 "$sha"); fi
+          {
+            echo "Built from \`$BRANCH\` at $sha. Copy AltRadar.dll into POE2Fixer/Plugins/AltRadar/."
+            echo
+            echo "## Changes"
+            echo
+            changes=$(git log --no-merges --format='### %s%n%n%b' "${range[@]}" | grep -vE '^(Co-Authored-By|Claude-Session):' || true)
+            echo "${changes:-No new commits since the last build.}"
+            echo
+            echo "To build an older commit: Actions → Build and sync upstream → Run workflow, and enter the commit."
+          } > release-notes.md
           gh release delete latest --cleanup-tag --yes || true
           gh release create latest Plugins/AltRadar/bin/Release/AltRadar.dll \
             --target "$sha" --latest \
             --title "AltRadar latest ($BRANCH, ${sha:0:7})" \
-            --notes "Built from \`$BRANCH\` at $sha. Copy AltRadar.dll into POE2Fixer/Plugins/AltRadar/. To build an older commit: Actions → Build and sync upstream → Run workflow, and enter the commit."
+            --notes-file release-notes.md
           for t in $(gh release list --limit 100 --json tagName --jq '.[].tagName'); do
             [ "$t" = latest ] || gh release delete "$t" --cleanup-tag --yes
           done
