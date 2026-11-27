@@ -99,3 +99,6 @@ jobs:
             --target "$sha" --latest \
             --title "AltRadar latest ($BRANCH, ${sha:0:7})" \
             --notes "Built from \`$BRANCH\` at $sha. Copy AltRadar.dll into POE2Fixer/Plugins/AltRadar/. To build an older commit: Actions → Build and sync upstream → Run workflow, and enter the commit."
+          for t in $(gh release list --limit 100 --json tagName --jq '.[].tagName'); do
+            [ "$t" = latest ] || gh release delete "$t" --cleanup-tag --yes
+          done
