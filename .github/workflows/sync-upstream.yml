@@ -8,7 +8,7 @@ name: Build and sync upstream
 #                      run as an artifact (no release, nothing pushed).
 on:
   push:
-    branches: [main, restructure]
+    branches: [main, reorg]
   schedule:
     - cron: "17 6 * * *"
   workflow_dispatch:
