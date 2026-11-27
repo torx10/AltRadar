@@ -865,6 +865,7 @@ class RadarOverlay {
 public:
     RadarData::RadarConfig        cfg;
     RadarData::TargetDatabase     targets;
+    RadarData::RoomTargetStore    roomTargets;
     RadarData::IconTables         icons;
     TerrainTexture                terrain;
     RadarPerf::AreaCacheState     cache;
@@ -971,10 +972,10 @@ public:
         if (current.Data() != walkable.Data()) walkable = std::move(current);
 
         if (cache.NeedsFullRebuild(snap, walkable.Data())) {
-            cache.RebuildAll(ctx, snap, walkable, cfg, targets, icons);
+            cache.RebuildAll(ctx, snap, walkable, cfg, targets, roomTargets, icons);
         } else {
             cache.PollPoiDiscovery(ctx, snap, cfg, targets);
-            cache.RebuildPoiIfNeeded(ctx, snap, cfg, targets, icons);
+            cache.RebuildPoiIfNeeded(ctx, snap, cfg, targets, roomTargets, icons);
             if (cache.NeedsEntityRebuild(snap))
                 cache.RebuildEntitiesOnly(ctx, snap, cfg, targets, icons);
         }

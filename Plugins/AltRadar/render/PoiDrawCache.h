@@ -279,9 +279,10 @@ struct PoiDrawCache {
 
     void Rebuild(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
                  const RadarData::RadarConfig& cfg, const RadarData::TargetDatabase& db,
-                 const RadarData::IconTables& icons) {
+                 const RadarData::RoomTargetStore& roomTargets, const RadarData::IconTables& icons) {
         Clear();
         if (!ctx || !cfg.ShowImportantPOI) return;
+        AddRoomTargets(ctx, snap, db, roomTargets, icons);
 
         const auto targets = db.GetTargetsForArea(snap.CurrentAreaHash, snap.CurrentAreaName);
         if (targets.empty()) return;
@@ -449,22 +450,25 @@ struct PoiDrawCache {
                                        e.TerrainHeight, false));
             }
         }
+    }
 
-        // Room targets: a marker at the centre of each matching room of the area layout.
-        if (std::none_of(targets.begin(), targets.end(),
-                         [](const auto* t) { return !t->roomPattern.empty(); }))
-            return;
+    // A marker at the centre of each room matched by the area's room targets.
+    void AddRoomTargets(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
+                        const RadarData::TargetDatabase& db, const RadarData::RoomTargetStore& roomTargets,
+                        const RadarData::IconTables& icons) {
+        const std::string area = db.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
+        const auto targets = roomTargets.ForArea(area, db.IsEndgameArea(area));
+        if (targets.empty()) return;
         const auto rooms = ctx->Terrain.GetAreaRooms();
         if (!rooms.Ready) return;
         for (const auto* t : targets) {
-            if (t->roomPattern.empty()) continue;
-            for (const auto* room : RadarData::SelectRoomTargets(rooms.Rooms, t->roomPattern,
-                                                                t->expectedCount,
+            for (const auto* room : RadarData::SelectRoomTargets(rooms.Rooms, t->pattern,
+                                                                t->look.expectedCount,
                                                                 snap.Player.GridPositionX,
                                                                 snap.Player.GridPositionY)) {
                 const float z = ctx->Terrain.GetTerrainHeight(static_cast<int>(room->GridX),
                                                              static_cast<int>(room->GridY));
-                pois.push_back(MakePoi(*t, icons, room->GridX, room->GridY, z, false));
+                pois.push_back(MakePoi(t->look, icons, room->GridX, room->GridY, z, false));
             }
         }
     }

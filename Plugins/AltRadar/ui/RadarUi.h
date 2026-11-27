@@ -49,9 +49,13 @@ struct UiState {
     bool        editModalOpen = false;
     RadarData::TargetEntry editTarget;
     std::string editAreaKey;
-    bool        editAllAreas = false;  // room targets: save under "*" instead of editAreaKey
     bool        editIsNew = false;
     size_t      editStorageIndex = SIZE_MAX;
+
+    bool                  editRoomOpen = false;
+    RadarData::RoomTarget editRoom;
+    size_t                editRoomIndex = SIZE_MAX;  // SIZE_MAX: a new room target
+    bool                  editRoomGlobal = false;
 };
 
 struct RulePickerRow {
@@ -1166,74 +1170,6 @@ inline void DrawRuleOpacitySlider(const char* label, RadarData::Rgba8& color, fl
         color.a = static_cast<uint8_t>((opacity * 255 + 50) / 100);
 }
 
-enum class BuiltinRuleGroup {
-    Base,
-    Chest,
-    Breach,
-    Delirium,
-    Expedition,
-};
-
-struct BuiltinRuleRef {
-    const char*      title;
-    const char*      key;
-    const char*      summary;
-    BuiltinRuleGroup group;
-};
-
-inline RadarData::DisplayRule BuildBuiltinRuleTemplate(const BuiltinRuleRef& ref) {
-    RadarData::DisplayRule rule;
-    rule.name = ref.title;
-    if (std::strcmp(ref.key, "Player") == 0 || std::strcmp(ref.key, "Leader") == 0
-        || std::strcmp(ref.key, "Self") == 0) {
-        rule.categories = {"Player"};
-    } else if (std::strcmp(ref.key, "NPC") == 0 || std::strcmp(ref.key, "Special NPC") == 0) {
-        rule.categories = {"Npc"};
-    } else if (std::strcmp(ref.key, "Friendly") == 0) {
-        rule.categories = {"Monster"};
-        rule.reaction = "Friendly";
-    } else if (std::strcmp(ref.key, "Normal Monster") == 0) {
-        rule.categories = {"Monster"};
-        rule.rarity = "Normal";
-        rule.reaction = "Hostile";
-    } else if (std::strcmp(ref.key, "Magic Monster") == 0) {
-        rule.categories = {"Monster"};
-        rule.rarity = "Magic";
-        rule.reaction = "Hostile";
-    } else if (std::strcmp(ref.key, "Rare Monster") == 0) {
-        rule.categories = {"Monster"};
-        rule.rarity = "Rare";
-        rule.reaction = "Hostile";
-    } else if (std::strcmp(ref.key, "Unique Monster") == 0
-               || std::strcmp(ref.key, "Pinnacle Boss Not Attackable") == 0) {
-        rule.categories = {"Monster"};
-        rule.rarity = "Unique";
-        rule.reaction = "Hostile";
-    } else if (std::strcmp(ref.title, "Waypoint") == 0 || std::strcmp(ref.title, "Checkpoint") == 0) {
-        rule.categories = {"Object", "Other"};
-        rule.poi = "Yes";
-        rule.matchTerms = {ref.title};
-    } else if (std::strcmp(ref.key, "Strongbox") == 0
-               || std::strcmp(ref.key, "Jeweller's Strongbox") == 0
-               || std::strcmp(ref.key, "Researcher's Strongbox") == 0
-               || std::strcmp(ref.key, "Large Strongbox") == 0
-               || std::strcmp(ref.key, "Omen Chest") == 0
-               || std::strcmp(ref.key, "Rare Chests") == 0
-               || std::strcmp(ref.key, "Magic Chests") == 0
-               || std::strcmp(ref.key, "All Other Chest") == 0
-               || std::strcmp(ref.key, "Breach Chest") == 0) {
-        rule.categories = {"Chest"};
-        rule.matchTerms = {ref.key};
-        if (std::strcmp(ref.key, "Rare Chests") == 0) rule.rarity = "Rare";
-        if (std::strcmp(ref.key, "Magic Chests") == 0) rule.rarity = "Magic";
-        if (std::strcmp(ref.key, "Omen Chest") == 0) rule.rarity = "Unique";
-    } else {
-        rule.categories = {"Object", "Other"};
-        rule.matchTerms = {ref.key};
-    }
-    return rule;
-}
-
 inline void DrawRuleEditorRowGap(float height = 6.f) { ImGui::Dummy(ImVec2(0.f, height)); }
 
 inline void DrawRuleEditorTextLabel(const char* label, float width) {
@@ -2003,7 +1939,6 @@ inline bool TargetMatchesLandmarkSearch(const RadarData::TargetEntry& target,
     if (search.empty()) return true;
     return ContainsCaseInsensitiveUi(target.name, search)
            || ContainsCaseInsensitiveUi(target.path, search)
-           || ContainsCaseInsensitiveUi(target.roomPattern, search)
            || ContainsCaseInsensitiveUi(target.category, search)
            || ContainsCaseInsensitiveUi(areaLabel, search);
 }
@@ -2017,6 +1952,27 @@ inline bool ShouldIncludeLandmarkTarget(const RadarData::TargetDatabase& db,
         && db.HasUserOverrideFor(RadarData::NormalizeAreaKey(areaKey), target))
         return false;
     return true;
+}
+
+inline void DrawTargetIconCell(const RadarData::TargetEntry& t, const RadarData::IconTables& icons) {
+    if (!t.showIcon) return;
+    const auto iconDef = RadarRender::PoiDrawCache::ResolvePoiIcon(t, icons);
+    const ImVec2 p = ImGui::GetCursorScreenPos();
+    const auto shape = iconDef.markerShape == RadarData::MarkerShape::None ? RadarData::MarkerShape::Circle
+                                                                           : iconDef.markerShape;
+    RadarRender::DrawEntityMarker(ImGui::GetWindowDrawList(), shape, p.x + 12.f, p.y + 10.f, 5.f,
+                                  iconDef.markerColor.ToImU32());
+}
+
+inline void DrawTargetIconFields(RadarData::TargetEntry& t) {
+    ImGui::Checkbox("Show as Icon", &t.showIcon);
+    if (!t.showIcon) return;
+    ImGui::DragFloat("Icon Size", &t.iconSize, 1, 5, 80);
+    DrawMarkerShapeCombo("Marker Shape", t.markerShape);
+    ImVec4 markerColor = t.markerColor.ToImVec4();
+    if (ImGui::ColorEdit4("Marker Colour", &markerColor.x,
+                          ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar))
+        t.markerColor = RadarData::Rgba8::FromImVec4(markerColor);
 }
 
 inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
@@ -2080,19 +2036,9 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
             ImGui::TextUnformatted(t.name.c_str());
         }
         ImGui::TableSetColumnIndex(2);
-        if (t.roomPattern.empty()) ImGui::TextUnformatted(t.path.c_str());
-        else ImGui::Text("room: %s", t.roomPattern.c_str());
+        ImGui::TextUnformatted(t.path.c_str());
         ImGui::TableSetColumnIndex(3);
-        if (t.showIcon) {
-            const auto iconDef = RadarRender::PoiDrawCache::ResolvePoiIcon(t, overlay.icons);
-            ImVec2 p = ImGui::GetCursorScreenPos();
-            const auto shape = iconDef.markerShape == RadarData::MarkerShape::None
-                                   ? RadarData::MarkerShape::Circle
-                                   : iconDef.markerShape;
-            RadarRender::DrawEntityMarker(ImGui::GetWindowDrawList(), shape,
-                                          p.x + 12.f, p.y + 10.f, 5.f,
-                                          iconDef.markerColor.ToImU32());
-        }
+        DrawTargetIconCell(t, overlay.icons);
         ImGui::TableSetColumnIndex(4);
         ImGui::Text("%.0f", t.iconSize);
         ImGui::TableSetColumnIndex(5);
@@ -2104,7 +2050,6 @@ inline void DrawTargetIndicesTable(RadarData::TargetDatabase& db,
         if (DrawEditButton("##edit", ImVec2(22.f, 20.f))) {
             ui.editTarget = t;
             ui.editAreaKey = areaKey;
-            ui.editAllAreas = areaKey == "*";
             ui.editIsNew = false;
             ui.editStorageIndex = idx;
             ui.editModalOpen = true;
@@ -2208,16 +2153,7 @@ inline std::string ResolveCurrentAreaKey(const PluginSDK::Snapshot& snap,
 // Campaign custom areas (User) appear under Acts; maps under Endgame.
 inline std::string ResolveCurrentAreaSection(const RadarData::TargetDatabase& db,
                                              const std::string& currentArea) {
-    if (currentArea.empty()) return "Acts";
-    const std::string key = RadarData::NormalizeAreaKey(currentArea);
-    if (auto it = db.areaSource.find(key); it != db.areaSource.end()) {
-        if (it->second == "Endgame") return "Endgame";
-        return "Acts";
-    }
-    if (key.size() >= 3
-        && (key.rfind("MAP", 0) == 0 || key.rfind("SANCTUM", 0) == 0))
-        return "Endgame";
-    return "Acts";
+    return db.IsEndgameArea(currentArea) ? "Endgame" : "Acts";
 }
 
 inline std::vector<std::string> CollectAreasForSection(const RadarData::TargetDatabase& db,
@@ -2322,8 +2258,7 @@ inline void DrawCustomTreeSection(RadarData::TargetDatabase& db, const std::stri
 
 inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
                                 const std::filesystem::path& pluginDir,
-                                RadarRender::RadarOverlay& overlay,
-                                const std::string& currentArea) {
+                                RadarRender::RadarOverlay& overlay) {
     if (!ui.editModalOpen) return;
     ImGui::SetNextWindowSize(ImVec2(480, 300), ImGuiCond_FirstUseEver);
     if (!ImGui::Begin("Edit Target", &ui.editModalOpen)) {
@@ -2334,56 +2269,20 @@ inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
     strncpy_s(nameBuf, ui.editTarget.name.c_str(), sizeof(nameBuf) - 1);
     ImGui::InputText("Name", nameBuf, sizeof(nameBuf));
     ui.editTarget.name = nameBuf;
-    const bool isRoom = !ui.editTarget.roomPattern.empty();
-    std::string saveKey = ui.editAreaKey;
-    if (isRoom) {
-        char roomBuf[512];
-        strncpy_s(roomBuf, ui.editTarget.roomPattern.c_str(), sizeof(roomBuf) - 1);
-        // An emptied pattern would turn this into a path landmark, so keep the old one.
-        if (ImGui::InputText("Room pattern", roomBuf, sizeof(roomBuf)) && roomBuf[0])
-            ui.editTarget.roomPattern = roomBuf;
-        if (ImGui::IsItemHovered())
-            ImGui::SetTooltip("The whole room name must match; * matches anything, e.g. *breach*.");
-        ImGui::Checkbox("Enabled", &ui.editTarget.enabled);
-        ImGui::DragInt("Count", &ui.editTarget.expectedCount, 1, 0, 99);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("0 = every matching room, N = the N nearest to you.");
-        ImGui::Checkbox("All areas", &ui.editAllAreas);
-        saveKey = ui.editAllAreas ? std::string("*")
-                                  : (ui.editAreaKey == "*" ? currentArea : ui.editAreaKey);
-    } else {
-        char pathBuf[512];
-        strncpy_s(pathBuf, ui.editTarget.path.c_str(), sizeof(pathBuf) - 1);
-        ImGui::InputText("Metadata Path", pathBuf, sizeof(pathBuf));
-        ui.editTarget.path = pathBuf;
-        ImGui::Checkbox("Enabled", &ui.editTarget.enabled);
-        ImGui::DragInt("Count", &ui.editTarget.expectedCount, 1, 1, 99);
-    }
-    ImGui::Checkbox("Show as Icon", &ui.editTarget.showIcon);
-    if (ui.editTarget.showIcon) {
-        ImGui::DragFloat("Icon Size", &ui.editTarget.iconSize, 1, 5, 80);
-        DrawMarkerShapeCombo("Marker Shape", ui.editTarget.markerShape);
-        ImVec4 markerColor = ui.editTarget.markerColor.ToImVec4();
-        if (ImGui::ColorEdit4("Marker Colour", &markerColor.x,
-                              ImGuiColorEditFlags_NoInputs | ImGuiColorEditFlags_AlphaBar))
-            ui.editTarget.markerColor = RadarData::Rgba8::FromImVec4(markerColor);
-    }
-    const bool needsArea = isRoom && saveKey.empty();
-    if (needsArea) ImGui::TextDisabled("Enter an area to save a room target for this area only.");
-    ImGui::BeginDisabled(needsArea);
-    const bool save = ImGui::Button("Save", ImVec2(90, 0));
-    ImGui::EndDisabled();
-    if (save) {
+    char pathBuf[512];
+    strncpy_s(pathBuf, ui.editTarget.path.c_str(), sizeof(pathBuf) - 1);
+    ImGui::InputText("Metadata Path", pathBuf, sizeof(pathBuf));
+    ui.editTarget.path = pathBuf;
+    ImGui::Checkbox("Enabled", &ui.editTarget.enabled);
+    ImGui::DragInt("Count", &ui.editTarget.expectedCount, 1, 1, 99);
+    DrawTargetIconFields(ui.editTarget);
+    if (ImGui::Button("Save", ImVec2(90, 0))) {
         if (ui.editStorageIndex < db.storage.size()
             && db.storage[ui.editStorageIndex].category != "User") {
             db.storage[ui.editStorageIndex] = ui.editTarget;
             db.SaveBundledOverride(ui.editStorageIndex, pluginDir);
         } else {
-            // Changing a room target's scope moves it to the other area bucket.
-            if (ui.editStorageIndex < db.storage.size() && saveKey != ui.editAreaKey) {
-                db.RemoveUserTargetFromArea(ui.editStorageIndex, ui.editAreaKey);
-                ui.editStorageIndex = SIZE_MAX;
-            }
-            db.UpsertUserTarget(saveKey, ui.editTarget, ui.editStorageIndex);
+            db.UpsertUserTarget(ui.editAreaKey, ui.editTarget, ui.editStorageIndex);
             db.SaveUser(pluginDir);
         }
         overlay.cache.InvalidatePoi();
@@ -2392,6 +2291,140 @@ inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
     }
     ImGui::SameLine();
     if (ImGui::Button("Cancel", ImVec2(90, 0))) ui.editModalOpen = false;
+    ImGui::End();
+}
+
+inline void SaveRoomTargets(RadarRender::RadarOverlay& overlay, const std::filesystem::path& pluginDir) {
+    overlay.roomTargets.Save(pluginDir);
+    overlay.cache.InvalidatePoi();
+}
+
+inline void DrawRoomTargetRows(UiState& ui, RadarRender::RadarOverlay& overlay,
+                               const std::filesystem::path& pluginDir, const std::string& category,
+                               const std::string& area) {
+    if (!ImGui::BeginTable("rooms", 7, ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg
+                                           | ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoHostExtendX))
+        return;
+    ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed, 24.f);
+    ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_WidthFixed, 150.f);
+    ImGui::TableSetupColumn("Pattern", ImGuiTableColumnFlags_WidthFixed, 480.f);
+    ImGui::TableSetupColumn("Icon", ImGuiTableColumnFlags_WidthFixed, 36.f);
+    ImGui::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed, 40.f);
+    ImGui::TableSetupColumn("Edit", ImGuiTableColumnFlags_WidthFixed, 30.f);
+    ImGui::TableSetupColumn("Del", ImGuiTableColumnFlags_WidthFixed, 30.f);
+    ImGui::TableHeadersRow();
+    auto& targets = overlay.roomTargets.targets;
+    for (size_t i = 0; i < targets.size(); ++i) {
+        auto& r = targets[i];
+        if (r.category != category || r.area != area) continue;
+        ImGui::PushID(static_cast<int>(i));
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        if (ImGui::Checkbox("##en", &r.look.enabled)) SaveRoomTargets(overlay, pluginDir);
+        ImGui::TableSetColumnIndex(1);
+        ImGui::TextUnformatted(r.look.name.c_str());
+        ImGui::TableSetColumnIndex(2);
+        ImGui::TextUnformatted(r.pattern.c_str());
+        ImGui::TableSetColumnIndex(3);
+        DrawTargetIconCell(r.look, overlay.icons);
+        ImGui::TableSetColumnIndex(4);
+        if (r.look.expectedCount > 0) ImGui::Text("%d", r.look.expectedCount);
+        else ImGui::TextUnformatted("all");
+        PushPoiActionButtonStyle();
+        ImGui::TableSetColumnIndex(5);
+        CenterCursorForCell(22.f, 20.f);
+        if (DrawEditButton("##edit", ImVec2(22.f, 20.f))) {
+            ui.editRoom = r;
+            ui.editRoomIndex = i;
+            ui.editRoomGlobal = r.area == "*";
+            ui.editRoomOpen = true;
+        }
+        ImGui::TableSetColumnIndex(6);
+        CenterCursorForCell(22.f, 20.f);
+        const bool remove = DrawTrashButton("##delete", ImVec2(22.f, 20.f));
+        PopPoiActionButtonStyle();
+        ImGui::PopID();
+        if (remove) {
+            targets.erase(targets.begin() + static_cast<std::ptrdiff_t>(i));
+            if (ui.editRoomOpen && ui.editRoomIndex != SIZE_MAX && ui.editRoomIndex >= i) ui.editRoomOpen = false;
+            SaveRoomTargets(overlay, pluginDir);
+            break;
+        }
+    }
+    ImGui::EndTable();
+}
+
+// Global first, then the area you are in, then the rest, as in the FixerWiki Radar.
+inline void DrawRoomTargetSection(const char* label, const std::string& category, UiState& ui,
+                                  RadarRender::RadarOverlay& overlay,
+                                  const std::filesystem::path& pluginDir, const std::string& currentArea) {
+    if (!DrawPoiCategoryHeader(("rooms" + category).c_str(), label, false)) return;
+    std::vector<std::string> areas;
+    for (const auto& r : overlay.roomTargets.targets)
+        if (r.category == category && std::find(areas.begin(), areas.end(), r.area) == areas.end())
+            areas.push_back(r.area);
+    if (areas.empty()) ImGui::TextDisabled("No targets configured");
+    std::sort(areas.begin(), areas.end(), [&](const std::string& a, const std::string& b) {
+        auto rank = [&](const std::string& k) {
+            return k == "*" ? 0 : RadarData::AreaKeysEqual(k, currentArea) ? 1 : 2;
+        };
+        return rank(a) != rank(b) ? rank(a) < rank(b) : a < b;
+    });
+    for (const auto& area : areas) {
+        const bool current = RadarData::AreaKeysEqual(area, currentArea);
+        std::string title = area == "*" ? "Global" : overlay.targets.DisplayNameForArea(area);
+        if (current) title += " [Current Location]";
+        ImGui::SetNextItemOpen(area == "*" || current, ImGuiCond_Once);
+        if (!ImGui::TreeNode((title + "##" + area).c_str())) continue;
+        DrawRoomTargetRows(ui, overlay, pluginDir, category, area);
+        ImGui::TreePop();
+    }
+    ImGui::TreePop();
+}
+
+inline void DrawEditRoomModal(UiState& ui, RadarRender::RadarOverlay& overlay,
+                              const std::filesystem::path& pluginDir, const std::string& currentArea) {
+    if (!ui.editRoomOpen) return;
+    ImGui::SetNextWindowSize(ImVec2(520, 320), ImGuiCond_FirstUseEver);
+    if (!ImGui::Begin("Edit Room Target", &ui.editRoomOpen)) {
+        ImGui::End();
+        return;
+    }
+    auto& r = ui.editRoom;
+    char nameBuf[256];
+    strncpy_s(nameBuf, r.look.name.c_str(), sizeof(nameBuf) - 1);
+    if (ImGui::InputText("Name", nameBuf, sizeof(nameBuf))) r.look.name = nameBuf;
+    char patternBuf[512];
+    strncpy_s(patternBuf, r.pattern.c_str(), sizeof(patternBuf) - 1);
+    if (ImGui::InputTextWithHint("Room pattern", "e.g. *breach*", patternBuf, sizeof(patternBuf)))
+        r.pattern = patternBuf;
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("The whole room name must match; * matches anything. Empty matches nothing.");
+    ImGui::Checkbox("Enabled", &r.look.enabled);
+    ImGui::DragInt("Count", &r.look.expectedCount, 1, 0, 99);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("0 = every matching room, N = the N nearest to you.");
+    ImGui::Checkbox("Global (all areas in category)", &ui.editRoomGlobal);
+    ImGui::SameLine();
+    ImGui::TextDisabled("%s", r.category == "Endgame" ? "Endgame" : "Acts (Level < 65)");
+    DrawTargetIconFields(r.look);
+
+    const std::string area = ui.editRoomGlobal ? std::string("*") : (r.area == "*" ? currentArea : r.area);
+    const char* blocked = r.pattern.empty() ? "Enter a room pattern."
+                          : area.empty()    ? "Enter an area to save a target for this area only."
+                                            : nullptr;
+    if (blocked) ImGui::TextDisabled("%s", blocked);
+    ImGui::BeginDisabled(blocked != nullptr);
+    if (ImGui::Button("Save", ImVec2(90, 0))) {
+        r.area = area;
+        auto& targets = overlay.roomTargets.targets;
+        if (ui.editRoomIndex < targets.size()) targets[ui.editRoomIndex] = r;
+        else targets.push_back(r);
+        SaveRoomTargets(overlay, pluginDir);
+        ui.editRoomOpen = false;
+    }
+    ImGui::EndDisabled();
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel", ImVec2(90, 0))) ui.editRoomOpen = false;
     ImGui::End();
 }
 
@@ -2446,10 +2479,13 @@ inline void DrawLandmarksTab(RadarData::RadarConfig& cfg, RadarData::TargetDatab
                         ui, overlay, pluginDir, landmarkSearch);
     DrawAreaTreeSection(db, "Acts (Level < 65)", "Acts", currentArea, currentSection != "Endgame",
                         ui, overlay, pluginDir, landmarkSearch);
+    DrawRoomTargetSection("Room Targets (Level < 65)", "Acts", ui, overlay, pluginDir, currentArea);
+    DrawRoomTargetSection("Room Targets Endgame", "Endgame", ui, overlay, pluginDir, currentArea);
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
 
-    DrawEditTargetModal(ui, db, pluginDir, overlay, currentArea);
+    DrawEditTargetModal(ui, db, pluginDir, overlay);
+    DrawEditRoomModal(ui, overlay, pluginDir, currentArea);
 }
 
 inline void DrawSettings(RadarRender::RadarOverlay& overlay, UiState& ui,

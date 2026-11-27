@@ -275,44 +275,67 @@ static void TestSelectRoomTargets() {
     assert(SelectRoomTargets(rooms, "Delirium", 0, 0, 0).empty());
 }
 
-static TargetEntry RoomTarget(const char* name, const char* pattern) {
-    TargetEntry t;
-    t.name = name;
-    t.roomPattern = pattern;
-    t.expectedCount = 0;
-    return t;
+static RoomTarget MakeRoom(const char* name, const char* pattern, const char* category, const char* area) {
+    RoomTarget r;
+    r.pattern = pattern;
+    r.category = category;
+    r.area = area;
+    r.look.name = name;
+    r.look.expectedCount = 0;
+    return r;
 }
 
-// Room targets for one area or all areas survive a save, and two in one area stay separate.
-static void TestRoomTargetsPersist(const fs::path& pluginDir) {
+static std::vector<std::string> Names(const std::vector<const RoomTarget*>& targets) {
+    std::vector<std::string> out;
+    for (const auto* t : targets) out.push_back(t->look.name);
+    std::sort(out.begin(), out.end());
+    return out;
+}
+
+// rooms.json round trip, and which targets an area gets: its own plus its category's globals.
+static void TestRoomTargetStore(const fs::path& pluginDir) {
     {
-        TargetDatabase db;
-        db.Load(pluginDir);
-        db.UpsertUserTarget("*", RoomTarget("Any breach", "*breach*"));
-        db.UpsertUserTarget("G1_1", RoomTarget("Ritual", "*ritual*"));
-        db.UpsertUserTarget("G1_1", RoomTarget("Shrine", "*shrine*"));
-        assert(db.SaveUser(pluginDir));
+        RoomTargetStore store;
+        store.targets = {MakeRoom("Breach", "*breach*", "Acts", "*"), MakeRoom("Ritual", "*ritual*", "Acts", "G1_1"),
+                         MakeRoom("Shrine", "*shrine*", "Acts", "G1_1"), MakeRoom("Boss", "*boss*", "Endgame", "*")};
+        store.targets.back().look.iconSize = 42.f;
+        auto off = MakeRoom("Off", "*off*", "Acts", "*");
+        off.look.enabled = false;
+        store.targets.push_back(off);
+        assert(store.Save(pluginDir));
     }
+    RoomTargetStore store;
+    store.Load(pluginDir);
+    assert(store.targets.size() == 5);
+    assert(store.targets[3].look.iconSize == 42.f && store.targets[3].pattern == "*boss*");
+    assert((Names(store.ForArea("G1_1", false)) == std::vector<std::string>{"Breach", "Ritual", "Shrine"}));
+    assert((Names(store.ForArea("G2_3", false)) == std::vector<std::string>{"Breach"}));
+    assert((Names(store.ForArea("MAPBLUFF", true)) == std::vector<std::string>{"Boss"}));
+
+    WriteRaw(RoomTargetStore::PathFor(pluginDir), "{ \"RoomTargets\": [");  // broken file is kept
+    store.Load(pluginDir);
+    assert(store.targets.empty());
+    assert(fs::exists(fs::path(RoomTargetStore::PathFor(pluginDir)) += ".bad"));
+}
+
+// The first room-target build stored them in user.json with RoomPattern; they move to rooms.json.
+static void TestRoomTargetsMoveOutOfUserJson(const fs::path& pluginDir) {
+    WriteRaw(pluginDir / "config" / "targets" / "user.json", R"({
+        "G1_1": [{"Name": "Spot", "Path": "Metadata/Spot"},
+                 {"Name": "Ritual", "Path": "", "RoomPattern": "*ritual*", "ExpectedCount": 2}],
+        "MAPBLUFF": [{"Name": "Boss", "Path": "", "RoomPattern": "*boss*"}]
+    })");
     TargetDatabase db;
     db.Load(pluginDir);
-    auto names = [&](const char* area) {
-        std::vector<std::string> out;
-        for (const auto* t : db.GetTargetsForArea(area, area))
-            if (!t->roomPattern.empty()) out.push_back(t->name + "=" + t->roomPattern);
-        std::sort(out.begin(), out.end());
-        return out;
-    };
-    assert((names("G1_1") == std::vector<std::string>{"Any breach=*breach*", "Ritual=*ritual*", "Shrine=*shrine*"}));
-    assert((names("G2_3") == std::vector<std::string>{"Any breach=*breach*"}));
-    assert(db.DisplayNameForArea("*") == "Global");
-
-    // A second save must keep the all-areas target too (it used to load where SaveUser never looks).
+    for (const auto* t : db.GetTargetsForArea("G1_1", "G1_1")) assert(t->name != "Ritual");  // not a landmark
+    RoomTargetStore store;
+    assert(store.Adopt(db) == 2);
+    assert(store.targets[0].pattern == "*ritual*" && store.targets[0].area == "G1_1");
+    assert(store.targets[0].category == "Acts" && store.targets[0].look.expectedCount == 2);
+    assert(store.targets[1].category == "Endgame");
     assert(db.SaveUser(pluginDir));
-    TargetDatabase again;
-    again.Load(pluginDir);
-    bool kept = false;
-    for (const auto* t : again.GetTargetsForArea("G2_3", "G2_3")) kept |= t->roomPattern == "*breach*";
-    assert(kept);
+    const auto user = ReadAll(pluginDir / "config" / "targets" / "user.json");
+    assert(user.find("RoomPattern") == std::string::npos && user.find("Metadata/Spot") != std::string::npos);
 }
 
 int main() {
@@ -330,7 +353,8 @@ int main() {
     TestChestPathsReachTheRightRule();
     TestDisplayRulesUpgrade(dir / "plugin4");
     TestSelectRoomTargets();
-    TestRoomTargetsPersist(dir / "plugin5");
+    TestRoomTargetStore(dir / "plugin5");
+    TestRoomTargetsMoveOutOfUserJson(dir / "plugin6");
 
     fs::remove_all(dir);
     std::puts("AltRadar self-test: all checks passed");

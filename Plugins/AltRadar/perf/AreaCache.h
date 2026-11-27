@@ -147,7 +147,7 @@ struct AreaCacheState {
     void RebuildAll(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
                     PluginSDK::WalkableGridHandle& gridHandle,
                     const RadarData::RadarConfig& cfg, const RadarData::TargetDatabase& db,
-                            const RadarData::IconTables& icons) {
+                    const RadarData::RoomTargetStore& roomTargets, const RadarData::IconTables& icons) {
         const auto totalStart = std::chrono::steady_clock::now();
         MarkHeavyRebuildThisFrame();
         const bool areaChanged = snap.AreaChangeCounter != areaCounter;
@@ -162,7 +162,7 @@ struct AreaCacheState {
                                            .count();
         }
         const auto poiStart = std::chrono::steady_clock::now();
-        pois.Rebuild(ctx, snap, cfg, db, icons);
+        pois.Rebuild(ctx, snap, cfg, db, roomTargets, icons);
         if (perfDebug.captureThisFrame) {
             perfDebug.poiRebuildRan = true;
             perfDebug.poiRebuildMs = std::chrono::duration<double, std::milli>(
@@ -234,6 +234,7 @@ struct AreaCacheState {
     void RebuildPoiIfNeeded(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
                             const RadarData::RadarConfig& cfg,
                             const RadarData::TargetDatabase& db,
+                            const RadarData::RoomTargetStore& roomTargets,
                             const RadarData::IconTables& icons) {
         // An area's rooms arrive after it loads; rebuild when the host publishes a new list.
         if (const uint64_t rev = ctx ? ctx->Terrain.GetAreaRoomsRevision() : 0; rev != lastRoomsRevision) {
@@ -243,7 +244,7 @@ struct AreaCacheState {
         if (!poiDirty) return;
         MarkHeavyRebuildThisFrame();
         const auto poiStart = std::chrono::steady_clock::now();
-        pois.Rebuild(ctx, snap, cfg, db, icons);
+        pois.Rebuild(ctx, snap, cfg, db, roomTargets, icons);
         if (perfDebug.captureThisFrame) {
             perfDebug.poiRebuildRan = true;
             perfDebug.poiRebuildMs = std::chrono::duration<double, std::milli>(

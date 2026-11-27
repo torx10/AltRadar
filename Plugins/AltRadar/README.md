@@ -54,8 +54,10 @@ Open the Plugins tab → **Alt Radar** → three tabs:
 - **General Settings** — overlay toggle, walkable map, visibility rules
 - **Display Rules** — generated vector marker rules and sizes; rules can also match an entity's
   model (`Model`), which is how the Vaal, Ezomyte, Ventor's and Etched Beetle strongboxes are told apart
-- **Objects** — POI targets by area, Add POI/Entity from map, and room targets (Add Room from Map):
-  a marker at the centre of every room whose name matches a pattern, for this area or all areas
+- **Objects** — landmarks by area, Add POI/Entity from map
+- **Room Targets** (Objects tab, Add Room from Map) — a marker at the centre of every room whose
+  name matches a pattern, for one area or every area of its category (Acts or Endgame); saved in
+  `config/targets/rooms.json`
 
 ## SDK
 

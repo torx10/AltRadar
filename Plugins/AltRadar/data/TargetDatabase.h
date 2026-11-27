@@ -40,6 +40,8 @@ public:
     std::unordered_map<std::string, TargetEntry> bundledDefaults;
     TargetOverridesStore overrides;
     PatternMatcherSet ignorePatterns;
+    // Room targets an earlier build saved in user.json; RoomTargetStore::Adopt moves them to rooms.json.
+    std::vector<std::pair<std::string, nlohmann::json>> legacyRoomTargets;
 
     static TargetEntry ParseTarget(const nlohmann::json& o, const std::string& category) {
         TargetEntry t;
@@ -72,8 +74,34 @@ public:
             t.anchorTileX = o.value("AnchorTileX", 0);
             t.anchorTileY = o.value("AnchorTileY", 0);
         }
-        t.roomPattern = o.value("RoomPattern", "");
         return t;
+    }
+
+    static nlohmann::json WriteTarget(const TargetEntry& t) {
+        nlohmann::json o = {
+            {"Name", t.name},
+            {"Path", t.path},
+            {"Enabled", t.enabled},
+            {"Icon", t.showIcon},
+            {"IconName", t.iconName},
+            {"IconSize", t.iconSize},
+            {"ExpectedCount", t.expectedCount},
+            {"MarkerShape", MarkerShapeName(t.markerShape)},
+            {"MarkerColor", {t.markerColor.r, t.markerColor.g, t.markerColor.b, t.markerColor.a}},
+            {"NameColor", std::to_string(t.nameColor.r) + ", " + std::to_string(t.nameColor.g) + ", "
+                              + std::to_string(t.nameColor.b)},
+            {"BGColor", std::to_string(t.bgColor.r) + ", " + std::to_string(t.bgColor.g) + ", "
+                            + std::to_string(t.bgColor.b)},
+        };
+        if (t.hasAnchor) {
+            o["AnchorGridX"] = t.anchorGridX;
+            o["AnchorGridY"] = t.anchorGridY;
+            if (t.anchorTileX != 0 || t.anchorTileY != 0) {
+                o["AnchorTileX"] = t.anchorTileX;
+                o["AnchorTileY"] = t.anchorTileY;
+            }
+        }
+        return o;
     }
 
     static std::filesystem::path TargetConfigDir(const std::filesystem::path& pluginDir) {
@@ -174,11 +202,15 @@ public:
             if (category != "User" || !areaSource.count(areaKey))
                 areaSource[areaKey] = category;
             for (const auto& entry : it.value()) {
+                if (category == "User" && entry.contains("RoomPattern")) {
+                    legacyRoomTargets.emplace_back(areaKey, entry);
+                    continue;
+                }
                 size_t idx = storage.size();
                 storage.push_back(ParseTarget(entry, category));
                 targetAreaKeys.push_back(areaKey);
                 targetOverrideKeys.emplace_back();
-                if ((areaKey == "*" || areaKey == "GLOBAL") && category != "User") {
+                if (areaKey == "*" || areaKey == "GLOBAL") {
                     if (category == "Endgame") endgameGlobalTargets.push_back(idx);
                     else actsGlobalTargets.push_back(idx);
                 } else {
@@ -283,6 +315,7 @@ public:
         bundledDefaults.clear();
         overrides.Clear();
         ignorePatterns.patterns.clear();
+        legacyRoomTargets.clear();
         const auto targetDir = TargetConfigDir(pluginDir);
         std::string actsJson;
         std::string endgameJson;
@@ -336,33 +369,7 @@ public:
             nlohmann::json arr = nlohmann::json::array();
             for (size_t idx : indices) {
                 if (idx >= storage.size() || storage[idx].category != "User") continue;
-                const auto& t = storage[idx];
-                arr.push_back({
-                    {"Name", t.name},
-                    {"Path", t.path},
-                    {"Enabled", t.enabled},
-                    {"Icon", t.showIcon},
-                    {"IconName", t.iconName},
-                    {"IconSize", t.iconSize},
-                    {"ExpectedCount", t.expectedCount},
-                    {"MarkerShape", MarkerShapeName(t.markerShape)},
-                    {"MarkerColor", {t.markerColor.r, t.markerColor.g, t.markerColor.b,
-                                      t.markerColor.a}},
-                    {"NameColor", std::to_string(t.nameColor.r) + ", " + std::to_string(t.nameColor.g)
-                                  + ", " + std::to_string(t.nameColor.b)},
-                    {"BGColor", std::to_string(t.bgColor.r) + ", " + std::to_string(t.bgColor.g)
-                                 + ", " + std::to_string(t.bgColor.b)},
-                });
-                if (!t.roomPattern.empty()) arr.back()["RoomPattern"] = t.roomPattern;
-                if (t.hasAnchor) {
-                    auto& o = arr.back();
-                    o["AnchorGridX"] = t.anchorGridX;
-                    o["AnchorGridY"] = t.anchorGridY;
-                    if (t.anchorTileX != 0 || t.anchorTileY != 0) {
-                        o["AnchorTileX"] = t.anchorTileX;
-                        o["AnchorTileY"] = t.anchorTileY;
-                    }
-                }
+                arr.push_back(WriteTarget(storage[idx]));
             }
             if (!arr.empty()) j[area] = arr;
         }
@@ -458,7 +465,7 @@ public:
     }
 
     static bool SameTargetIdentity(const TargetEntry& a, const TargetEntry& b) {
-        if (a.path != b.path || a.roomPattern != b.roomPattern) return false;
+        if (a.path != b.path) return false;
         if (a.hasAnchor != b.hasAnchor) return !a.hasAnchor && !b.hasAnchor;
         if (!a.hasAnchor) return true;
         return a.anchorTileX == b.anchorTileX && a.anchorTileY == b.anchorTileY
@@ -521,6 +528,15 @@ public:
         return areas;
     }
 
+    // Endgame when the bundled files say so or the area id looks like a map (areas only the user
+    // added have no Acts/Endgame source).
+    bool IsEndgameArea(std::string_view areaKey) const {
+        const std::string key = NormalizeAreaKey(std::string(areaKey));
+        const auto it = areaSource.find(key);
+        return (it != areaSource.end() && it->second == "Endgame")
+               || (key.size() >= 3 && (key.rfind("MAP", 0) == 0 || key.rfind("SANCTUM", 0) == 0));
+    }
+
     std::vector<const TargetEntry*> GetTargetsForArea(std::string_view areaHash,
                                                     std::string_view areaName = {}) const {
         std::vector<const TargetEntry*> result;
@@ -532,13 +548,8 @@ public:
                     result.push_back(&storage[i]);
         };
         addIndices(actsGlobalTargets, "*");
-        if (auto it = byArea.find("*"); it != byArea.end()) addIndices(it->second, "*");  // user, all areas
         const std::string key = ResolveAreaKey(areaHash, areaName);
-        const auto srcIt = areaSource.find(key);
-        const bool isEndgameArea =
-            (srcIt != areaSource.end() && srcIt->second == "Endgame")
-            || (key.size() >= 3 && (key.rfind("MAP", 0) == 0 || key.rfind("SANCTUM", 0) == 0));
-        if (isEndgameArea) addIndices(endgameGlobalTargets, "*");
+        if (IsEndgameArea(key)) addIndices(endgameGlobalTargets, "*");
         if (auto it = byArea.find(key); it != byArea.end()) addIndices(it->second, key);
         else {
             for (const auto& [k, v] : byArea) {
@@ -559,7 +570,7 @@ public:
         // Keep Acts/Endgame source for bundled areas — only tag new areas as User.
         if (!areaSource.count(key)) {
             areaSource[key] = "User";
-            areaDisplayNames[key] = key == "*" ? "Global" : key;
+            areaDisplayNames[key] = key;
         }
     }
 

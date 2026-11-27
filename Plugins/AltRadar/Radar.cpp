@@ -102,6 +102,13 @@ public:
             RadarData::RadarLog::Instance().Warn("display_rules load failed for " + path.string() + ": unknown error");
         }
         m_overlay.targets.Load(pluginDir);
+        m_overlay.roomTargets.Load(pluginDir);
+        if (const size_t moved = m_overlay.roomTargets.Adopt(m_overlay.targets)) {
+            m_overlay.roomTargets.Save(pluginDir);
+            m_overlay.targets.SaveUser(pluginDir);
+            RadarData::RadarLog::Instance().Info("Moved " + std::to_string(moved)
+                                                 + " room targets from user.json to rooms.json");
+        }
         m_overlay.cache.InvalidatePoi();
         m_overlay.walkable = ctx()->Terrain.GetWalkableGrid();
 
@@ -207,6 +214,7 @@ public:
             RadarData::RadarLog::Instance().Warn(displayRulesNote);
         }
         m_overlay.targets.SaveUser(dir);
+        m_overlay.roomTargets.Save(dir);
     }
 
 private:
@@ -417,18 +425,19 @@ private:
                           hovered->MinTileX, hovered->MinTileY, hovered->MaxTileX, hovered->MaxTileY,
                           hovered->GridX, hovered->GridY);
         if (!clicked) return;
-        m_ui.editTarget = {};
-        m_ui.editTarget.name = RoomShortName(hovered->Name);
-        m_ui.editTarget.roomPattern = hovered->Name;
-        m_ui.editTarget.category = "User";
-        m_ui.editTarget.enabled = true;
-        m_ui.editTarget.showIcon = true;
-        m_ui.editTarget.expectedCount = 0;
-        m_ui.editAreaKey = m_overlay.targets.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
-        m_ui.editAllAreas = false;
-        m_ui.editIsNew = true;
-        m_ui.editStorageIndex = SIZE_MAX;
-        m_ui.editModalOpen = true;
+        const std::string area = m_overlay.targets.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
+        RadarData::RoomTarget room;
+        room.pattern = hovered->Name;  // the exact room; widen it with * in the editor
+        room.category = m_overlay.targets.IsEndgameArea(area) ? "Endgame" : "Acts";
+        room.area = area;
+        room.look.name = RoomShortName(hovered->Name);
+        room.look.category = "User";
+        room.look.showIcon = true;
+        room.look.expectedCount = 0;
+        m_ui.editRoom = room;
+        m_ui.editRoomIndex = SIZE_MAX;
+        m_ui.editRoomGlobal = false;
+        m_ui.editRoomOpen = true;
         EndPickerMode();
     }
 };
