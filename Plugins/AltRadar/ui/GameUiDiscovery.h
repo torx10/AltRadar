@@ -992,7 +992,7 @@ inline void DrawUiDiscoveryDiffRows(UiDiscoveryState& state, PluginSDK::Context*
                            focus ? focus->path.c_str() : row.key.c_str(),
                            row.before && row.before->visible ? "yes" : "no",
                            row.after && row.after->visible ? "yes" : "no",
-                           visibilityLabel);
+                           visibilityLabel.c_str());
         ImGui::PopStyleColor();
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.72f, 0.72f, 0.72f, 1.f));
         const std::string beforeRect = DiscoveryRectText(row.before);

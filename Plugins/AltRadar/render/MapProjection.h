@@ -64,11 +64,6 @@ inline bool IsInsideMapRect(const PluginSDK::MapData& map, float sx, float sy,
            && sy >= map.CenterY - halfH + margin && sy <= map.CenterY + halfH - margin;
 }
 
-inline float MinimapClipRadius(const PluginSDK::MapData& map, float inset = 10.f) {
-    if (!map.IsVisible) return 0.f;
-    return std::max(1.f, std::min(map.SizeX, map.SizeY) * 0.5f - inset);
-}
-
 // GridToMiniMap projects around GetMiniMapTransform().Center, not MapData.Center (host Y often wrong).
 inline void GetMinimapClipOrigin(PluginSDK::Context* ctx, const PluginSDK::MapData& map,
                                  float& cx, float& cy) {

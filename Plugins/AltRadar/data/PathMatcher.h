@@ -118,22 +118,24 @@ inline bool MatchPattern(const CompiledPattern& pattern, const CompiledCandidate
         return cand.size() >= prefix.size()
                && cand.compare(0, prefix.size(), prefix) == 0;
     }
-    size_t pi = 0, ci = 0;
-    while (pi < pat.size() && ci < cand.size()) {
-        if (pat[pi] == '*') {
+    // On a mismatch, let the last '*' swallow one more character and retry.
+    size_t pi = 0, ci = 0, starPi = std::string::npos, starCi = 0;
+    while (ci < cand.size()) {
+        if (pi < pat.size() && pat[pi] == '*') {
+            starPi = pi++;
+            starCi = ci;
+        } else if (pi < pat.size() && pat[pi] == cand[ci]) {
             ++pi;
-            if (pi >= pat.size()) return true;
-            const size_t next = cand.find(pat[pi], ci);
-            if (next == std::string::npos) return false;
-            ci = next;
-            continue;
+            ++ci;
+        } else if (starPi != std::string::npos) {
+            pi = starPi + 1;
+            ci = ++starCi;
+        } else {
+            return false;
         }
-        if (pat[pi] != cand[ci]) return false;
-        ++pi;
-        ++ci;
     }
     while (pi < pat.size() && pat[pi] == '*') ++pi;
-    return pi >= pat.size() && ci >= cand.size();
+    return pi == pat.size();
 }
 
 inline bool MatchPattern(const CompiledPattern& pattern, std::string_view candidateRaw) {

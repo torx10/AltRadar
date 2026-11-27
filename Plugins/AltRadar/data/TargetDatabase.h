@@ -120,13 +120,7 @@ public:
                                       + ": " + ec.message());
             return false;
         }
-        std::ofstream out(path, std::ios::binary);
-        if (!out.is_open()) {
-            RadarLog::Instance().Warn(std::string("Failed to create ") + label + ": " + path.string());
-            return false;
-        }
-        out.write(content.data(), static_cast<std::streamsize>(content.size()));
-        if (!out.good()) {
+        if (!WriteFileAtomic(path, content)) {
             RadarLog::Instance().Warn(std::string("Failed to write ") + label + ": " + path.string());
             return false;
         }
@@ -269,23 +263,10 @@ public:
             LoadAreaJson(j, category);
         } catch (const std::exception& ex) {
             RadarLog::Instance().Warn("Skipping target file " + path.string() + ": " + ex.what());
+            BackupUnreadableFile(path);
         } catch (...) {
             RadarLog::Instance().Warn("Skipping target file " + path.string() + ": parse failed");
-        }
-    }
-
-    void LoadIgnore(const std::filesystem::path& path) {
-        if (!std::filesystem::exists(path)) return;
-        std::ifstream in(path);
-        if (!in.is_open()) return;
-        nlohmann::json j;
-        try {
-            in >> j;
-            LoadIgnoreJson(j);
-        } catch (const std::exception& ex) {
-            RadarLog::Instance().Warn("Skipping ignore file " + path.string() + ": " + ex.what());
-        } catch (...) {
-            RadarLog::Instance().Warn("Skipping ignore file " + path.string() + ": parse failed");
+            BackupUnreadableFile(path);
         }
     }
 
@@ -390,13 +371,7 @@ public:
             RadarLog::Instance().Warn("Failed to create target config directory: " + ec.message());
             return false;
         }
-        std::ofstream out(path);
-        if (!out.is_open()) {
-            RadarLog::Instance().Warn("Failed to open user target file for save: " + path.string());
-            return false;
-        }
-        out << j.dump(4);
-        if (!out.good()) {
+        if (!WriteFileAtomic(path, j.dump(4))) {
             RadarLog::Instance().Warn("Failed to write user target file: " + path.string());
             return false;
         }
@@ -605,17 +580,6 @@ public:
     }
 
     std::vector<std::string> ListUserAreas() const { return ListAreas("User"); }
-
-    size_t CountUserTargetsInArea(const std::string& areaKey) const {
-        const std::string key = NormalizeAreaKey(areaKey);
-        auto it = byArea.find(key);
-        if (it == byArea.end()) return 0;
-        size_t n = 0;
-        for (size_t idx : it->second) {
-            if (idx < storage.size() && storage[idx].category == "User") ++n;
-        }
-        return n;
-    }
 
     bool RemoveUserTargetFromArea(size_t storageIndex, const std::string& areaKey) {
         const std::string key = NormalizeAreaKey(areaKey);

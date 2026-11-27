@@ -21,8 +21,6 @@ public:
         return IconTables::DefaultDisplayRules();
     }
 
-    static bool HasUsableRules(const std::vector<DisplayRule>& rules) { return !rules.empty(); }
-
     static bool ValidateRules(const std::vector<DisplayRule>& rules, std::string& note) {
         if (rules.empty()) {
             note = "display_rules.json resolved to zero usable rules";
@@ -124,13 +122,7 @@ public:
             note = "create config directory failed for " + path.parent_path().string() + ": " + ec.message();
             return false;
         }
-        std::ofstream out(path, std::ios::binary | std::ios::trunc);
-        if (!out.is_open()) {
-            note = "open display_rules.json for write failed: " + path.string();
-            return false;
-        }
-        out.write(content.data(), static_cast<std::streamsize>(content.size()));
-        if (!out.good()) {
+        if (!WriteFileAtomic(path, content)) {
             note = "write display_rules.json failed: " + path.string();
             return false;
         }
@@ -229,13 +221,7 @@ public:
             note = "create config directory failed for " + path.parent_path().string() + ": " + ec.message();
             return false;
         }
-        std::ofstream out(path);
-        if (!out.is_open()) {
-            note = "open display_rules.json for write failed: " + path.string();
-            return false;
-        }
-        out << j.dump(4);
-        if (!out.good()) {
+        if (!WriteFileAtomic(path, j.dump(4))) {
             note = "write display_rules.json failed: " + path.string();
             return false;
         }
@@ -246,12 +232,6 @@ public:
                + ", defaults=" + std::to_string(defaults)
                + ", stateHides=" + std::to_string(stateHides);
         return true;
-    }
-
-    static void Save(const std::filesystem::path& pluginDir,
-                     const std::vector<DisplayRule>& rules) {
-        std::string note;
-        Save(pluginDir, rules, note);
     }
 
     static void Load(const std::filesystem::path& pluginDir, std::vector<DisplayRule>& rules) {
@@ -306,9 +286,11 @@ public:
                 return;
             }
 
-            if (!note.empty())
+            if (!note.empty()) {
                 RadarLog::Instance().Warn("display_rules load failed for " + path.string() + ": "
                                           + note + "; using built-in defaults in memory");
+                BackupUnreadableFile(path);
+            }
             rules = SeededDefaults();
             RadarLog::Instance().Info("display_rules parse result: failed");
             RadarLog::Instance().Info("default display rule count: " + std::to_string(rules.size()));

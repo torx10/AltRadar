@@ -51,7 +51,6 @@ public:
 
     void Info(const std::string& msg) { Write("INFO", msg); }
     void Warn(const std::string& msg) { Write("WARN", msg); }
-    void Error(const std::string& msg) { Write("ERROR", msg); }
     void Debug(const std::string& msg) { Write("DEBUG", msg); }
 
     std::filesystem::path Path() const { return m_path; }

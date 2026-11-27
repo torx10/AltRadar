@@ -142,18 +142,6 @@ struct AreaCacheState {
         return !lastTargetPatterns.empty();
     }
 
-    void RefreshPoiMatchCounts(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap) {
-        if (!ctx || lastTargetPatterns.empty()) {
-            lastTgtMatchCount = -1;
-            lastEntityMatchCount = -1;
-            return;
-        }
-        lastTgtMatchCount = RadarRender::PoiDrawCache::CountMatchingTgtLocations(ctx,
-                                                                                 lastTargetPatterns);
-        lastEntityMatchCount = RadarRender::PoiDrawCache::CountMatchingEntities(snap,
-                                                                                 lastTargetPatterns);
-    }
-
     void RebuildAll(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap,
                     PluginSDK::WalkableGridHandle& gridHandle,
                     const RadarData::RadarConfig& cfg, const RadarData::TargetDatabase& db,

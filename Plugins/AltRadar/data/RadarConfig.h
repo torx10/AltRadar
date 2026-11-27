@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FileIo.h"
 #include "RadarLog.h"
 #include "RadarTypes.h"
 
@@ -241,9 +242,11 @@ struct RadarConfig {
             in >> j;
         } catch (const std::exception& ex) {
             RadarLog::Instance().Warn(std::string("settings.json parse failed; using defaults: ") + ex.what());
+            BackupUnreadableFile(path);
             return;
         } catch (...) {
             RadarLog::Instance().Warn("settings.json parse failed; using defaults");
+            BackupUnreadableFile(path);
             return;
         }
         auto readColor = [&](const char* key, ImVec4& out) {
@@ -356,8 +359,10 @@ struct RadarConfig {
         }
         } catch (const std::exception& ex) {
             RadarLog::Instance().Warn(std::string("settings.json invalid; using loaded defaults where possible: ") + ex.what());
+            BackupUnreadableFile(path);
         } catch (...) {
             RadarLog::Instance().Warn("settings.json invalid; using loaded defaults where possible");
+            BackupUnreadableFile(path);
         }
     }
 
@@ -425,8 +430,8 @@ struct RadarConfig {
         j["WalkableMapColor"] = {TextureInteriorColor.x, TextureInteriorColor.y,
                                   TextureInteriorColor.z, TextureInteriorColor.w};
         j["POIColor"] = {POIColor.x, POIColor.y, POIColor.z, POIColor.w};
-        std::ofstream out(path);
-        if (out.is_open()) out << j.dump(4);
+        if (!WriteFileAtomic(path, j.dump(4)))
+            RadarLog::Instance().Warn("Failed to save settings: " + path.string());
     }
 };
 

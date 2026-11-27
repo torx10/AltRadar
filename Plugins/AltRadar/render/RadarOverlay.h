@@ -289,22 +289,6 @@ inline std::string FormatRuneshapeWeight(int weight) {
     return std::string(buf);
 }
 
-inline std::string ExtractRuneshapeGlyph(std::string_view anchorName) {
-    std::string glyph;
-    glyph.reserve(2);
-    bool takeNext = true;
-    for (const unsigned char ch : anchorName) {
-        if (std::isalnum(ch) != 0) {
-            if (takeNext) glyph.push_back(static_cast<char>(std::toupper(ch)));
-            if (glyph.size() >= 2) break;
-            takeNext = false;
-        } else {
-            takeNext = true;
-        }
-    }
-    return glyph;
-}
-
 inline void DrawRuneshapeBadgeIcon(ImDrawList* dl, const ImVec2& min, const ImVec2& max,
                                    RuneIconCache* iconCache, void* d3dDevice,
                                    std::string_view runeName, ImU32 accentColor) {
@@ -1134,11 +1118,6 @@ public:
                                                     : "cached texture mode";
                 perf.MarkSkipped(RadarPerf::OverlayPerfTiming::Section::BoundaryLinesDraw);
             }
-            const int cachedDotCount = (cfg.DotRenderMode == RadarData::DotMatrixRenderMode::CachedTexture
-                                        && UsesDotMatrixTerrain(cfg))
-                                           ? (cache.walkable.walkableCellCount
-                                              / std::max(1, cfg.DotCellStep * cfg.DotCellStep))
-                                           : 0;
             const int effectiveCachedDotCount = (effectiveDotMode == RadarData::DotMatrixRenderMode::CachedTexture
                                                  && UsesDotMatrixTerrain(cfg))
                                                     ? (cache.walkable.walkableCellCount

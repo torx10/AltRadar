@@ -1,5 +1,6 @@
 #pragma once
 
+#include "FileIo.h"
 #include "RadarTypes.h"
 #include "DefaultDisplayRules.h"
 
@@ -13,8 +14,6 @@
 #include "../third_party/json.hpp"
 
 namespace RadarData {
-
-inline bool IsIconVisible(const IconDef& d) { return d.scale > 0.f; }
 
 struct IconTables {
     static constexpr int kRuleSchemaVersion = 3;
@@ -251,13 +250,6 @@ struct IconTables {
                    || (rule.chest == "Opened" && !rule.categories.empty() && rule.categories[0] == "Chest"));
     }
 
-    static bool HasDisplayRuleId(const std::vector<DisplayRule>& rules, std::string_view id) {
-        for (const auto& rule : rules) {
-            if (rule.id == id) return true;
-        }
-        return false;
-    }
-
     static std::vector<DisplayRule> UserRulesOnly(const std::vector<DisplayRule>& rules) {
         std::vector<DisplayRule> out;
         for (const auto& rule : rules) {
@@ -339,6 +331,7 @@ struct IconTables {
         try {
             in >> j;
         } catch (...) {
+            BackupUnreadableFile(path);
             SeedIconDefaults();
             return;
         }
@@ -359,6 +352,7 @@ struct IconTables {
                     break;
                 }
         } catch (...) {
+            BackupUnreadableFile(path);
             SeedIconDefaults();
         }
     }
@@ -397,8 +391,8 @@ struct IconTables {
         const auto path = pluginDir / "config" / "icons.json";
         std::error_code ec;
         std::filesystem::create_directories(path.parent_path(), ec);
-        std::ofstream out(path);
-        if (out.is_open()) out << j.dump(4);
+        if (!WriteFileAtomic(path, j.dump(4)))
+            RadarLog::Instance().Warn("Failed to save icons: " + path.string());
     }
 
     void SeedIconDefaults() {

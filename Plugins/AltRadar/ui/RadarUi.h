@@ -1159,12 +1159,6 @@ inline void DrawRuleOpacitySlider(const char* label, RadarData::Rgba8& color, fl
         color.a = static_cast<uint8_t>((opacity * 255 + 50) / 100);
 }
 
-inline void DrawInlineRuleLabel(const char* label) {
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted(label);
-    ImGui::SameLine(0.f, 4.f);
-}
-
 enum class BuiltinRuleGroup {
     Base,
     Chest,
@@ -1510,81 +1504,6 @@ inline void DrawDisplayRuleStyleRow(bool hideEditable, bool& hideValue,
     }
 
     ImGui::EndGroup();
-}
-
-inline RadarData::IconDef* ResolveBuiltinRuleDef(RadarData::IconTables& icons,
-                                                 const BuiltinRuleRef& ref) {
-    auto lookup = [&](auto& map) -> RadarData::IconDef* {
-        auto it = map.find(ref.key);
-        return it == map.end() ? nullptr : &it->second;
-    };
-    switch (ref.group) {
-        case BuiltinRuleGroup::Base:
-            return lookup(icons.baseIcons);
-        case BuiltinRuleGroup::Chest:
-            return lookup(icons.chestIcons);
-        case BuiltinRuleGroup::Breach:
-            return lookup(icons.breachIcons);
-        case BuiltinRuleGroup::Delirium:
-            return lookup(icons.deliriumIcons);
-        case BuiltinRuleGroup::Expedition:
-            return lookup(icons.expeditionIcons);
-        default:
-            return nullptr;
-    }
-}
-
-inline void DrawBuiltInRuleRow(const BuiltinRuleRef& ref, RadarData::IconTables& icons) {
-    RadarData::IconDef* def = ResolveBuiltinRuleDef(icons, ref);
-    if (!def) return;
-
-    ImGui::PushID(ref.key);
-    PushRuleCardStyle();
-    bool open = false;
-    bool enabled = def->scale > 0.f;
-    bool moveUp = false;
-    bool moveDown = false;
-    bool remove = false;
-    if (BeginRuleHeaderTable("##syshdr")) {
-        ImGui::TableSetColumnIndex(0);
-        open = ImGui::TreeNodeEx("##sysrule",
-                                 ImGuiTreeNodeFlags_SpanFullWidth
-                                     | ImGuiTreeNodeFlags_FramePadding,
-                                 "");
-        ImGui::TableSetColumnIndex(1);
-        CenterCursorForCell(ImGui::GetFrameHeight(), ImGui::GetFrameHeight());
-        if (ImGui::Checkbox("##enabled", &enabled)) {
-            if (!enabled) def->scale = 0.f;
-            else if (def->scale <= 0.f) def->scale = 30.f;
-        }
-        ImGui::TableSetColumnIndex(2);
-        DrawRuleMarkerPreview(def->markerShape, def->markerColor);
-        ImGui::TableSetColumnIndex(3);
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextUnformatted(ref.title);
-        ImGui::TableSetColumnIndex(4);
-        ImGui::AlignTextToFramePadding();
-        ImGui::TextDisabled("%s", ref.summary);
-        ImGui::TableSetColumnIndex(5);
-        DrawRuleActionButtons(false, false, false, moveUp, moveDown, remove);
-        EndRuleHeaderTable();
-    }
-    if (open) {
-        DrawRuleEditorRowGap(2.f);
-        RadarData::DisplayRule preview = BuildBuiltinRuleTemplate(ref);
-        preview.markerShape = def->markerShape;
-        preview.markerColor = def->markerColor;
-        preview.size = def->scale;
-        preview.label = def->label;
-
-        DrawDisplayRuleMatcherFields(preview, false, true, "##sys");
-
-        bool hide = false;
-        DrawDisplayRuleStyleRow(false, hide, def->markerShape, def->markerColor, def->scale);
-        ImGui::TreePop();
-    }
-    PopRuleCardStyle();
-    ImGui::PopID();
 }
 
 inline void DrawDisplayRuleRow(size_t index, RadarData::IconTables& icons, RuleSection section) {

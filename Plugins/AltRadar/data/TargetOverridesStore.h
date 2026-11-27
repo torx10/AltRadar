@@ -54,6 +54,7 @@ public:
             if (!j.is_object() || j.value("SchemaVersion", 0) != 1 || !j.contains("Overrides")
                 || !j["Overrides"].is_array()) {
                 RadarLog::Instance().Warn("Ignoring malformed target overrides file: " + path.string());
+                BackupUnreadableFile(path);
                 return false;
             }
             for (const auto& o : j["Overrides"]) {
@@ -92,6 +93,7 @@ public:
         } catch (...) {
             RadarLog::Instance().Warn("Ignoring malformed target overrides file: " + path.string());
         }
+        BackupUnreadableFile(path);
         entries.clear();
         return false;
     }
@@ -123,13 +125,9 @@ public:
             if (e.bgColor) o["BGColor"] = ColorString(*e.bgColor);
             j["Overrides"].push_back(std::move(o));
         }
-        std::ofstream out(path);
-        if (!out.is_open()) {
-            RadarLog::Instance().Warn("Failed to open target overrides file for save: " + path.string());
-            return false;
-        }
-        out << j.dump(4);
-        return out.good();
+        if (WriteFileAtomic(path, j.dump(4))) return true;
+        RadarLog::Instance().Warn("Failed to write target overrides file: " + path.string());
+        return false;
     }
 
     static bool Reset(const std::filesystem::path& pluginDir) {

@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -224,8 +225,8 @@ private:
 
         if (m_ui.pickerPoiMode) {
             auto* gameCtx = const_cast<PluginSDK::Context*>(ctx());
-            std::optional<PluginSDK::TgtLocation> nearest;
-            float nearestDistSq = kPickerRadiusSq;
+            struct Hit { PluginSDK::TgtLocation loc; ImVec2 pos; float distSq; };
+            std::vector<Hit> hits;
 
             ctx()->Terrain.EnumerateTgtLocations([&](const PluginSDK::TgtLocation& loc) {
                 const float tz = ctx()->Terrain.GetTerrainHeight(static_cast<int>(loc.X),
@@ -236,29 +237,22 @@ private:
                 const float dx = mouse.x - scr.sx;
                 const float dy = mouse.y - scr.sy;
                 const float distSq = dx * dx + dy * dy;
-                if (distSq < nearestDistSq) {
-                    nearestDistSq = distSq;
-                    nearest = loc;
-                }
+                if (distSq < kPickerRadiusSq) hits.push_back({loc, ImVec2(scr.sx, scr.sy), distSq});
                 return true;
             });
 
+            const Hit* nearestHit = nullptr;
+            for (const auto& h : hits)
+                if (!nearestHit || h.distSq < nearestHit->distSq) nearestHit = &h;
+            const PluginSDK::TgtLocation* nearest = nearestHit ? &nearestHit->loc : nullptr;
+
             if (nearest) {
-                ctx()->Terrain.EnumerateTgtLocations([&](const PluginSDK::TgtLocation& loc) {
-                    const auto scr =
-                        RadarRender::ProjectGridToScreen(gameCtx, snap, loc.X, loc.Y, 0.f);
-                    if (!scr.valid) return true;
-                    const float dx = mouse.x - scr.sx;
-                    const float dy = mouse.y - scr.sy;
-                    const float distSq = dx * dx + dy * dy;
-                    if (distSq >= kPickerRadiusSq) return true;
-                    const bool isNearest = loc.Path == nearest->Path && loc.X == nearest->X
-                                           && loc.Y == nearest->Y;
-                    dl->AddCircleFilled(ImVec2(scr.sx, scr.sy), isNearest ? 9.f : 6.f,
+                for (const auto& h : hits) {
+                    const bool isNearest = &h == nearestHit;
+                    dl->AddCircleFilled(h.pos, isNearest ? 9.f : 6.f,
                                         isNearest ? IM_COL32(0, 255, 255, 255)
                                                   : IM_COL32(255, 255, 0, 120));
-                    return true;
-                });
+                }
                 dl->AddText(ImVec2(12.f, 32.f), IM_COL32(200, 255, 200, 255),
                             nearest->Path.c_str());
             }
@@ -286,8 +280,8 @@ private:
 
         if (m_ui.pickerEntityMode) {
             auto* gameCtx = const_cast<PluginSDK::Context*>(ctx());
-            const PluginSDK::Entity* nearestEnt = nullptr;
-            float nearestDistSq = kPickerRadiusSq;
+            struct Hit { const PluginSDK::Entity* ent; ImVec2 pos; float distSq; };
+            std::vector<Hit> hits;
 
             for (const auto& e : snap.Entities) {
                 if (!e.IsValid) continue;
@@ -301,28 +295,18 @@ private:
                 const float dx = mouse.x - scr.sx;
                 const float dy = mouse.y - scr.sy;
                 const float distSq = dx * dx + dy * dy;
-                if (distSq < nearestDistSq) {
-                    nearestDistSq = distSq;
-                    nearestEnt = &e;
-                }
+                if (distSq < kPickerRadiusSq) hits.push_back({&e, ImVec2(scr.sx, scr.sy), distSq});
             }
 
+            const Hit* nearestHit = nullptr;
+            for (const auto& h : hits)
+                if (!nearestHit || h.distSq < nearestHit->distSq) nearestHit = &h;
+            const PluginSDK::Entity* nearestEnt = nearestHit ? nearestHit->ent : nullptr;
+
             if (nearestEnt) {
-                for (const auto& e : snap.Entities) {
-                    if (!e.IsValid) continue;
-                    if (e.EntityState == PluginSDK::EntityState::Useless) continue;
-                    if (e.EntityType != PluginSDK::EntityType::Monster
-                        && e.EntityType != PluginSDK::EntityType::Chest
-                        && e.EntityType != PluginSDK::EntityType::NPC)
-                        continue;
-                    const auto scr = RadarRender::ProjectEntityToScreen(gameCtx, snap, e);
-                    if (!scr.valid) continue;
-                    const float dx = mouse.x - scr.sx;
-                    const float dy = mouse.y - scr.sy;
-                    const float distSq = dx * dx + dy * dy;
-                    if (distSq >= kPickerRadiusSq) continue;
-                    const bool isNearest = &e == nearestEnt;
-                    dl->AddCircleFilled(ImVec2(scr.sx, scr.sy), isNearest ? 8.f : 5.f,
+                for (const auto& h : hits) {
+                    const bool isNearest = &h == nearestHit;
+                    dl->AddCircleFilled(h.pos, isNearest ? 8.f : 5.f,
                                         isNearest ? IM_COL32(255, 128, 0, 255)
                                                   : IM_COL32(200, 200, 200, 120));
                 }
