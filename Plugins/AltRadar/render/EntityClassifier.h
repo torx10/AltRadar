@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <functional>
 #include <optional>
 
 namespace RadarRender {
@@ -165,26 +166,32 @@ inline bool MatchesDisplayRule(const RadarData::DisplayRule& rule, const PluginS
     return true;
 }
 
+// Returns an entity's monster mods; lets a caller reuse them across refreshes (each read is a host call).
+using MonsterModsLookup = std::function<const std::vector<PluginSDK::MonsterMod>&(const PluginSDK::Entity&)>;
+
 inline EntityClassification ClassifyByRules(const PluginSDK::Entity& e, PluginSDK::Context* ctx,
                                             std::string_view path,
                                             const RadarData::IconTables& icons,
-                                            const RadarData::RadarConfig& cfg) {
-    // Read on first use and shared by every rule with a Mods condition.
-    std::optional<std::vector<PluginSDK::MonsterMod>> mods;
+                                            const RadarData::RadarConfig& cfg,
+                                            const MonsterModsLookup* modsLookup = nullptr) {
+    // Read on first use and shared by every rule that needs them (each read is a host call).
+    std::vector<PluginSDK::MonsterMod> ownMods;
+    const std::vector<PluginSDK::MonsterMod>* mods = nullptr;
+    std::optional<bool> friendly;
     for (size_t ruleIndex = 0; ruleIndex < icons.displayRules.size(); ++ruleIndex) {
         const auto& rule = icons.displayRules[ruleIndex];
         if (!MatchesDisplayRule(rule, e, path)) continue;
         if (cfg.RuneShapeShowWeights && RadarData::IconTables::IsRuneShapeOwnedRule(rule)) continue;
-        bool isFriendly = false;
-        if (ctx && e.Components.Positioned)
-            isFriendly = ctx->Components.ReadPositioned(e.Components.Positioned).IsFriendly;
-        else
-            isFriendly = e.EntityState == PluginSDK::EntityState::MonsterFriendly;
         if (!rule.rarity.empty()) {
             const char* rarity = e.Rarity >= 3 ? "Unique" : e.Rarity == 2 ? "Rare" : e.Rarity == 1 ? "Magic" : "Normal";
             if (!RadarData::MarkerShapeNameEquals(rule.rarity, rarity)) continue;
         }
         if (!rule.reaction.empty()) {
+            if (!friendly)
+                friendly = ctx && e.Components.Positioned
+                               ? ctx->Components.ReadPositioned(e.Components.Positioned).IsFriendly
+                               : e.EntityState == PluginSDK::EntityState::MonsterFriendly;
+            const bool isFriendly = *friendly;
             const bool wantsFriendly = RadarData::MarkerShapeNameEquals(rule.reaction, "Friendly");
             const bool wantsHostile = RadarData::MarkerShapeNameEquals(rule.reaction, "Hostile");
             if ((wantsFriendly && !isFriendly) || (wantsHostile && isFriendly)) continue;
@@ -208,7 +215,10 @@ inline EntityClassification ClassifyByRules(const PluginSDK::Entity& e, PluginSD
         }
         if (!rule.mods.empty()) {
             if (!ctx || e.Components.OMP == 0) continue;
-            if (!mods) mods = ctx->Components.EnumerateMonsterMods(e.Components.OMP);
+            if (!mods) {
+                if (modsLookup) mods = &(*modsLookup)(e);
+                else mods = &(ownMods = ctx->Components.EnumerateMonsterMods(e.Components.OMP));
+            }
             bool anyMod = false;
             for (const auto& term : rule.mods) {
                 for (const auto& mod : *mods) {
@@ -388,9 +398,10 @@ inline std::optional<EntityMarkerStyle> ClassifySelfRule(const RadarData::IconTa
 inline EntityClassification ClassifyEntity(PluginSDK::Context* ctx, const PluginSDK::Entity& e,
                                            std::string_view path,
                                            const RadarData::IconTables& icons,
-                                           const RadarData::RadarConfig& cfg) {
+                                           const RadarData::RadarConfig& cfg,
+                                           const MonsterModsLookup* modsLookup = nullptr) {
     return cfg.UseLegacyClassifier ? ClassifyByLegacy(e, path, icons)
-                                   : ClassifyByRules(e, ctx, path, icons, cfg);
+                                   : ClassifyByRules(e, ctx, path, icons, cfg, modsLookup);
 }
 
 inline std::optional<EntityMarkerStyle> ClassifySelf(const RadarData::IconTables& icons,

@@ -10,6 +10,7 @@
 
 #include <imgui.h>
 #include <array>
+#include <chrono>
 #include <cmath>
 #include <unordered_set>
 #include <unordered_map>
@@ -34,6 +35,15 @@ struct EntityDrawCache {
 
     std::vector<RadarData::EntityDrawCmd> cmds;
     std::array<int, 5> wispCounts{};  // drawn wisp deposits by RadarData::WispKindIndex
+    // Monster mods by entity address, re-read once a second: the spirit rules read every
+    // monster's mods, and mods rarely change (a possession is caught within a second).
+    // shortcut: an address reused by a new entity in the same area keeps the old mods for up to
+    // a second; key by entity id if that ever shows.
+    struct CachedMods {
+        std::chrono::steady_clock::time_point readAt;
+        std::vector<PluginSDK::MonsterMod> mods;
+    };
+    std::unordered_map<uintptr_t, CachedMods> modCache;
     std::unordered_map<std::string, RememberedMarker> remembered;
     std::unordered_set<std::string>                  liveRememberedKeys;
     uint64_t                              lastSnapshotTime = 0;
@@ -41,6 +51,7 @@ struct EntityDrawCache {
     void Clear() {
         cmds.clear();
         wispCounts.fill(0);
+        modCache.clear();
         remembered.clear();
         liveRememberedKeys.clear();
         lastSnapshotTime = 0;
@@ -126,6 +137,15 @@ struct EntityDrawCache {
         cmds.clear();
         wispCounts.fill(0);
         liveRememberedKeys.clear();
+        const auto now = std::chrono::steady_clock::now();
+        const MonsterModsLookup modsLookup = [&](const PluginSDK::Entity& e) -> const std::vector<PluginSDK::MonsterMod>& {
+            auto& cached = modCache[e.Address];
+            if (cached.readAt == std::chrono::steady_clock::time_point{} || now - cached.readAt >= std::chrono::seconds(1)) {
+                cached.mods = ctx->Components.EnumerateMonsterMods(e.Components.OMP);
+                cached.readAt = now;
+            }
+            return cached.mods;
+        };
         if (!ctx) return;
         std::unordered_map<uint32_t, ImU32> runeshapeColors;
         if (AnyRuleUsesRuneshapeColor(icons)) {
@@ -160,7 +180,7 @@ struct EntityDrawCache {
             cmd.gridY = e.GridPositionY;
             cmd.terrainZ = e.TerrainHeight;
 
-            const auto marker = ClassifyEntity(ctx, e, path, icons, cfg);
+            const auto marker = ClassifyEntity(ctx, e, path, icons, cfg, &modsLookup);
             if (!marker.matched || marker.hidden) continue;
             cmd.markerShape = marker.style.shape;
             cmd.markerSize = marker.style.size;

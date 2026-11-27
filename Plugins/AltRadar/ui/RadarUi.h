@@ -420,7 +420,8 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
         ImGui::Checkbox("Find far wisp deposits", &cfg.ScanFarWisps);
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("In the Wildwood and Flotsam (or once you meet a deposit), also read sleeping\n"
-                              "entities so every deposit of the area shows. Costs a little performance.");
+                              "entities so every deposit of the area shows. Costly: the game then reports\n"
+                              "every sleeping entity of the map, so leave it off if frames get slow.");
         ImGui::Checkbox("Wisp counter", &cfg.ShowWispCounter);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Azmeri wisp deposits: large 100%%, medium 85%%, small 70%%.");
         ImGui::Unindent(12.f);
@@ -453,6 +454,14 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
         ImGui::SameLine(160.f);
         ImGui::SetNextItemWidth(160.f);
         ImGui::SliderInt("##MaxEntitiesDrawn", &cfg.MaxEntitiesDrawn, 64, 2048, "%d");
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextUnformatted("Entity update every");
+        ImGui::SameLine(160.f);
+        ImGui::SetNextItemWidth(160.f);
+        ImGui::SliderInt("##EntityUpdateIntervalMs", &cfg.EntityUpdateIntervalMs, 0, 250, "%d ms");
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("How often monster/chest markers are refreshed. Higher is cheaper; POE2Fixer\n"
+                              "disables a plugin whose frame time stays over 50 ms. 33 ms = 30 times a second.");
         ImGui::Unindent(12.f);
     }
     ImGui::Spacing();

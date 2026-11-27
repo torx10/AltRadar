@@ -133,13 +133,13 @@ inline const char* MarkerShapeName(MarkerShape shape) {
     }
 }
 
+// ASCII lower-case: game paths and rule terms are ASCII, and std::tolower is a locale call per char.
+inline char LowerAscii(char c) { return (c >= 'A' && c <= 'Z') ? static_cast<char>(c + ('a' - 'A')) : c; }
+
 inline bool MarkerShapeNameEquals(std::string_view lhs, std::string_view rhs) {
     if (lhs.size() != rhs.size()) return false;
-    for (size_t i = 0; i < lhs.size(); ++i) {
-        const unsigned char a = static_cast<unsigned char>(lhs[i]);
-        const unsigned char b = static_cast<unsigned char>(rhs[i]);
-        if (std::tolower(a) != std::tolower(b)) return false;
-    }
+    for (size_t i = 0; i < lhs.size(); ++i)
+        if (LowerAscii(lhs[i]) != LowerAscii(rhs[i])) return false;
     return true;
 }
 
@@ -217,20 +217,18 @@ struct DisplayRule {
     bool                     navigable = false;
 };
 
+// Called for every rule term of every entity on each refresh, so kept cheap: find the term's first
+// character, then compare the rest.
 inline bool ContainsCaseInsensitiveRuleText(std::string_view text, std::string_view term) {
     if (term.empty()) return true;
     if (term.size() > text.size()) return false;
-    for (size_t i = 0; i + term.size() <= text.size(); ++i) {
-        bool ok = true;
-        for (size_t j = 0; j < term.size(); ++j) {
-            const unsigned char a = static_cast<unsigned char>(text[i + j]);
-            const unsigned char b = static_cast<unsigned char>(term[j]);
-            if (std::tolower(a) != std::tolower(b)) {
-                ok = false;
-                break;
-            }
-        }
-        if (ok) return true;
+    const char first = LowerAscii(term[0]);
+    const size_t last = text.size() - term.size();
+    for (size_t i = 0; i <= last; ++i) {
+        if (LowerAscii(text[i]) != first) continue;
+        size_t j = 1;
+        while (j < term.size() && LowerAscii(text[i + j]) == LowerAscii(term[j])) ++j;
+        if (j == term.size()) return true;
     }
     return false;
 }

@@ -216,7 +216,8 @@ struct RadarConfig {
     float PlayerNameTextScale = 1.f;
     bool  PlayerNameIncludeSelf = false;
     bool  ScaleWispsBySize = true;
-    bool  ScanFarWisps = true;    // read sleeping entities where wisps are, so far deposits show
+    bool  ScanFarWisps = false;   // read sleeping entities where wisps are, so far deposits show (costly)
+    int   EntityUpdateIntervalMs = 33;  // at most this often: full snapshot + entity marker rebuild
     bool  ShowWispCounter = true;
     bool  ShowImportantPOI = true;
     bool  DrawPoiIcons = false;
@@ -329,6 +330,7 @@ struct RadarConfig {
         PlayerNameIncludeSelf = j.value("PlayerNameIncludeSelf", PlayerNameIncludeSelf);
         ScaleWispsBySize = j.value("ScaleWispsBySize", ScaleWispsBySize);
         ScanFarWisps = j.value("ScanFarWisps", ScanFarWisps);
+        EntityUpdateIntervalMs = std::clamp(j.value("EntityUpdateIntervalMs", EntityUpdateIntervalMs), 0, 250);
         ShowWispCounter = j.value("ShowWispCounter", ShowWispCounter);
         ShowImportantPOI = j.value("ShowImportantPOI", ShowImportantPOI);
         DrawPoiIcons = j.value("DrawPoiIcons", DrawPoiIcons);
@@ -415,6 +417,7 @@ struct RadarConfig {
         j["PlayerNameIncludeSelf"] = PlayerNameIncludeSelf;
         j["ScaleWispsBySize"] = ScaleWispsBySize;
         j["ScanFarWisps"] = ScanFarWisps;
+        j["EntityUpdateIntervalMs"] = EntityUpdateIntervalMs;
         j["ShowWispCounter"] = ShowWispCounter;
         j["RuneShapeShowWeights"] = RuneShapeShowWeights;
         j["RuneShapeMinimumWeight"] = RuneShapeMinimumWeight;

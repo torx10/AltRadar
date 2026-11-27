@@ -146,8 +146,10 @@ struct PatternMatcherSet {
     std::vector<CompiledPattern> patterns;
     void Add(std::string_view path) { patterns.push_back(CompilePattern(path)); }
     bool MatchesAny(std::string_view candidate) const {
+        if (patterns.empty()) return false;
+        const auto compiled = CompileCandidate(candidate);  // once, not once per pattern
         for (const auto& p : patterns)
-            if (MatchPattern(p, candidate)) return true;
+            if (MatchPattern(p, compiled)) return true;
         return false;
     }
 };

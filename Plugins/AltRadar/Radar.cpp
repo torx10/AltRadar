@@ -171,7 +171,8 @@ public:
             ctx()->Log.Info("Alt Radar landmark overrides reset");
         }
 
-        const auto snap = ctx()->Game.GetSnapshot();
+        const auto snap = m_ui.rulePickerOpen ? ctx()->Game.GetSnapshot()
+                                              : ctx()->Game.GetSnapshot(static_cast<PluginSDK::EntityType>(0x7FFFFFFF));
         const bool perfCaptureEnabled =
             m_overlay.cfg.EnablePerformanceDebug && m_overlay.cfg.EnablePerfTimingCapture;
         const auto settingsStart = perfCaptureEnabled ? std::optional(std::chrono::steady_clock::now())
@@ -194,10 +195,11 @@ public:
         if (ctx()->ImGuiContext)
             ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx()->ImGuiContext));
 
-        const auto snap = ctx()->Game.GetSnapshot();
+        const bool picking = m_ui.pickerPoiMode || m_ui.pickerEntityMode || m_ui.pickerRoomMode;
+        const auto& snap = FrameSnapshot(picking);
         m_overlay.runeIcons.SetPluginDir(DirectoryPath());
 
-        if (m_ui.pickerPoiMode || m_ui.pickerEntityMode || m_ui.pickerRoomMode) {
+        if (picking) {
             DrawPicker(snap);  // the picker reads sleeping entities itself
             return;
         }
@@ -231,6 +233,40 @@ private:
     bool     m_wispArea = false;
     uint64_t m_wispAreaCounter = UINT64_MAX;
     bool     m_sleepingScan = false;
+
+    // GetSnapshot() materializes every entity's strings (host calls + allocations), which DrawUI
+    // cannot afford each frame (the host's watchdog disables a plugin whose DrawUI is consistently
+    // over 50 ms). Fetch the entity list at most every EntityUpdateIntervalMs, or when forced; other
+    // frames take a light snapshot (player, maps, area) and keep the last entity list with its
+    // LastUpdateTime, so the entity cache sees nothing new until the next full fetch.
+    PluginSDK::Snapshot                   m_snap;
+    std::chrono::steady_clock::time_point m_lastFullSnapshot{};
+
+    const PluginSDK::Snapshot& FrameSnapshot(bool forceEntities) {
+        const auto start = std::chrono::steady_clock::now();
+        // No entity has this type, and the SDK filters before materializing strings.
+        auto light = ctx()->Game.GetSnapshot(static_cast<PluginSDK::EntityType>(0x7FFFFFFF));
+        const bool due = forceEntities || light.AreaChangeCounter != m_snap.AreaChangeCounter
+                         || (light.LastUpdateTime != m_snap.LastUpdateTime
+                             && start - m_lastFullSnapshot
+                                    >= std::chrono::milliseconds(m_overlay.cfg.EntityUpdateIntervalMs));
+        if (due) {
+            m_snap = ctx()->Game.GetSnapshot();
+            m_lastFullSnapshot = start;
+        } else {
+            auto entities = std::move(m_snap.Entities);
+            const auto entitiesTime = m_snap.LastUpdateTime;
+            m_snap = std::move(light);
+            m_snap.Entities = std::move(entities);
+            m_snap.LastUpdateTime = entitiesTime;
+        }
+        const bool capture = m_overlay.cfg.EnablePerformanceDebug && m_overlay.cfg.EnablePerfTimingCapture;
+        m_overlay.perf.RecordExternal(
+            RadarPerf::OverlayPerfTiming::Section::SnapshotFetch,
+            std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - start).count(), capture,
+            true);
+        return m_snap;
+    }
 
     void UpdateWispArea(const PluginSDK::Snapshot& snap) {
         if (snap.AreaChangeCounter != m_wispAreaCounter) {

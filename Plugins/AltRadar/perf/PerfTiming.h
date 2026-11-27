@@ -26,6 +26,7 @@ public:
         EntityCacheRebuild,
         EntityDraw,
         SettingsDebugUi,
+        SnapshotFetch,
         Count,
     };
 
@@ -205,6 +206,7 @@ public:
             case Section::EntityCacheRebuild: return "Entity cache rebuild";
             case Section::EntityDraw: return "Entity draw";
             case Section::SettingsDebugUi: return "Settings/debug UI";
+            case Section::SnapshotFetch: return "Snapshot fetch";
             default: return "Unknown";
         }
     }
