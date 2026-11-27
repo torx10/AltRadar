@@ -38,7 +38,8 @@ public:
         // Azmeri wisp deposits were caught by the size-0 rule that hides other objects. Kinds by model.
         {4, {"stock.wisps_vivid", "stock.wisps_primal", "stock.wisps_wild", "stock.wisps_sacred",
              "stock.azmeri_wisps"}, {}, {}},
-        // Special deposits use AzmeriResourcePrimalist* paths, not only AzmeriResourceBase.
+        // Wider wisp path: PoE2 0.5.5 names the deposit models AzmeriResource<Colour><Size>
+        // (MiscAnimated); PoE2 data only has the AzmeriResourceBase object, so this changes nothing there.
         {5, {}, {"stock.wisps_vivid", "stock.wisps_primal", "stock.wisps_wild", "stock.wisps_sacred",
                  "stock.azmeri_wisps"}, {}},
     };
