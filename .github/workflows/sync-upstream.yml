@@ -16,7 +16,8 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # windows-2025 still has VS 2022 (v143 toolset), which AltRadar.vcxproj targets.
+    runs-on: windows-2025
     defaults:
       run:
         shell: bash
@@ -51,6 +52,7 @@ jobs:
 
       - name: Build AltRadar
         if: github.event_name == 'push' || steps.merge.outputs.changed == 'true'
+        shell: pwsh
         run: msbuild AltRadar.sln -p:Configuration=Release -p:Platform=x64 -m
 
       - name: Push merge
