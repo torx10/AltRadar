@@ -1,0 +1,53 @@
+name: Sync upstream
+
+# Merges POEFixer/Radar into main when it merges cleanly and AltRadar still builds.
+# Conflicts or a broken build fail the run (GitHub emails you) and push nothing.
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Merge upstream
+        id: merge
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch https://github.com/POEFixer/Radar master
+          if git merge-base --is-ancestor FETCH_HEAD HEAD; then
+            echo "Already up to date with upstream."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if ! git merge --no-edit -m "Merge upstream POEFixer/Radar" FETCH_HEAD; then
+            git diff --name-only --diff-filter=U
+            git merge --abort
+            echo "::error::Upstream conflicts with main (files above). Merge by hand: git fetch upstream && git merge upstream/master"
+            exit 1
+          fi
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - uses: microsoft/setup-msbuild@v2
+        if: steps.merge.outputs.changed == 'true'
+
+      - name: Build AltRadar
+        if: steps.merge.outputs.changed == 'true'
+        run: msbuild AltRadar.sln -p:Configuration=Release -p:Platform=x64 -m
+
+      - name: Push
+        if: steps.merge.outputs.changed == 'true'
+        run: git push origin HEAD:main

@@ -118,7 +118,6 @@
     <ClInclude Include="ui\UiBlockerDetector.h" />
     <ClInclude Include="..\..\POEFixer\plugin_sdk\PluginAbi.h" />
     <ClInclude Include="..\..\POEFixer\plugin_sdk\PluginSDK.h" />
-    <ClInclude Include="..\..\POEFixer\plugin_sdk\PluginI18n.h" />
     <ClInclude Include="..\..\POEFixer\imgui\imgui.h" />
     <ClInclude Include="..\..\POEFixer\imgui\imconfig.h" />
     <ClInclude Include="..\..\POEFixer\imgui\imgui_internal.h" />
