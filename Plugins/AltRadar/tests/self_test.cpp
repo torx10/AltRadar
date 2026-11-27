@@ -175,10 +175,11 @@ static void TestChestPathsReachTheRightRule() {
             if (!r.enabled || r.hide || r.categories.empty()
                 || std::find(r.categories.begin(), r.categories.end(), category) == r.categories.end())
                 continue;
-            if (!r.models.empty() || !r.subtypes.empty() || !r.states.empty() || !r.rarity.empty()) continue;
+            if (!r.models.empty() || !r.mods.empty() || !r.subtypes.empty() || !r.states.empty() || !r.rarity.empty())
+                continue;
             if (r.matchTerms.empty()) return r.id;  // a catch-all (the hide rules come first and are skipped)
             for (const auto& term : r.matchTerms)
-                if (ContainsCaseInsensitiveRuleText(path, term)) return r.id;
+                if (MatchesRuleTerm(path, term)) return r.id;
         }
         return "";
     };
@@ -209,6 +210,8 @@ static void TestChestPathsReachTheRightRule() {
     // object instead of falling into the size-0 catch-all that hides other objects.
     assert(firstPathRule("Metadata/MiscellaneousObjects/Azmeri/AzmeriResourceBase", "Object") == "stock.azmeri_wisps");
     assert(firstPathRule("Metadata/MiscellaneousObjects/Azmeri/AzmeriResourcePrimalistBig", "Object") == "stock.azmeri_wisps");
+    assert(firstPathRule("Metadata/MiscellaneousObjects/Azmeri/AzmeriFuelResupply", "Object") == "stock.wisp_fuel");
+    assert(firstPathRule("Metadata/MiscellaneousObjects/Azmeri/AzmeriLightBomb", "Object") == "stock.wisp_light");
     assert(firstPathRule("Metadata/MiscellaneousObjects/SomethingElse", "Object") == "stock.delirium_bomb");
 }
 
@@ -219,7 +222,7 @@ static void TestDisplayRulesUpgrade(const fs::path& pluginDir) {
     for (const char* id : {"stock.vaal_strongbox", "stock.ezomyte_strongbox", "stock.ventors_strongbox",
                            "stock.etched_beetle_strongbox", "stock.legacy_of_the_order", "stock.blacksmiths_strongbox",
                            "stock.cartographers_strongbox", "stock.corruption_strongbox", "stock.abyssal_strongbox",
-                           "stock.azmeri_wisps"})
+                           "stock.azmeri_wisps", "stock.wisp_fuel", "stock.possessed_vivid", "stock.free_wisp_sacred"})
         old.erase(old.begin() + IndexOf(old, id));
     old[IndexOf(old, "stock.researchers_strongbox")].matchTerms = {"StrongBoxes/ResearchStrongboxHigh"};
     old[IndexOf(old, "stock.researchers_strongbox")].markerColor = {1, 2, 3, 255};  // user edit
@@ -465,6 +468,49 @@ static void TestWildwoodRoomTargets(const fs::path& pluginDir) {
     assert(again.targets.size() == 13);
 }
 
+// Azmeri spirits from PoE2 0.5.5.10: free wisps by MonsterVarieties path, possessed and touched
+// monsters by mod (SpiritPossessed<Attr> -> BuffTemplates TormentedSpiritPower<Tier>).
+static void TestAzmeriSpirits() {
+    const auto rules = IconTables::DefaultDisplayRules();
+    auto firstMonsterRule = [&](const std::string& path, const std::string& modId) -> std::string {
+        for (const auto& r : rules) {
+            if (!r.enabled || std::find(r.categories.begin(), r.categories.end(), "Monster") == r.categories.end()) continue;
+            if (!r.subtypes.empty() || !r.states.empty() || !r.rarity.empty() || r.life == "Dead") continue;
+            bool ok = r.matchTerms.empty();
+            for (const auto& t : r.matchTerms) ok |= MatchesRuleTerm(path, t);
+            if (!r.mods.empty()) {
+                bool mod = false;
+                for (const auto& t : r.mods) mod |= !modId.empty() && MatchesRuleTerm(modId, t);
+                ok &= mod;
+            }
+            if (ok) return r.id;
+        }
+        return "";
+    };
+    const std::string spirits = "Metadata/Monsters/TormentedSpirits/";
+    const std::pair<const char*, const char*> free[] = {
+        {"TormentedSpiritoftheWolfVivid", "stock.free_wisp_vivid"}, {"TormentedSpiritoftheStagVividViper", "stock.free_wisp_vivid"},
+        {"TormentedSpiritoftheOwlPrimal", "stock.free_wisp_primal"}, {"TormentedSpiritoftheBearWildViper", "stock.free_wisp_wild"},
+        {"TormentedSpiritoftheRabbitSacred_", "stock.free_wisp_sacred"}, {"TormentedSpiritoftheFoxSacred", "stock.free_wisp_sacred"},
+        {"TormentedSpiritoftheOwlPrimalPossesedDaemon", "stock.hide_wisp_daemon"},
+        {"TormentedSpiritoftheRabbitSacredPossesedDaemonPlayer", "stock.hide_wisp_daemon"}};
+    for (const auto& [name, want] : free) {
+        const auto got = firstMonsterRule(spirits + name, "");
+        if (got != want) std::fprintf(stderr, "%s -> %s (want %s)\n", name, got.c_str(), want);
+        assert(got == want);
+    }
+    const std::pair<const char*, const char*> mods[] = {
+        {"SpiritPossessedDex", "stock.possessed_vivid"}, {"SpiritPossessedInt", "stock.possessed_primal"},
+        {"SpiritPossessedStr", "stock.possessed_wild"}, {"SpiritPossessedSacred", "stock.possessed_sacred"},
+        {"SpiritTouchedDex", "stock.spirit_touched"}, {"SpiritTouchedSacred", "stock.spirit_touched"}};
+    for (const auto& [mod, want] : mods) assert(firstMonsterRule("Metadata/Monsters/Wolves/Wolf", mod) == want);
+    // An ordinary monster reaches none of the spirit rules.
+    const auto plain = firstMonsterRule("Metadata/Monsters/Wolves/Wolf", "SomeOtherMod");
+    for (const char* prefix : {"stock.possessed_", "stock.spirit_touched", "stock.free_wisp_", "stock.hide_wisp_daemon"})
+        assert(plain.rfind(prefix, 0) != 0);
+    assert(WispKindIndex(".../wisp_doodads/wisp_vodoo_big.ao") == 2 && WispKindIndex("") == 4);
+}
+
 int main() {
     const auto dir = fs::temp_directory_path() / "altradar_self_test";
     fs::remove_all(dir);
@@ -485,6 +531,7 @@ int main() {
     TestIgnoreList(dir / "plugin7");
     TestGlobalUserLandmark(dir / "plugin8");
     TestWispKinds();
+    TestAzmeriSpirits();
     TestWildwoodRoomTargets(dir / "plugin9");
 
     fs::remove_all(dir);

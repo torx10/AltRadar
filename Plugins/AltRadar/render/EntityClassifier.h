@@ -125,64 +125,7 @@ inline const char* EntityStateName(PluginSDK::EntityState state) {
     }
 }
 
-inline bool ContainsCaseInsensitive(std::string_view text, std::string_view term) {
-    if (term.empty()) return true;
-    if (term.size() > text.size()) return false;
-    for (size_t i = 0; i + term.size() <= text.size(); ++i) {
-        bool ok = true;
-        for (size_t j = 0; j < term.size(); ++j) {
-            const unsigned char a = static_cast<unsigned char>(text[i + j]);
-            const unsigned char b = static_cast<unsigned char>(term[j]);
-            if (std::tolower(a) != std::tolower(b)) {
-                ok = false;
-                break;
-            }
-        }
-        if (ok) return true;
-    }
-    return false;
-}
-
-inline bool HasGlobWildcard(std::string_view pattern) {
-    return pattern.find('*') != std::string_view::npos
-           || pattern.find('?') != std::string_view::npos;
-}
-
-inline bool MatchGlobCaseInsensitive(std::string_view text, std::string_view pattern) {
-    size_t ti = 0;
-    size_t pi = 0;
-    size_t starPi = std::string_view::npos;
-    size_t starTi = 0;
-    while (ti < text.size()) {
-        if (pi < pattern.size()
-            && (pattern[pi] == '?'
-                || std::tolower(static_cast<unsigned char>(pattern[pi]))
-                       == std::tolower(static_cast<unsigned char>(text[ti])))) {
-            ++ti;
-            ++pi;
-            continue;
-        }
-        if (pi < pattern.size() && pattern[pi] == '*') {
-            starPi = pi++;
-            starTi = ti;
-            continue;
-        }
-        if (starPi != std::string_view::npos) {
-            pi = starPi + 1;
-            ti = ++starTi;
-            continue;
-        }
-        return false;
-    }
-    while (pi < pattern.size() && pattern[pi] == '*') ++pi;
-    return pi == pattern.size();
-}
-
-inline bool MatchesRuleTerm(std::string_view text, std::string_view term) {
-    if (term.empty()) return true;
-    return HasGlobWildcard(term) ? MatchGlobCaseInsensitive(text, term)
-                                 : ContainsCaseInsensitive(text, term);
-}
+using RadarData::MatchesRuleTerm;
 
 inline bool MatchesNamedList(const std::vector<std::string>& values, std::string_view candidate) {
     if (values.empty()) return true;
@@ -226,6 +169,8 @@ inline EntityClassification ClassifyByRules(const PluginSDK::Entity& e, PluginSD
                                             std::string_view path,
                                             const RadarData::IconTables& icons,
                                             const RadarData::RadarConfig& cfg) {
+    // Read on first use and shared by every rule with a Mods condition.
+    std::optional<std::vector<PluginSDK::MonsterMod>> mods;
     for (size_t ruleIndex = 0; ruleIndex < icons.displayRules.size(); ++ruleIndex) {
         const auto& rule = icons.displayRules[ruleIndex];
         if (!MatchesDisplayRule(rule, e, path)) continue;
@@ -263,10 +208,10 @@ inline EntityClassification ClassifyByRules(const PluginSDK::Entity& e, PluginSD
         }
         if (!rule.mods.empty()) {
             if (!ctx || e.Components.OMP == 0) continue;
-            const auto mods = ctx->Components.EnumerateMonsterMods(e.Components.OMP);
+            if (!mods) mods = ctx->Components.EnumerateMonsterMods(e.Components.OMP);
             bool anyMod = false;
             for (const auto& term : rule.mods) {
-                for (const auto& mod : mods) {
+                for (const auto& mod : *mods) {
                     if (MatchesRuleTerm(mod.Id, term) || MatchesRuleTerm(mod.Name, term)
                         || MatchesRuleTerm(mod.Metadata, term)) {
                         anyMod = true;

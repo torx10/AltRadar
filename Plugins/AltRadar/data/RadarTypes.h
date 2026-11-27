@@ -235,6 +235,59 @@ inline bool ContainsCaseInsensitiveRuleText(std::string_view text, std::string_v
     return false;
 }
 
+// How a display rule term matches text (path, mod, model): a term with * or ? matches the
+// WHOLE text as a glob, any other term matches as a case-insensitive substring.
+inline bool HasGlobWildcard(std::string_view pattern) {
+    return pattern.find('*') != std::string_view::npos
+           || pattern.find('?') != std::string_view::npos;
+}
+
+inline bool MatchGlobCaseInsensitive(std::string_view text, std::string_view pattern) {
+    size_t ti = 0;
+    size_t pi = 0;
+    size_t starPi = std::string_view::npos;
+    size_t starTi = 0;
+    while (ti < text.size()) {
+        if (pi < pattern.size()
+            && (pattern[pi] == '?'
+                || std::tolower(static_cast<unsigned char>(pattern[pi]))
+                       == std::tolower(static_cast<unsigned char>(text[ti])))) {
+            ++ti;
+            ++pi;
+            continue;
+        }
+        if (pi < pattern.size() && pattern[pi] == '*') {
+            starPi = pi++;
+            starTi = ti;
+            continue;
+        }
+        if (starPi != std::string_view::npos) {
+            pi = starPi + 1;
+            ti = ++starTi;
+            continue;
+        }
+        return false;
+    }
+    while (pi < pattern.size() && pattern[pi] == '*') ++pi;
+    return pi == pattern.size();
+}
+
+inline bool MatchesRuleTerm(std::string_view text, std::string_view term) {
+    if (term.empty()) return true;
+    return HasGlobWildcard(term) ? MatchGlobCaseInsensitive(text, term)
+                                 : ContainsCaseInsensitiveRuleText(text, term);
+}
+
+// Kind of an Azmeri wisp deposit from its model token (same tokens as the stock wisp rules).
+inline constexpr const char* kWispKindNames[] = {"Vivid", "Primal", "Wild", "Sacred", "Unknown"};
+inline int WispKindIndex(std::string_view model) {
+    if (ContainsCaseInsensitiveRuleText(model, "wisp_warden")) return 0;
+    if (ContainsCaseInsensitiveRuleText(model, "wisp_primal")) return 1;
+    if (ContainsCaseInsensitiveRuleText(model, "wisp_vodoo")) return 2;
+    if (ContainsCaseInsensitiveRuleText(model, "wisp_sacred")) return 3;
+    return 4;
+}
+
 // Marker scale for an Azmeri wisp deposit from its model, wisp_<kind>_<sml|med|big>.ao
 // (AzmeriWoodsDustType.WispAnimations, 0.5.5); 1 when the size is not in the name.
 inline float WispSizeScale(std::string_view model) {

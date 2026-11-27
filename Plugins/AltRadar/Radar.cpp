@@ -129,6 +129,7 @@ public:
             }
         }
         EndPickerMode();
+        SetSleepingScan(false);
         m_overlay.walkable.Reset();
         m_overlay.terrain.Release();
         m_overlay.runeIcons.Release();
@@ -186,8 +187,10 @@ public:
     }
 
     void DrawUI() override {
-        if (!m_overlay.cfg.OverlayEnabled) return;
-        if (!ctx()->Game.IsInGame()) return;
+        if (!m_overlay.cfg.OverlayEnabled || !ctx()->Game.IsInGame()) {
+            SetSleepingScan(false);
+            return;
+        }
         if (ctx()->ImGuiContext)
             ImGui::SetCurrentContext(static_cast<ImGuiContext*>(ctx()->ImGuiContext));
 
@@ -195,10 +198,13 @@ public:
         m_overlay.runeIcons.SetPluginDir(DirectoryPath());
 
         if (m_ui.pickerPoiMode || m_ui.pickerEntityMode || m_ui.pickerRoomMode) {
-            DrawPicker(snap);
+            DrawPicker(snap);  // the picker reads sleeping entities itself
             return;
         }
+        UpdateWispArea(snap);
+        SetSleepingScan(m_overlay.cfg.ScanFarWisps && m_wispArea);
         m_overlay.Draw(const_cast<PluginSDK::Context*>(ctx()), snap);
+        if (m_overlay.cfg.ShowWispCounter) RadarUi::DrawWispCounter(m_overlay.cache.entities.wispCounts);
     }
 
     void SaveSettings() override {
@@ -220,6 +226,29 @@ public:
 private:
     RadarRender::RadarOverlay m_overlay;
     RadarUi::UiState          m_ui;
+    // Far wisp deposits are sleeping entities. Like the FixerWiki Radar, scan them in the Wildwood
+    // and Flotsam, and on any other map once a deposit has been seen up close.
+    bool     m_wispArea = false;
+    uint64_t m_wispAreaCounter = UINT64_MAX;
+    bool     m_sleepingScan = false;
+
+    void UpdateWispArea(const PluginSDK::Snapshot& snap) {
+        if (snap.AreaChangeCounter != m_wispAreaCounter) {
+            m_wispAreaCounter = snap.AreaChangeCounter;
+            const std::string area = m_overlay.targets.ResolveAreaKey(snap.CurrentAreaHash, snap.CurrentAreaName);
+            m_wispArea = area == "MAPUNIQUEWILDWOOD" || area == "MAPFLOTSAM";  // WorldAreas ids, 0.5.5
+        }
+        if (!m_wispArea)
+            m_wispArea = std::any_of(snap.Entities.begin(), snap.Entities.end(), [](const PluginSDK::Entity& e) {
+                return e.EntityType == PluginSDK::EntityType::AzmeriWisp;
+            });
+    }
+
+    void SetSleepingScan(bool on) {
+        if (on == m_sleepingScan) return;
+        ctx()->Overlay.SetIncludeSleepingEntities(on);
+        m_sleepingScan = on;
+    }
 
     void EndPickerMode() {
         if (!m_ui.pickerPoiMode && !m_ui.pickerEntityMode && !m_ui.pickerRoomMode) return;
@@ -228,6 +257,7 @@ private:
         m_ui.pickerRoomMode = false;
         m_ui.pickerForIgnore = false;
         ctx()->Overlay.SetIncludeSleepingEntities(false);
+        m_sleepingScan = false;  // the next frame turns the wisp scan back on if wanted
         ctx()->Overlay.SetWantsOverlayInput(false);
     }
 

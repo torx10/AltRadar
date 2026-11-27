@@ -52,7 +52,10 @@ POE2Fixer/Plugins/AltRadar/
 Open the Plugins tab → **Alt Radar** → three tabs:
 
 - **General Settings** — overlay toggle, walkable map, visibility rules, player names (character
-  name or "Player", text size, optionally yourself), wisp size scaling
+  name or "Player", text size, optionally yourself)
+- **Azmeri wisps** — deposits by kind (Vivid, Primal, Wild, Sacred) scaled by size, far deposits in
+  the Wildwood and Flotsam, a per-kind counter, Wildwood fuel and light, free wisps, and possessed
+  or spirit-touched monsters by tier
 - **Display Rules** — generated vector marker rules and sizes; rules can also match an entity's
   model (`Model`), which is how the Vaal, Ezomyte, Ventor's and Etched Beetle strongboxes are told apart
 - **Objects** — landmarks by area, Add POI/Entity from map

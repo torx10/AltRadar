@@ -417,6 +417,11 @@ inline void DrawGeneralTab(RadarData::RadarConfig& cfg, UiState& ui,
         ImGui::Checkbox("Hide when alt-tabbed", &cfg.HideWhenNotForeground);
         ImGui::Checkbox("Enable UI Blocker Detection", &cfg.EnableUiBlockerDetection);
         ImGui::Checkbox("Scale wisps by deposit size", &cfg.ScaleWispsBySize);
+        ImGui::Checkbox("Find far wisp deposits", &cfg.ScanFarWisps);
+        if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("In the Wildwood and Flotsam (or once you meet a deposit), also read sleeping\n"
+                              "entities so every deposit of the area shows. Costs a little performance.");
+        ImGui::Checkbox("Wisp counter", &cfg.ShowWispCounter);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Azmeri wisp deposits: large 100%%, medium 85%%, small 70%%.");
         ImGui::Unindent(12.f);
     }
@@ -2258,6 +2263,22 @@ inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
         }
         if (ImGui::IsItemHovered())
             ImGui::SetTooltip("Stop drawing entities with this path (Ignore tab).");
+    }
+    ImGui::End();
+}
+
+// Deposits of the area by kind, shown while there are any (like the Wisps plugin's HUD).
+inline void DrawWispCounter(const std::array<int, 5>& counts) {
+    if (std::all_of(counts.begin(), counts.end(), [](int c) { return c == 0; })) return;
+    ImGui::SetNextWindowPos(ImVec2(20.f, 220.f), ImGuiCond_FirstUseEver);
+    ImGui::SetNextWindowBgAlpha(0.55f);
+    if (ImGui::Begin("Wisps##AltRadarWispCounter", nullptr,
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_AlwaysAutoResize
+                         | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav
+                         | ImGuiWindowFlags_NoSavedSettings)) {
+        ImGui::TextUnformatted("Wisps");
+        for (size_t i = 0; i < counts.size(); ++i)
+            if (counts[i] > 0) ImGui::Text("%-8s %d", RadarData::kWispKindNames[i], counts[i]);
     }
     ImGui::End();
 }

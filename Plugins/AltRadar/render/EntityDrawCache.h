@@ -9,6 +9,7 @@
 #include "plugin_sdk/PluginSDK.h"
 
 #include <imgui.h>
+#include <array>
 #include <cmath>
 #include <unordered_set>
 #include <unordered_map>
@@ -32,12 +33,14 @@ struct EntityDrawCache {
     };
 
     std::vector<RadarData::EntityDrawCmd> cmds;
+    std::array<int, 5> wispCounts{};  // drawn wisp deposits by RadarData::WispKindIndex
     std::unordered_map<std::string, RememberedMarker> remembered;
     std::unordered_set<std::string>                  liveRememberedKeys;
     uint64_t                              lastSnapshotTime = 0;
 
     void Clear() {
         cmds.clear();
+        wispCounts.fill(0);
         remembered.clear();
         liveRememberedKeys.clear();
         lastSnapshotTime = 0;
@@ -121,6 +124,7 @@ struct EntityDrawCache {
                  const RadarData::RadarConfig& cfg, const RadarData::TargetDatabase& db,
                  const RadarData::IconTables& icons) {
         cmds.clear();
+        wispCounts.fill(0);
         liveRememberedKeys.clear();
         if (!ctx) return;
         std::unordered_map<uint32_t, ImU32> runeshapeColors;
@@ -142,7 +146,10 @@ struct EntityDrawCache {
             if (!e.IsValid) continue;
             if (IsSelfEntity(e, snap)) continue;
             if (e.EntityState == PluginSDK::EntityState::Useless) continue;
-            if (cfg.HideOutsideNetworkBubble && e.Zone == PluginSDK::NearbyZone::Far) continue;
+            const bool wisp = e.EntityType == PluginSDK::EntityType::AzmeriWisp;
+            // Sleeping entities are read only for far wisp deposits (ScanFarWisps).
+            if (e.IsSleeping && !wisp) continue;
+            if (cfg.HideOutsideNetworkBubble && e.Zone == PluginSDK::NearbyZone::Far && !wisp) continue;
             if (e.EntityType == PluginSDK::EntityType::Monster && e.CurrentHP <= 0) continue;
 
             const std::string path = RadarData::NarrowPath(e.Path);
@@ -161,9 +168,13 @@ struct EntityDrawCache {
             cmd.label = marker.style.label;
             if (cfg.ShowPlayerNames && e.EntitySubtype == PluginSDK::EntitySubtype::PlayerOther)
                 SetPlayerLabel(cmd, e, cfg);
-            if (cfg.ScaleWispsBySize && ctx && e.EntityType == PluginSDK::EntityType::AzmeriWisp
-                && e.Components.Animated)
-                cmd.markerSize *= RadarData::WispSizeScale(ctx->Components.ReadAnimated(e.Components.Animated).Path);
+            if (wisp) {
+                const std::string model = ctx && e.Components.Animated
+                                              ? ctx->Components.ReadAnimated(e.Components.Animated).Path
+                                              : std::string{};
+                ++wispCounts[static_cast<size_t>(RadarData::WispKindIndex(model))];
+                if (cfg.ScaleWispsBySize) cmd.markerSize *= RadarData::WispSizeScale(model);
+            }
             if (marker.useRuneshapeColor && e.Id != 0) {
                 if (const auto it = runeshapeColors.find(e.Id); it != runeshapeColors.end())
                     cmd.markerColor = it->second;

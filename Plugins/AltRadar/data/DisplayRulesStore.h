@@ -14,7 +14,7 @@ namespace RadarData {
 
 class DisplayRulesStore {
 public:
-    static constexpr int kSchemaVersion = 5;
+    static constexpr int kSchemaVersion = 6;
 
     // Changes to the stock rules, applied once to a file older than `version`. After that the file
     // carries the new version, so a rule the user deletes or edits afterwards stays that way.
@@ -42,6 +42,12 @@ public:
         // (MiscAnimated); PoE2 data only has the AzmeriResourceBase object, so this changes nothing there.
         {5, {}, {"stock.wisps_vivid", "stock.wisps_primal", "stock.wisps_wild", "stock.wisps_sacred",
                  "stock.azmeri_wisps"}, {}},
+        // Azmeri spirits (PoE2 0.5.5 Mods / MonsterVarieties / BuffTemplates) and the Wildwood's
+        // fuel and light objects.
+        {6, {"stock.wisp_fuel", "stock.wisp_light", "stock.hide_wisp_daemon", "stock.possessed_vivid",
+             "stock.possessed_primal", "stock.possessed_wild", "stock.possessed_sacred", "stock.spirit_touched",
+             "stock.free_wisp_vivid", "stock.free_wisp_primal", "stock.free_wisp_wild", "stock.free_wisp_sacred"},
+            {}, {}},
     };
 
     static void CopyMatchConditions(const DisplayRule& from, DisplayRule& to) {
