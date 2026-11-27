@@ -361,9 +361,11 @@ extern "C" PLUGIN_API PluginSDK::Plugin* CreatePlugin() { return new RadarPlugin
 extern "C" PLUGIN_API void DestroyPlugin(PluginSDK::Plugin* p) { delete p; }
 
 // Required by POE2Fixer since 2026-10-22: the host checks this before CreatePlugin.
+// String literals only: the POEFixer publish tool reads this block as text.
+// Keep the version equal to kVersion in data/AltRadarVersion.h.
 POEFIXER_PLUGIN_INFO(
     "AltRadar",
     "Alt Radar",
-    ALTRADAR_VERSION,
+    "0.1.0",
     "torx10",
     "Radar overlay for the in-game large map: monsters, NPCs, chests, POI landmarks and the walkable map.")
