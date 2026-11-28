@@ -6,6 +6,7 @@
 // Map the MSVC-only functions the data code uses, so this also runs on Linux.
 #include <cstdio>
 #include <cstring>
+#include <thread>
 #define localtime_s(tmOut, timeIn) localtime_r(timeIn, tmOut)
 #define sscanf_s sscanf  // only used with %d, where the two behave the same
 #endif
@@ -14,6 +15,7 @@
 #include "data/DisplayRulesStore.h"
 #include "data/IconTables.h"
 #include "data/PathField.h"
+#include "data/PathService.h"
 #include "data/PathMatcher.h"
 #include "data/RadarConfig.h"
 #include "data/RoomTargets.h"
@@ -579,6 +581,93 @@ static void TestPathField() {
     assert(NearestWalkable(g, 5, 1, 2, near) && g.Walkable(near.x, near.y) && std::abs(near.x - 5) == 1);
 }
 
+// The worker: a request gives a path, a new area drops the old paths, and a path traced on the
+// worker matches the one traced directly.
+static void TestPathService() {
+    using namespace RadarPath;
+    const Grid g = GridFrom({".....#.....",
+                             ".....#.....",
+                             "..........."});
+    std::vector<uint8_t> packed((static_cast<size_t>(g.width) + 1) / 2 * g.height, 0);
+    for (int y = 0; y < g.height; ++y)
+        for (int x = 0; x < g.width; ++x)
+            packed[static_cast<size_t>(y) * ((g.width + 1) / 2) + x / 2] |= static_cast<uint8_t>(g.At(x, y) << ((x & 1) * 4));
+    auto waitFor = [](PathService& s, uint64_t gridId) {
+        for (int i = 0; i < 400; ++i) {
+            if (auto r = s.Latest(); r && r->gridId == gridId && !s.Busy()) return r;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        }
+        return std::shared_ptr<const PathResult>{};
+    };
+    PathService service;
+    service.SetGrid(packed, g.width, g.height, 1);
+    service.Request({0, 0}, {{7, {10, 0}}, {8, {5, 0}}});  // (5,0) is a wall: snapped next to it
+    auto r = waitFor(service, 1);
+    assert(r && r->paths.size() == 2);
+    DistanceField f;
+    f.Build(g, {0, 0});
+    assert(r->paths[0].key == 7 && r->paths[0].points == TracePath(g, f, {10, 0}));
+    assert(g.Walkable(r->paths[1].points.back().x, r->paths[1].points.back().y));
+
+    service.SetGrid(packed, g.width, g.height, 2);  // a new area: no paths until asked again
+    assert(!service.Latest());
+    service.Request({0, 0}, {{7, {10, 0}}});
+    r = waitFor(service, 2);
+    assert(r && r->paths.size() == 1);
+
+    // When DrawUI sends a request.
+    using clock = std::chrono::steady_clock;
+    const auto t0 = clock::now();
+    RequestGate gate;
+    const std::vector<PathTarget> one{{1, {100, 100}}};
+    assert(gate.ShouldSend({0, 0}, one, 1, t0));                                       // first
+    assert(!gate.ShouldSend({10, 0}, one, 1, t0 + std::chrono::seconds(5)));           // moved a little
+    assert(!gate.ShouldSend({40, 0}, one, 1, t0 + std::chrono::milliseconds(100)));    // far, too soon
+    assert(gate.ShouldSend({40, 0}, one, 1, t0 + std::chrono::milliseconds(600)));     // far, later
+    assert(gate.ShouldSend({40, 0}, {{2, {100, 100}}}, 1, t0 + std::chrono::milliseconds(601)));  // new target
+    assert(gate.ShouldSend({40, 0}, {{2, {100, 100}}}, 2, t0 + std::chrono::milliseconds(602)));  // new area
+}
+
+// Draw Path is kept for your own landmarks, for bundled ones (as an override) and for room targets.
+static void TestDrawPathSaved(const fs::path& pluginDir) {
+    auto countBundled = [](const TargetDatabase& db) {  // the shipped files already set DrawPath on most
+        int n = 0;
+        for (const auto& t : db.storage) n += t.category != "User" && t.drawPath;
+        return n;
+    };
+    int bundledBefore = 0;
+    {
+        TargetDatabase db;
+        db.Load(pluginDir);
+        bundledBefore = countBundled(db);
+        TargetEntry mine;
+        mine.name = "Mine";
+        mine.path = "Metadata/Mine*";
+        mine.drawPath = true;
+        db.UpsertUserTarget("G1_1", mine);
+        assert(db.SaveUser(pluginDir));
+        size_t bundled = SIZE_MAX;  // the first bundled landmark
+        for (size_t i = 0; i < db.storage.size() && bundled == SIZE_MAX; ++i)
+            if (db.storage[i].category != "User" && !db.storage[i].drawPath) bundled = i;
+        assert(bundled != SIZE_MAX);
+        db.storage[bundled].drawPath = true;
+        assert(db.SaveBundledOverride(bundled, pluginDir));
+    }
+    TargetDatabase db;
+    db.Load(pluginDir);
+    int user = 0;
+    for (const auto& t : db.storage) user += t.category == "User" && t.drawPath;
+    assert(user == 1 && countBundled(db) == bundledBefore + 1);
+
+    RoomTargetStore rooms;
+    rooms.targets = {MakeRoom("Arena", "*arena*", "Endgame", "*")};
+    rooms.targets[0].look.drawPath = true;
+    assert(rooms.Save(pluginDir));
+    RoomTargetStore again;
+    again.Load(pluginDir);
+    assert(again.targets.size() == 1 && again.targets[0].look.drawPath);
+}
+
 int main() {
     const auto dir = fs::temp_directory_path() / "altradar_self_test";
     fs::remove_all(dir);
@@ -601,6 +690,8 @@ int main() {
     TestWispKinds();
     TestAzmeriSpirits();
     TestPathField();
+    TestPathService();
+    TestDrawPathSaved(dir / "plugin10");
     TestWildwoodRoomTargets(dir / "plugin9");
 
     fs::remove_all(dir);

@@ -332,6 +332,7 @@ struct TargetEntry {
     float       anchorGridY = 0.f;
     int         anchorTileX = 0;
     int         anchorTileY = 0;
+    bool        drawPath = false;  // PathFinder draws the way to it
 };
 
 struct PoiResolved {
@@ -352,6 +353,7 @@ struct PoiResolved {
     Rgba8       markerColor;
     Rgba8       nameColor;
     Rgba8       bgColor;
+    bool        drawPath = false;
 };
 
 struct EntityDrawCmd {

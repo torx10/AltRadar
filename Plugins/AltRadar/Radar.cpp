@@ -130,6 +130,7 @@ public:
         }
         EndPickerMode();
         SetSleepingScan(false);
+        m_overlay.paths.Release();  // stops the path worker
         m_overlay.walkable.Reset();
         m_overlay.terrain.Release();
         m_overlay.runeIcons.Release();

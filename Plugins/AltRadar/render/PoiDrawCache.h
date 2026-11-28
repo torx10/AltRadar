@@ -65,6 +65,7 @@ struct PoiDrawCache {
                                               : RadarData::DefaultTargetMarkerColor();
         p.nameColor = t.nameColor;
         p.bgColor = t.bgColor;
+        p.drawPath = t.drawPath;
         return p;
     }
 

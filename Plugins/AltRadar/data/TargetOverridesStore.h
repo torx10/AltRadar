@@ -27,6 +27,7 @@ struct TargetOverrideEntry {
     std::optional<Rgba8> markerColor;
     std::optional<Rgba8> nameColor;
     std::optional<Rgba8> bgColor;
+    std::optional<bool> drawPath;
 };
 
 class TargetOverridesStore {
@@ -85,6 +86,7 @@ public:
                     e.nameColor = ParseRgbString(o["NameColor"].get<std::string>());
                 if (o.contains("BGColor") && o["BGColor"].is_string())
                     e.bgColor = ParseRgbString(o["BGColor"].get<std::string>());
+                if (o.contains("DrawPath") && o["DrawPath"].is_boolean()) e.drawPath = o["DrawPath"].get<bool>();
                 entries[e.key] = std::move(e);
             }
             return true;
@@ -123,6 +125,7 @@ public:
             if (e.markerColor) o["MarkerColor"] = {e.markerColor->r, e.markerColor->g, e.markerColor->b, e.markerColor->a};
             if (e.nameColor) o["NameColor"] = ColorString(*e.nameColor);
             if (e.bgColor) o["BGColor"] = ColorString(*e.bgColor);
+            if (e.drawPath) o["DrawPath"] = *e.drawPath;
             j["Overrides"].push_back(std::move(o));
         }
         if (WriteFileAtomic(path, j.dump(4))) return true;

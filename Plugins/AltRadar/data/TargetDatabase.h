@@ -75,6 +75,7 @@ public:
             t.anchorTileX = o.value("AnchorTileX", 0);
             t.anchorTileY = o.value("AnchorTileY", 0);
         }
+        t.drawPath = o.value("DrawPath", false);
         return t;
     }
 
@@ -94,6 +95,7 @@ public:
             {"BGColor", std::to_string(t.bgColor.r) + ", " + std::to_string(t.bgColor.g) + ", "
                             + std::to_string(t.bgColor.b)},
         };
+        if (t.drawPath) o["DrawPath"] = true;
         if (t.hasAnchor) {
             o["AnchorGridX"] = t.anchorGridX;
             o["AnchorGridY"] = t.anchorGridY;
@@ -458,6 +460,7 @@ public:
         if (o.markerColor) t.markerColor = *o.markerColor;
         if (o.nameColor) t.nameColor = *o.nameColor;
         if (o.bgColor) t.bgColor = *o.bgColor;
+        if (o.drawPath) t.drawPath = *o.drawPath;
     }
 
     void ApplyOverrides() {
@@ -489,8 +492,9 @@ public:
         if (!SameColor(t.markerColor, d.markerColor)) o.markerColor = t.markerColor;
         if (!SameColor(t.nameColor, d.nameColor)) o.nameColor = t.nameColor;
         if (!SameColor(t.bgColor, d.bgColor)) o.bgColor = t.bgColor;
+        if (t.drawPath != d.drawPath) o.drawPath = t.drawPath;
         if (!o.enabled && !o.name && !o.path && !o.showIcon && !o.iconName && !o.iconSize && !o.expectedCount
-            && !o.markerShape && !o.markerColor && !o.nameColor && !o.bgColor) {
+            && !o.markerShape && !o.markerColor && !o.nameColor && !o.bgColor && !o.drawPath) {
             overrides.entries.erase(key);
         } else {
             overrides.entries[key] = std::move(o);

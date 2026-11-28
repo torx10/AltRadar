@@ -1778,6 +1778,10 @@ inline void DrawRuneShapeTab(RadarData::RadarConfig& cfg, RadarData::IconTables&
     ImGui::SameLine();
     ImGui::SetNextItemWidth(220.f);
     ImGui::SliderInt("##RuneShapeMinimumWeight", &cfg.RuneShapeMinimumWeight, -100, 100, "%d");
+    ImGui::Checkbox("Path to best Runeshape", &cfg.RuneShapePathToBest);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Draw the route to the Runeshape(s) with the highest weight (at least the minimum\n"
+                          "weight); equal weights each get a path. Needs Enable PathFinder (Landmarks tab).");
     if (ctx) {
         size_t count = 0;
         int best = 0;
@@ -2225,6 +2229,8 @@ inline void DrawEditTargetModal(UiState& ui, RadarData::TargetDatabase& db,
     ImGui::InputText("Metadata Path", pathBuf, sizeof(pathBuf));
     ui.editTarget.path = pathBuf;
     ImGui::Checkbox("Enabled", &ui.editTarget.enabled);
+    ImGui::SameLine();
+    ImGui::Checkbox("Draw Path", &ui.editTarget.drawPath);
     ImGui::DragInt("Count", &ui.editTarget.expectedCount, 1, 1, 99);
     DrawRgbEdit("Name Colour", ui.editTarget.nameColor);
     ImGui::SameLine();
@@ -2399,6 +2405,8 @@ inline void DrawEditRoomModal(UiState& ui, RadarRender::RadarOverlay& overlay,
     if (ImGui::IsItemHovered())
         ImGui::SetTooltip("The whole room name must match; * matches anything. Empty matches nothing.");
     ImGui::Checkbox("Enabled", &r.look.enabled);
+    ImGui::SameLine();
+    ImGui::Checkbox("Draw Path", &r.look.drawPath);
     ImGui::DragInt("Count", &r.look.expectedCount, 1, 0, 99);
     if (ImGui::IsItemHovered()) ImGui::SetTooltip("0 = every matching room, N = the N nearest to you.");
     ImGui::Checkbox("Global (all areas in category)", &ui.editRoomGlobal);
@@ -2514,6 +2522,15 @@ inline void DrawLandmarksTab(RadarData::RadarConfig& cfg, RadarData::TargetDatab
         ImGui::SetTooltip("Show or hide curated landmarks and custom picked map targets on the overlay.");
     ImGui::SameLine(0.f, 8.f);
     ImGui::Checkbox("Text Background", &cfg.EnablePOIBackground);
+    ImGui::SameLine(0.f, 16.f);
+    ImGui::Checkbox("Enable PathFinder", &cfg.EnablePathFinder);
+    if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Draw the walking route to every landmark and room target with Draw Path ticked.");
+    ImGui::SameLine(0.f, 8.f);
+    ImGui::BeginDisabled(!cfg.EnablePathFinder);
+    ImGui::Checkbox("Multicolor", &cfg.PathMulticolor);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Give each path its own colour instead of its target's.");
+    ImGui::EndDisabled();
 
     if (ImGui::Button("Add Landmark from Map", ImVec2(0, 0))) {
         ui.pickerPoiMode = true;

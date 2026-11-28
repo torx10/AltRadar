@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MapProjection.h"
+#include "PathOverlay.h"
 #include "TerrainTexture.h"
 #include "perf/AreaCache.h"
 #include "perf/PerfTiming.h"
@@ -13,6 +14,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <climits>
 #include <cstdio>
 #include <filesystem>
 #include <imgui.h>
@@ -898,6 +900,38 @@ public:
     RadarData::RadarConfig        cfg;
     RadarData::TargetDatabase     targets;
     RadarData::RoomTargetStore    roomTargets;
+    PathOverlay                   paths;
+    std::vector<PathTargetSpec>   pathTargets;
+    std::chrono::steady_clock::time_point pathTargetsAt{};
+
+    // What PathFinder draws a way to: POIs marked Draw Path (landmarks, room targets) and, with
+    // RuneShapePathToBest, the unfinished Runeshape(s) with the best weight (ties each get one).
+    std::vector<PathTargetSpec> CollectPathTargets(PluginSDK::Context* ctx, const PluginSDK::Snapshot& snap) const {
+        std::vector<PathTargetSpec> out;
+        if (!cfg.EnablePathFinder) return out;
+        std::unordered_map<std::string, int> seen;  // key: name + which one of that name
+        for (const auto& p : cache.pois.pois) {
+            if (!p.drawPath) continue;
+            const uint64_t key = std::hash<std::string>{}(p.name) * 31u + static_cast<uint64_t>(seen[p.name]++);
+            out.push_back({key, p.gridX, p.gridY, p.markerColor.ToImU32()});
+        }
+        if (cfg.RuneShapePathToBest && ctx) {
+            const auto runeshapes = ctx->Runeshape.Runeshapes();
+            int best = INT_MIN;
+            for (const auto& r : runeshapes)
+                if (!r.completed && r.comboWeight >= cfg.RuneShapeMinimumWeight) best = std::max(best, r.comboWeight);
+            for (const auto& r : runeshapes) {
+                if (r.completed || r.comboWeight != best) continue;
+                for (const auto& e : snap.Entities)
+                    if (e.IsValid && e.Id == static_cast<uint32_t>(r.entityId)) {
+                        out.push_back({0x8000000000000000ull | r.entityId, e.GridPositionX, e.GridPositionY,
+                                       RuneshapeSdkColorToImU32(r.color)});
+                        break;
+                    }
+            }
+        }
+        return out;
+    }
     RadarData::IconTables         icons;
     TerrainTexture                terrain;
     RadarPerf::AreaCacheState     cache;
@@ -1002,6 +1036,12 @@ public:
         const auto areaCacheStart = std::chrono::steady_clock::now();
         auto current = ctx->Terrain.GetWalkableGrid();
         if (current.Data() != walkable.Data()) walkable = std::move(current);
+        // Path targets change slowly; collect them a few times a second, not every frame.
+        if (const auto now = std::chrono::steady_clock::now(); now - pathTargetsAt >= std::chrono::milliseconds(200)) {
+            pathTargets = CollectPathTargets(ctx, snap);
+            pathTargetsAt = now;
+        }
+        paths.Update(walkable, snap, pathTargets);
 
         if (cache.NeedsFullRebuild(snap, walkable.Data())) {
             cache.RebuildAll(ctx, snap, walkable, cfg, targets, roomTargets, icons);
@@ -1208,6 +1248,7 @@ public:
             } else if (!cfg.ShowBoundaryEdges) {
                 perf.flags.boundarySkipReason = "boundary edges disabled";
             }
+            paths.Draw(dl, ctx, snap, cfg, &largeMapProj);  // under the markers
             const auto entityDrawStart = std::chrono::steady_clock::now();
             cache.entities.Draw(ctx, snap, dl, &largeMapProj);
             DrawRuneShapeSdkOverlay(dl, ctx, snap, cfg, icons, &runeIcons, &largeMapProj);
@@ -1240,6 +1281,7 @@ public:
             perf.flags.terrainTextureDrawSkippedReason = UsesTextureTerrain(cfg)
                                                             ? "cached terrain large-map only"
                                                             : "texture terrain mode disabled";
+            paths.Draw(dl, ctx, snap, cfg, nullptr);
             if (cfg.DrawMiniMapEntities) {
                 const auto entityDrawStart = std::chrono::steady_clock::now();
                 cache.entities.Draw(ctx, snap, dl);

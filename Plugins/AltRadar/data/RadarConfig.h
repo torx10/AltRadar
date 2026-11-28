@@ -219,6 +219,9 @@ struct RadarConfig {
     bool  ScanFarWisps = false;   // read sleeping entities where wisps are, so far deposits show (costly)
     int   EntityUpdateIntervalMs = 33;  // at most this often: full snapshot + entity marker rebuild
     bool  ShowWispCounter = true;
+    bool  EnablePathFinder = true;     // draw the way to targets marked Draw Path
+    bool  PathMulticolor = false;      // a distinct colour per path instead of the target's
+    bool  RuneShapePathToBest = false; // path to the best-weighted Runeshape(s)
     bool  ShowImportantPOI = true;
     bool  DrawPoiIcons = false;
     bool  EnablePOIBackground = true;
@@ -332,11 +335,14 @@ struct RadarConfig {
         ScanFarWisps = j.value("ScanFarWisps", ScanFarWisps);
         EntityUpdateIntervalMs = std::clamp(j.value("EntityUpdateIntervalMs", EntityUpdateIntervalMs), 0, 250);
         ShowWispCounter = j.value("ShowWispCounter", ShowWispCounter);
+        EnablePathFinder = j.value("EnablePathFinder", EnablePathFinder);
+        PathMulticolor = j.value("PathMulticolor", PathMulticolor);
         ShowImportantPOI = j.value("ShowImportantPOI", ShowImportantPOI);
         DrawPoiIcons = j.value("DrawPoiIcons", DrawPoiIcons);
         EnablePOIBackground = j.value("EnablePOIBackground", EnablePOIBackground);
         RuneShapeShowWeights = j.value("RuneShapeShowWeights", RuneShapeShowWeights);
-        (void)j.value("RuneShapeShowPath", false);
+        // RuneShapeShowPath: the same option under an older name.
+        RuneShapePathToBest = j.value("RuneShapePathToBest", j.value("RuneShapeShowPath", RuneShapePathToBest));
         RuneShapeMinimumWeight = std::clamp(j.value("RuneShapeMinimumWeight", RuneShapeMinimumWeight), -100, 100);
         EdgeIndicatorMinimap = j.value("EdgeIndicatorMinimap", EdgeIndicatorMinimap);
         EdgeIndicatorLargemap = j.value("EdgeIndicatorLargemap", EdgeIndicatorLargemap);
@@ -419,6 +425,9 @@ struct RadarConfig {
         j["ScanFarWisps"] = ScanFarWisps;
         j["EntityUpdateIntervalMs"] = EntityUpdateIntervalMs;
         j["ShowWispCounter"] = ShowWispCounter;
+        j["EnablePathFinder"] = EnablePathFinder;
+        j["PathMulticolor"] = PathMulticolor;
+        j["RuneShapePathToBest"] = RuneShapePathToBest;
         j["RuneShapeShowWeights"] = RuneShapeShowWeights;
         j["RuneShapeMinimumWeight"] = RuneShapeMinimumWeight;
         j["EdgeIndicatorMinimap"] = EdgeIndicatorMinimap;
