@@ -5,6 +5,7 @@
 #ifndef _WIN32
 // Map the MSVC-only functions the data code uses, so this also runs on Linux.
 #include <cstdio>
+#include <cstring>
 #define localtime_s(tmOut, timeIn) localtime_r(timeIn, tmOut)
 #define sscanf_s sscanf  // only used with %d, where the two behave the same
 #endif
@@ -12,6 +13,7 @@
 #undef NDEBUG
 #include "data/DisplayRulesStore.h"
 #include "data/IconTables.h"
+#include "data/PathField.h"
 #include "data/PathMatcher.h"
 #include "data/RadarConfig.h"
 #include "data/RoomTargets.h"
@@ -511,6 +513,72 @@ static void TestAzmeriSpirits() {
     assert(WispKindIndex(".../wisp_doodads/wisp_vodoo_big.ao") == 2 && WispKindIndex("") == 4);
 }
 
+// A grid from text: '#' wall, digits = cell value (walkable), '.' = 5 (open ground).
+static RadarPath::Grid GridFrom(std::initializer_list<const char*> rows) {
+    RadarPath::Grid g;
+    g.height = static_cast<int>(rows.size());
+    for (const char* r : rows) {
+        g.width = static_cast<int>(std::strlen(r));
+        for (int x = 0; x < g.width; ++x) {
+            const uint8_t v = r[x] == '#' ? 0 : r[x] == '.' ? 5 : static_cast<uint8_t>(r[x] - '0');
+            g.cells.push_back(v);
+            g.maxValue = std::max(g.maxValue, v);
+        }
+    }
+    return g;
+}
+
+static void TestPathField() {
+    using namespace RadarPath;
+    // 4 bits per cell, low nibble first (PoE2 walkable grid).
+    const uint8_t packed[] = {0x21, 0x03};
+    const Grid d = DecodeWalkable(packed, sizeof(packed), 4, 1);
+    assert((d.cells == std::vector<uint8_t>{1, 2, 3, 0}) && d.maxValue == 3);
+
+    // The only way through the wall is the gap at the bottom.
+    const Grid g = GridFrom({".....#.....",
+                             ".....#.....",
+                             ".....#.....",
+                             "..........."});
+    DistanceField f;
+    f.Build(g, {0, 0});
+    const auto path = TracePath(g, f, {10, 0});
+    assert(path.size() >= 3 && path.front() == (Cell{0, 0}) && path.back() == (Cell{10, 0}));
+    for (size_t i = 0; i + 1 < path.size(); ++i) assert(HasClearLine(g, path[i], path[i + 1]));
+    bool viaGap = false;
+    for (const auto& c : path) viaGap |= c.y == 3;
+    assert(viaGap);
+
+    // No squeezing diagonally between two wall corners.
+    const Grid corner = GridFrom({".#",
+                                  "#."});
+    DistanceField fc;
+    fc.Build(corner, {0, 0});
+    assert(fc.CostAt(1, 1) == DistanceField::kUnreached && TracePath(corner, fc, {1, 1}).empty());
+    assert(!HasClearLine(corner, {0, 0}, {1, 1}));
+
+    // Same length both ways: the open lane (5) wins over the one along a wall (1).
+    const Grid lanes = GridFrom({"1111111",
+                                 "1#####1",
+                                 ".......",});
+    DistanceField fl;
+    fl.Build(lanes, {0, 1});
+    const auto lanePath = TracePath(lanes, fl, {6, 1}, 1);  // segment 1: keep every cell
+    bool open = false;
+    for (const auto& c : lanePath) open |= c.y == 2;
+    assert(open);
+
+    // Stopping once the target is final gives the full field's cost.
+    DistanceField early;
+    const std::vector<Cell> targets{{10, 0}};
+    early.Build(g, {0, 0}, &targets);
+    assert(early.CostAt(10, 0) == f.CostAt(10, 0));
+    assert(TracePath(g, early, {10, 0}).back() == (Cell{10, 0}));
+
+    Cell near;
+    assert(NearestWalkable(g, 5, 1, 2, near) && g.Walkable(near.x, near.y) && std::abs(near.x - 5) == 1);
+}
+
 int main() {
     const auto dir = fs::temp_directory_path() / "altradar_self_test";
     fs::remove_all(dir);
@@ -532,6 +600,7 @@ int main() {
     TestGlobalUserLandmark(dir / "plugin8");
     TestWispKinds();
     TestAzmeriSpirits();
+    TestPathField();
     TestWildwoodRoomTargets(dir / "plugin9");
 
     fs::remove_all(dir);
